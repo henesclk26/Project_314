@@ -1,9 +1,16 @@
+#define USE_STEAM // Steam'i iptal edip UGS'ye donmek icin bu satiri silin veya basina // koyun
+
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using Unity.Services.Lobbies.Models;
 using Unity.Netcode;
+
+#if USE_STEAM
+using Steamworks.Data;
+#else
+using Unity.Services.Lobbies.Models;
+#endif
 
 public class LobbyUIManager : MonoBehaviour
 {
@@ -46,6 +53,12 @@ public class LobbyUIManager : MonoBehaviour
     public Transform playerListContainer;
     public GameObject playerNamePrefab;
 
+#if USE_STEAM
+    private SteamMultiplayerManager NetworkMgr => SteamMultiplayerManager.Instance;
+#else
+    private MultiplayerManager NetworkMgr => MultiplayerManager.Instance;
+#endif
+
     private void Start()
     {
         // --- SÜPER UI RESET ---
@@ -87,7 +100,7 @@ public class LobbyUIManager : MonoBehaviour
         joinPrivateBtn?.onClick.AddListener(OnJoinPrivate);
         refreshLobbiesBtn?.onClick.AddListener(OnRefreshPublicLobbies);
         leaveLobbyBtn?.onClick.AddListener(OnLeaveLobby);
-        startGameBtn?.onClick.AddListener(() => MultiplayerManager.Instance.StartGame("test_map"));
+        startGameBtn?.onClick.AddListener(() => NetworkMgr.StartGame("test_map"));
 
         // Oyun başlarken ilk seçimi (Selection) göster:
         SwitchPanel(selectionPanel);
@@ -121,40 +134,40 @@ public class LobbyUIManager : MonoBehaviour
 
     private async void OnCreatePublic()
     {
-        if (MultiplayerManager.Instance == null) return;
+        if (NetworkMgr == null) return;
 
         string lName = lobbyNameInput != null && !string.IsNullOrEmpty(lobbyNameInput.text) ? lobbyNameInput.text : "Public Lobby";
         int maxP = maxPlayersSlider != null ? Mathf.RoundToInt(maxPlayersSlider.value) : 14;
         
-        await MultiplayerManager.Instance.CreatePublicLobby(lName, maxP);
+        await NetworkMgr.CreatePublicLobby(lName, maxP);
         ShowInLobby("Public Lobi Kuruldu: " + lName);
     }
 
     private async void OnCreatePrivate()
     {
-        if (MultiplayerManager.Instance == null) return;
+        if (NetworkMgr == null) return;
 
         string lName = lobbyNameInput != null && !string.IsNullOrEmpty(lobbyNameInput.text) ? lobbyNameInput.text : "Private Lobby";
         int maxP = maxPlayersSlider != null ? Mathf.RoundToInt(maxPlayersSlider.value) : 14;
         
-        await MultiplayerManager.Instance.CreatePrivateLobby(lName, maxP);
+        await NetworkMgr.CreatePrivateLobby(lName, maxP);
         ShowInLobby("Private Lobi Kuruldu: " + lName);
     }
 
     private async void OnJoinPrivate()
     {
-        if (joinCodeInput == null || MultiplayerManager.Instance == null) return;
+        if (joinCodeInput == null || NetworkMgr == null) return;
 
         string code = joinCodeInput.text;
         if (string.IsNullOrEmpty(code)) return;
 
-        await MultiplayerManager.Instance.JoinByCode(code);
+        await NetworkMgr.JoinByCode(code);
         ShowInLobby("Lobiye Katılındı.");
     }
 
     public async void OnRefreshPublicLobbies()
     {
-        if (lobbyListContainer == null || lobbyEntryPrefab == null || MultiplayerManager.Instance == null) 
+        if (lobbyListContainer == null || lobbyEntryPrefab == null || NetworkMgr == null) 
         {
             Debug.LogWarning("lobbyListContainer veya lobbyEntryPrefab Inspector'da tanımlanmamış!");
             return;
@@ -166,7 +179,7 @@ public class LobbyUIManager : MonoBehaviour
             Destroy(child.gameObject);
         }
 
-        List<Lobby> lobbies = await MultiplayerManager.Instance.GetPublicLobbies();
+        var lobbies = await NetworkMgr.GetPublicLobbies();
         if (lobbies == null) 
         {
             Debug.LogWarning("Hiç public lobi bulunamadı veya sunucu yanıt vermedi.");
@@ -175,7 +188,7 @@ public class LobbyUIManager : MonoBehaviour
         
         Debug.Log($"[LobbyUIManager] {lobbies.Count} adet public lobi bulundu ve listeleniyor.");
 
-        foreach (Lobby l in lobbies)
+        foreach (var l in lobbies)
         {
             GameObject entry = Instantiate(lobbyEntryPrefab, lobbyListContainer);
             entry.SetActive(true); // GİZLİ PREFABIN KLONLARI KENDİLİĞİNDEN KAPANMASIN DİYE
@@ -192,13 +205,13 @@ public class LobbyUIManager : MonoBehaviour
 
     public async void JoinLobbyById(string lobbyId)
     {
-        await MultiplayerManager.Instance.JoinById(lobbyId);
+        await NetworkMgr.JoinById(lobbyId);
         ShowInLobby("Public Lobiye Katılındı.");
     }
 
     private async void OnLeaveLobby()
     {
-        await MultiplayerManager.Instance.LeaveLobby();
+        await NetworkMgr.LeaveLobby();
         
         inLobbyPanel?.SetActive(false);
         SwitchPanel(selectionPanel);
@@ -215,13 +228,13 @@ public class LobbyUIManager : MonoBehaviour
 
         if (joinCodeDisplay != null) 
         {
-            if (MultiplayerManager.Instance.CurrentLobbyIsPrivate)
+            if (NetworkMgr.CurrentLobbyIsPrivate)
             {
-                joinCodeDisplay.text = $"Oda Şifresi: {MultiplayerManager.Instance.CurrentLobbyCode} (Kapasite: {MultiplayerManager.Instance.CurrentLobbyMaxPlayers})";
+                joinCodeDisplay.text = $"Oda Şifresi: {NetworkMgr.CurrentLobbyCode} (Kapasite: {NetworkMgr.CurrentLobbyMaxPlayers})";
             }
             else
             {
-                joinCodeDisplay.text = $"Herkese Açık (Public) Lobi - (Kapasite: {MultiplayerManager.Instance.CurrentLobbyMaxPlayers})";
+                joinCodeDisplay.text = $"Herkese Açık (Public) Lobi - (Kapasite: {NetworkMgr.CurrentLobbyMaxPlayers})";
             }
         }
 
