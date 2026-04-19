@@ -2638,6 +2638,7 @@ GameObject:
   - component: {fileID: 985082522}
   - component: {fileID: 985082526}
   - component: {fileID: 985082525}
+  - component: {fileID: 985082527}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -2652,7 +2653,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 985082521}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cc285af7446562e498221ce70896ecdb, type: 3}
   m_Name: 
@@ -2782,6 +2783,18 @@ MonoBehaviour:
     OldPrefabList: []
   RunInBackground: 1
   LogLevel: 1
+--- !u!114 &985082527
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 985082521}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8776e091053d1a2409548b92749f0852, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SteamMultiplayerManager
 --- !u!1 &990534149
 GameObject:
   m_ObjectHideFlags: 0
