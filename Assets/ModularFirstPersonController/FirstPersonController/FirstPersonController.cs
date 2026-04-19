@@ -267,7 +267,7 @@ public class FirstPersonController : NetworkBehaviour
             sprintBarBG.rectTransform.sizeDelta = new Vector3(sprintBarWidth, sprintBarHeight, 0f);
             sprintBar.rectTransform.sizeDelta = new Vector3(sprintBarWidth - 2, sprintBarHeight - 2, 0f);
 
-            if(hideBarWhenFull)
+            if(hideBarWhenFull && sprintBarCG != null)
             {
                 sprintBarCG.alpha = 0;
             }
@@ -279,13 +279,32 @@ public class FirstPersonController : NetworkBehaviour
         }
 
         #endregion
+        
+        // Başlangıçta Spectator yazısını kapat
+        if (IsOwner && RoleManager.Instance != null && RoleManager.Instance.spectatorHintText != null)
+        {
+            RoleManager.Instance.spectatorHintText.gameObject.SetActive(false);
+        }
     }
 
     float camRotation;
 
+    [HideInInspector] public bool isDead = false;
+
+    // --- İzleyici (Spectator) Modu Değişkenleri ---
+    private int currentSpectateIndex = 0;
+    private FirstPersonController spectatedPlayer = null;
+    private bool spectatorInitialized = false;
+
     private void Update()
     {
         if (!IsLocalPlayer()) return;
+
+        if (isDead)
+        {
+            HandleSpectator();
+            return;
+        }
 
         // EĞER ŞU AN ANA MENÜDE (LOBİDE) İSEK: Fareyi göster ve karakteri dondur!
         if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "MainMenu")
@@ -466,9 +485,85 @@ public class FirstPersonController : NetworkBehaviour
         }
     }
 
+    #region Spectator Mode
+    private void HandleSpectator()
+    {
+        if (!spectatorInitialized)
+        {
+            if (RoleManager.Instance != null && RoleManager.Instance.spectatorHintText != null)
+            {
+                RoleManager.Instance.spectatorHintText.gameObject.SetActive(true);
+                RoleManager.Instance.spectatorHintText.text = "Sol Tık: Sonraki Oyuncu   |   Sağ Tık: Önceki Oyuncu"; // Veya Inspector'dan girdiğiniz değer kalabilir
+            }
+            spectatorInitialized = true;
+        }
+
+        if (Input.GetMouseButtonDown(0)) // Sol tık: İleri
+        {
+            CycleSpectator(1);
+        }
+        else if (Input.GetMouseButtonDown(1)) // Sağ tık: Geri
+        {
+            CycleSpectator(-1);
+        }
+        
+        // Asıl izleme kamerasını hedeflenen oyuncuya sabitle
+        SpectateCurrentTarget();
+    }
+
+    private void CycleSpectator(int direction)
+    {
+        // Sahnedeki tüm oyuncu kontrolcülerini bul
+        FirstPersonController[] allPlayers = FindObjectsByType<FirstPersonController>(FindObjectsSortMode.None);
+        List<FirstPersonController> alivePlayers = new List<FirstPersonController>();
+        
+        foreach(var p in allPlayers)
+        {
+            // Adamlar ölü değilse ve Network olarak oyundaysa ekle
+            if (!p.isDead && p.IsSpawned)
+            {
+                alivePlayers.Add(p);
+            }
+        }
+
+        if (alivePlayers.Count == 0) 
+        {
+            spectatedPlayer = null;
+            return; // Kimse hayatta değilse izleyecek kimse yok
+        }
+
+        currentSpectateIndex += direction;
+        
+        // Liste dışına çıkmayı engelle (Başa sar)
+        if (currentSpectateIndex >= alivePlayers.Count) currentSpectateIndex = 0;
+        if (currentSpectateIndex < 0) currentSpectateIndex = alivePlayers.Count - 1;
+
+        spectatedPlayer = alivePlayers[currentSpectateIndex];
+    }
+
+    private void SpectateCurrentTarget()
+    {
+        if (spectatedPlayer != null && !spectatedPlayer.isDead && spectatedPlayer.IsSpawned)
+        {
+            // İzlenen kişinin gözlerine yerleş
+            if (playerCamera != null && spectatedPlayer.playerCamera != null)
+            {
+                playerCamera.transform.position = spectatedPlayer.playerCamera.transform.position;
+                playerCamera.transform.rotation = spectatedPlayer.playerCamera.transform.rotation;
+            }
+        }
+        else
+        {
+            // Hedef sonradan ölürse veya düşerse, bir kereden sonraya atla
+            CycleSpectator(1);
+        }
+    }
+    #endregion
+
     void FixedUpdate()
     {
         if (!IsLocalPlayer()) return;
+        if (isDead) return;
 
         #region Movement
 
@@ -512,7 +607,7 @@ public class FirstPersonController : NetworkBehaviour
                         Crouch();
                     }
 
-                    if (hideBarWhenFull && !unlimitedSprint)
+                    if (hideBarWhenFull && !unlimitedSprint && sprintBarCG != null)
                     {
                         sprintBarCG.alpha += 5 * Time.deltaTime;
                     }
@@ -525,7 +620,7 @@ public class FirstPersonController : NetworkBehaviour
             {
                 isSprinting = false;
 
-                if (hideBarWhenFull && sprintRemaining == sprintDuration)
+                if (hideBarWhenFull && sprintRemaining == sprintDuration && sprintBarCG != null)
                 {
                     sprintBarCG.alpha -= 3 * Time.deltaTime;
                 }
@@ -629,6 +724,30 @@ public class FirstPersonController : NetworkBehaviour
             // Resets when play stops moving
             timer = 0;
             joint.localPosition = new Vector3(Mathf.Lerp(joint.localPosition.x, jointOriginalPos.x, Time.deltaTime * bobSpeed), Mathf.Lerp(joint.localPosition.y, jointOriginalPos.y, Time.deltaTime * bobSpeed), Mathf.Lerp(joint.localPosition.z, jointOriginalPos.z, Time.deltaTime * bobSpeed));
+        }
+    }
+
+    public void Die()
+    {
+        isDead = true;
+        playerCanMove = false;
+        cameraCanMove = false;
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+        }
+
+        if (IsLocalPlayer())
+        {
+            Debug.Log("ÖLDÜRÜLDÜN!");
+            if (RoleManager.Instance != null && RoleManager.Instance.roleText != null)
+            {
+                RoleManager.Instance.roleText.text = "ÖLDÜN!";
+                RoleManager.Instance.roleText.color = Color.gray;
+            }
+            
+            // Eğer isterseniz buraya animasyon çalma kodu ekleyebilirsiniz:
+            // GetComponent<Animator>().SetTrigger("Die");
         }
     }
 }
