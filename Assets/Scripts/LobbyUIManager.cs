@@ -19,6 +19,7 @@ public class LobbyUIManager : MonoBehaviour
     public GameObject privateGamePanel; // Host ve Şifre girilen menü
     public GameObject publicGamePanel; // Public server tarayıcı menüsü
     public GameObject inLobbyPanel; // Lobiye girilince çıkacak panel
+    public GameObject lobbyNamePanel; // Public lobi adı giriş paneli
 
     [Header("Menü Navigasyon Butonları")]
     public Button navToPrivateBtn; // Private menüsünü aç
@@ -27,12 +28,18 @@ public class LobbyUIManager : MonoBehaviour
     public Button backFromPublicBtn; // Geri dön
     public Button exitGameBtn; // Oyundan çıkış butonu
 
-    [Header("Host Settings")]
-    public TMP_InputField lobbyNameInput;
-    public Slider maxPlayersSlider;
-    public TMP_Text maxPlayersText;
-    public Button createPublicBtn;
+    [Header("Host Settings - Public")]
+    public TMP_InputField lobbyNameInput; // Lobi adı giriş alanı (lobbyNamePanel içinde)
+    public TMP_Text lobbyNameErrorText; // Hata mesajı (örn: "Maks 16 karakter!")
+    public Button confirmPublicBtn; // Lobi adını onayladıktan sonra lobi kur
+    public Button backFromNamePanelBtn; // Lobi adı panelinden geri dön
+    public Slider maxPlayersSlider; // Sadece public lobi için
+    public TMP_Text maxPlayersText; // Sadece public lobi için
+    public Button createPublicBtn; // Public Game ekranındaki Host butonu
+
+    [Header("Host Settings - Private")]
     public Button createPrivateBtn;
+    public TMP_Text privatePlayerCountText; // İnLobbyPanel'de "X/14 oyuncu" gösterir
 
     [Header("Join Private Lobby")]
     public TMP_InputField joinCodeInput;
@@ -74,12 +81,13 @@ public class LobbyUIManager : MonoBehaviour
         }
         // --- --- ---
 
-        // Setup slider
+        // Slider kurulumu (LobbyNamePanel'deki public lobi slider'ı)
         if (maxPlayersSlider != null)
         {
             maxPlayersSlider.minValue = 4;
-            maxPlayersSlider.maxValue = 100;
+            maxPlayersSlider.maxValue = 14;
             maxPlayersSlider.value = 14; // Varsayılan 14
+            maxPlayersSlider.wholeNumbers = true; // Tam sayı olsun
             maxPlayersSlider.onValueChanged.AddListener(UpdateMaxPlayersText);
             UpdateMaxPlayersText(maxPlayersSlider.value);
         }
@@ -92,10 +100,19 @@ public class LobbyUIManager : MonoBehaviour
         });
         backFromPrivateBtn?.onClick.AddListener(() => SwitchPanel(selectionPanel));
         backFromPublicBtn?.onClick.AddListener(() => SwitchPanel(selectionPanel));
+        backFromNamePanelBtn?.onClick.AddListener(() => SwitchPanel(publicGamePanel));
         exitGameBtn?.onClick.AddListener(OnExitGame);
 
+        // Lobi adı InputField karakter limiti
+        if (lobbyNameInput != null)
+        {
+            lobbyNameInput.characterLimit = 16;
+            lobbyNameInput.onValueChanged.AddListener(OnLobbyNameChanged);
+        }
+
         // Network Butonları
-        createPublicBtn?.onClick.AddListener(OnCreatePublic);
+        createPublicBtn?.onClick.AddListener(OnShowLobbyNamePanel); // Host → adı giriş paneline git
+        confirmPublicBtn?.onClick.AddListener(OnCreatePublic);      // Onayla → lobi kur
         createPrivateBtn?.onClick.AddListener(OnCreatePrivate);
         joinPrivateBtn?.onClick.AddListener(OnJoinPrivate);
         refreshLobbiesBtn?.onClick.AddListener(OnRefreshPublicLobbies);
@@ -113,8 +130,29 @@ public class LobbyUIManager : MonoBehaviour
         if (selectionPanel != null) selectionPanel.SetActive(false);
         if (privateGamePanel != null) privateGamePanel.SetActive(false);
         if (publicGamePanel != null) publicGamePanel.SetActive(false);
+        if (lobbyNamePanel != null) lobbyNamePanel.SetActive(false);
 
         if (targetPanel != null) targetPanel.SetActive(true);
+    }
+
+    private void OnShowLobbyNamePanel()
+    {
+        // Lobi adı giriş panelini aç, alanı temizle
+        if (lobbyNameInput != null) lobbyNameInput.text = "";
+        if (lobbyNameErrorText != null) lobbyNameErrorText.text = "";
+        SwitchPanel(lobbyNamePanel);
+    }
+
+    private void OnLobbyNameChanged(string value)
+    {
+        // Karakter sayısını hata metninde göster
+        if (lobbyNameErrorText != null)
+        {
+            if (value.Length >= 16)
+                lobbyNameErrorText.text = "Maksimum 16 karakter!";
+            else
+                lobbyNameErrorText.text = $"{value.Length}/16";
+        }
     }
 
     private void OnExitGame()
@@ -129,29 +167,41 @@ public class LobbyUIManager : MonoBehaviour
 
     private void UpdateMaxPlayersText(float val)
     {
-        if (maxPlayersText != null) maxPlayersText.text = $"Maks. Oyuncu: {Mathf.RoundToInt(val)}";
+        if (maxPlayersText != null) maxPlayersText.text = $"Maksimum: {Mathf.RoundToInt(val)} oyuncu";
     }
 
     private async void OnCreatePublic()
     {
         if (NetworkMgr == null) return;
 
-        string lName = lobbyNameInput != null && !string.IsNullOrEmpty(lobbyNameInput.text) ? lobbyNameInput.text : "Public Lobby";
+        // Boş bırakılmış mı kontrol et
+        string lName = lobbyNameInput != null ? lobbyNameInput.text.Trim() : "";
+        if (string.IsNullOrEmpty(lName))
+        {
+            if (lobbyNameErrorText != null) lobbyNameErrorText.text = "Lütfen bir lobi adı girin!";
+            return;
+        }
+
         int maxP = maxPlayersSlider != null ? Mathf.RoundToInt(maxPlayersSlider.value) : 14;
         
         await NetworkMgr.CreatePublicLobby(lName, maxP);
-        ShowInLobby("Public Lobi Kuruldu: " + lName);
+        ShowInLobby(lName);
     }
 
     private async void OnCreatePrivate()
     {
         if (NetworkMgr == null) return;
 
-        string lName = lobbyNameInput != null && !string.IsNullOrEmpty(lobbyNameInput.text) ? lobbyNameInput.text : "Private Lobby";
-        int maxP = maxPlayersSlider != null ? Mathf.RoundToInt(maxPlayersSlider.value) : 14;
+        // Lobi adı: "[SteamAdı]'s Lobby"
+        string steamName = "Player";
+#if USE_STEAM
+        steamName = Steamworks.SteamClient.Name;
+#endif
+        string lName = $"{steamName}'s Lobby";
+        int maxP = 14; // Sabit maksimum
         
         await NetworkMgr.CreatePrivateLobby(lName, maxP);
-        ShowInLobby("Private Lobi Kuruldu: " + lName);
+        ShowInLobby(lName);
     }
 
     private async void OnJoinPrivate()
@@ -205,8 +255,27 @@ public class LobbyUIManager : MonoBehaviour
 
     public async void JoinLobbyById(string lobbyId)
     {
+#if USE_STEAM
+        // Kapasite kontrolü: Lobi doluysa girişi engelle
+        var steamMgr = SteamMultiplayerManager.Instance;
+        if (steamMgr != null && steamMgr.HasActiveLobby)
+        {
+            int memberCount = steamMgr.GetLobbyMembers().Count;
+            int maxP = NetworkMgr.CurrentLobbyMaxPlayers;
+            if (memberCount >= maxP)
+            {
+                Debug.LogWarning("Lobi dolu, katılınamadı.");
+                return;
+            }
+        }
+#endif
         await NetworkMgr.JoinById(lobbyId);
-        ShowInLobby("Public Lobiye Katılındı.");
+        string lobbName = "Lobiye Katılındı";
+#if USE_STEAM
+        if (SteamMultiplayerManager.Instance != null && SteamMultiplayerManager.Instance.HasActiveLobby)
+            lobbName = SteamMultiplayerManager.Instance.GetLobbyName();
+#endif
+        ShowInLobby(lobbName);
     }
 
     private async void OnLeaveLobby()
@@ -217,30 +286,27 @@ public class LobbyUIManager : MonoBehaviour
         SwitchPanel(selectionPanel);
     }
 
-    private void ShowInLobby(string statusText)
+    private void ShowInLobby(string lobbyName)
     {
         if (selectionPanel != null) selectionPanel.SetActive(false);
         if (privateGamePanel != null) privateGamePanel.SetActive(false);
         if (publicGamePanel != null) publicGamePanel.SetActive(false);
+        if (lobbyNamePanel != null) lobbyNamePanel.SetActive(false);
 
         if (inLobbyPanel != null) inLobbyPanel.SetActive(true);
-        if (currentLobbyInfoText != null) currentLobbyInfoText.text = statusText;
+        if (currentLobbyInfoText != null) currentLobbyInfoText.text = lobbyName;
 
-        if (joinCodeDisplay != null) 
+        // Private lobide şifreyi gizle, sadece isim göster
+        if (joinCodeDisplay != null)
         {
             if (NetworkMgr.CurrentLobbyIsPrivate)
-            {
-                joinCodeDisplay.text = $"Oda Şifresi: {NetworkMgr.CurrentLobbyCode} (Kapasite: {NetworkMgr.CurrentLobbyMaxPlayers})";
-            }
+                joinCodeDisplay.gameObject.SetActive(false); // Private'ta şifre yok, gizle
             else
-            {
                 joinCodeDisplay.text = $"Herkese Açık (Public) Lobi - (Kapasite: {NetworkMgr.CurrentLobbyMaxPlayers})";
-            }
         }
 
         if (startGameBtn != null)
         {
-            // Sadece Host (Sunucu) oyunu başlatabilir
             startGameBtn.gameObject.SetActive(NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer);
         }
 
@@ -258,6 +324,15 @@ public class LobbyUIManager : MonoBehaviour
             NetworkManager.Singleton.OnClientConnectedCallback += OnClientChanged;
             NetworkManager.Singleton.OnClientDisconnectCallback += OnClientChanged;
         }
+
+#if USE_STEAM
+        // Steam üye değişikliklerini de dinle
+        if (SteamMultiplayerManager.Instance != null)
+        {
+            SteamMultiplayerManager.Instance.OnLobbyMembersChanged -= RefreshPlayerList;
+            SteamMultiplayerManager.Instance.OnLobbyMembersChanged += RefreshPlayerList;
+        }
+#endif
     }
 
     private void OnClientChanged(ulong clientId)
@@ -267,19 +342,58 @@ public class LobbyUIManager : MonoBehaviour
 
     private void RefreshPlayerList()
     {
-        if (playerListContainer == null || playerNamePrefab == null || NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening) return;
-        
+        if (playerListContainer == null || playerNamePrefab == null) return;
+
         foreach (Transform child in playerListContainer) Destroy(child.gameObject);
-        
+
+#if USE_STEAM
+        // Steam: Lobideki üyelerin isimlerini doğrudan Steam'den çek
+        var steamMgr = SteamMultiplayerManager.Instance;
+        if (steamMgr == null || !steamMgr.HasActiveLobby)
+        {
+            ShowNetcodePlayerList();
+            return;
+        }
+
+        var members = steamMgr.GetLobbyMembers();
+
+        foreach (var member in members)
+        {
+            var go = Instantiate(playerNamePrefab, playerListContainer);
+            var txt = go.GetComponent<TMP_Text>();
+            if (txt != null)
+                txt.text = member;
+        }
+
+        // Oyuncu sayısı text'lerini güncelle
+        if (privatePlayerCountText != null)
+        {
+            if (NetworkMgr.CurrentLobbyIsPrivate)
+                // Private: sadece kaç kişi var (örn: "3")
+                privatePlayerCountText.text = $"{members.Count}";
+            else
+                // Public: kaç/maksimum (örn: "1/9")
+                privatePlayerCountText.text = $"{members.Count}/{NetworkMgr.CurrentLobbyMaxPlayers}";
+        }
+#else
+        ShowNetcodePlayerList();
+#endif
+    }
+
+
+    private void ShowNetcodePlayerList()
+    {
+        if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening) return;
+
         int index = 1;
         foreach (var client in NetworkManager.Singleton.ConnectedClientsIds)
         {
             var go = Instantiate(playerNamePrefab, playerListContainer);
             var txt = go.GetComponent<TMP_Text>();
-            if (txt != null) {
+            if (txt != null)
                 txt.text = $"Oyuncu {index}";
-            }
             index++;
         }
     }
 }
+

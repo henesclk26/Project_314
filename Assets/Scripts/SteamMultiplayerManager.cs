@@ -22,7 +22,28 @@ public class SteamMultiplayerManager : MonoBehaviour
 
 #if UNITY_EDITOR || UNITY_STANDALONE
     private Lobby? currentLobby;
+
+    public bool HasActiveLobby => currentLobby.HasValue;
+
+    /// <summary>Lobinin adını Steam metadata'sından döndürür.</summary>
+    public string GetLobbyName() => currentLobby.HasValue ? currentLobby.Value.GetData("Name") : "";
+
+    /// <summary>Lobideki tüm üyelerin Steam isimlerini döndürür.</summary>
+    public List<string> GetLobbyMembers()
+    {
+        var names = new List<string>();
+        if (!currentLobby.HasValue) return names;
+        foreach (var member in currentLobby.Value.Members)
+            names.Add(member.Name);
+        return names;
+    }
+#else
+    public bool HasActiveLobby => false;
+    public string GetLobbyName() => "";
+    public List<string> GetLobbyMembers() => new List<string>();
 #endif
+
+
     
     // Steamworks requires an App ID. 480 is the default Spacewar template for testing.
     private const uint SteamAppId = 480;
@@ -106,14 +127,21 @@ public class SteamMultiplayerManager : MonoBehaviour
         }
     }
 
+    // LobbyUIManager bu event'e abone olarak oyuncu listesini otomatik yeniler
+    public event System.Action OnLobbyMembersChanged;
+
     private void OnLobbyMemberJoinedHook(Lobby lobby, Friend friend)
     {
         Debug.Log($"{friend.Name} lobiye katıldı.");
+        currentLobby = lobby; // Güncel üye listesi için lobby'i yenile
+        OnLobbyMembersChanged?.Invoke();
     }
 
     private void OnLobbyMemberLeaveHook(Lobby lobby, Friend friend)
     {
         Debug.Log($"{friend.Name} lobiden ayrıldı.");
+        currentLobby = lobby;
+        OnLobbyMembersChanged?.Invoke();
     }
 
     private async void OnGameLobbyJoinRequested(Lobby lobby, SteamId id)
