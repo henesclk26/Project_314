@@ -27,15 +27,48 @@ public class MeetingManager : MonoBehaviour
     private void Update()
     {
         var nm = NetworkManager.Singleton;
-        if (nm == null || !nm.IsServer) return;
-        if (!IsMeetingActive) return;
+        if (nm == null) return;
 
-        MeetingTimer -= Time.deltaTime;
+        // Sunucu: geri sayım ve oylama / bitiş
+        if (nm.IsServer)
+        {
+            if (!IsMeetingActive) return;
 
-        if (MeetingTimer <= 0)
-            EndMeeting();
-        else
-            CheckIfAllVoted();
+            MeetingTimer -= Time.deltaTime;
+
+            if (MeetingTimer <= 0)
+                EndMeeting();
+            else
+                CheckIfAllVoted();
+            return;
+        }
+
+        // Saf istemci: MeetingTimer sadece sunucuda güncelleniyordu; UI için yerel geri sayım
+        if (nm.IsClient && IsMeetingActive)
+        {
+            MeetingTimer -= Time.deltaTime;
+            if (MeetingTimer < 0f) MeetingTimer = 0f;
+        }
+    }
+
+    /// <summary>
+    /// OpenMeetingUIClientRpc tüm makinelerde çalışır; host zaten StartMeetingServer'da ayarladı.
+    /// Saf istemcilerde IsMeetingActive ve süre burada dolar ki TimerText güncellensin.
+    /// </summary>
+    public void OnMeetingUIOpenedOnClient()
+    {
+        var nm = NetworkManager.Singleton;
+        if (nm != null && nm.IsServer) return;
+        IsMeetingActive = true;
+        MeetingTimer = meetingDuration;
+    }
+
+    public void OnMeetingUIClosedOnClient()
+    {
+        var nm = NetworkManager.Singleton;
+        if (nm != null && nm.IsServer) return;
+        IsMeetingActive = false;
+        MeetingTimer = 0f;
     }
 
     // ─── Sunucudan çağrılır (MeetingTrigger'ın ServerRpc'si buraya yönlendirir) ───
@@ -61,6 +94,12 @@ public class MeetingManager : MonoBehaviour
 
         FirstPersonController voter = GetPlayerById(voterId);
         if (voter == null || voter.isDead.Value) return;
+
+        if (targetId != ulong.MaxValue)
+        {
+            FirstPersonController target = GetPlayerById(targetId);
+            if (target == null || target.isDead.Value) return;
+        }
 
         currentVotes[voterId] = targetId;
         MeetingTrigger.Singleton?.UpdateVoteStatusClientRpc(voterId);
@@ -109,7 +148,8 @@ public class MeetingManager : MonoBehaviour
             FirstPersonController eliminated = GetPlayerById(eliminatedPlayerId);
             if (eliminated != null && !eliminated.isDead.Value)
             {
-                // Önce server'da isDead'i set et — tüm client'lara NetworkVariable olarak senkronize olur
+                eliminated.deathCause.Value = FirstPersonController.PlayerDeathCause.Ejected;
+                eliminated.corpseHidden.Value = true;
                 eliminated.isDead.Value = true;
                 MeetingTrigger.Singleton?.KillPlayerClientRpc(eliminatedPlayerId);
             }

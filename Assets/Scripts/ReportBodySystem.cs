@@ -80,7 +80,7 @@ public class ReportBodySystem : NetworkBehaviour
             if (otherFpc == null) otherFpc = hit.GetComponentInParent<FirstPersonController>();
 
             // Başka bir oyuncu, ölü olmalı ve networkte aktif olmalı
-            if (otherFpc != null && otherFpc != fpc && otherFpc.isDead.Value && otherFpc.IsSpawned)
+            if (otherFpc != null && otherFpc != fpc && otherFpc.CanBeReportedAsBody() && otherFpc.IsSpawned)
             {
                 float distance = Vector3.Distance(transform.position, otherFpc.transform.position);
                 if (distance < closestDistance)
@@ -97,7 +97,8 @@ public class ReportBodySystem : NetworkBehaviour
         if (nearbyDeadBody == null) return;
 
         // Toplantıyı başlat (MeetingTrigger üzerinden ServerRpc)
-        MeetingTrigger.Singleton?.RequestMeetingServerRpc(NetworkManager.Singleton.LocalClientId);
+        ulong victimId = nearbyDeadBody.OwnerClientId;
+        MeetingTrigger.Singleton?.RequestMeetingServerRpc(NetworkManager.Singleton.LocalClientId, victimId);
 
         nearbyDeadBody = null;
         HideReportPrompt();

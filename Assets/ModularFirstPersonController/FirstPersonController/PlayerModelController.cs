@@ -48,11 +48,13 @@ public class PlayerModelController : NetworkBehaviour
         if (fpc != null)
         {
             fpc.isDead.OnValueChanged += OnDeadStateChanged;
-            ApplyPresentationState(fpc.isDead.Value);
+            fpc.corpseHidden.OnValueChanged += OnCorpseHiddenChanged;
+            fpc.deathCause.OnValueChanged += OnDeathCauseChanged;
+            ApplyPresentationState();
         }
         else
         {
-            ApplyPresentationState(false);
+            ApplyPresentationState();
         }
     }
 
@@ -63,6 +65,8 @@ public class PlayerModelController : NetworkBehaviour
         if (fpc != null)
         {
             fpc.isDead.OnValueChanged -= OnDeadStateChanged;
+            fpc.corpseHidden.OnValueChanged -= OnCorpseHiddenChanged;
+            fpc.deathCause.OnValueChanged -= OnDeathCauseChanged;
         }
     }
 
@@ -89,25 +93,54 @@ public class PlayerModelController : NetworkBehaviour
 
     private void OnDeadStateChanged(bool oldValue, bool newValue)
     {
-        ApplyPresentationState(newValue);
+        ApplyPresentationState();
     }
 
-    private void ApplyPresentationState(bool isDead)
+    private void OnCorpseHiddenChanged(bool prev, bool next) => ApplyPresentationState();
+
+    private void OnDeathCauseChanged(FirstPersonController.PlayerDeathCause prev, FirstPersonController.PlayerDeathCause next) => ApplyPresentationState();
+
+    private void ApplyPresentationState()
     {
-        if (playerModel != null && IsOwner && !isDead)
+        bool isDead = fpc != null && fpc.isDead.Value;
+        bool corpseHidden = fpc != null && fpc.corpseHidden.Value;
+        bool impostorCorpse = fpc != null && fpc.deathCause.Value == FirstPersonController.PlayerDeathCause.ImpostorKill;
+
+        if (!isDead)
         {
-            // Kendi modelimizi kendi kameramizdan gizle.
-            SetLayerRecursively(playerModel, localPlayerLayer);
+            if (playerModel != null && IsOwner)
+                SetLayerRecursively(playerModel, localPlayerLayer);
+
+            if (cachedRenderers != null)
+            {
+                foreach (Renderer rendererComponent in cachedRenderers)
+                {
+                    if (rendererComponent != null)
+                        rendererComponent.enabled = true;
+                }
+            }
+
+            if (cachedColliders != null)
+            {
+                foreach (Collider colliderComponent in cachedColliders)
+                {
+                    if (colliderComponent != null)
+                        colliderComponent.enabled = true;
+                }
+            }
+            return;
         }
+
+        // Ölü: katil kurbanı ve henüz raporlanmamışsa diğer oyunculara ceset göster; oylamayla ölen veya rapor sonrası gizli.
+        bool showCorpseToOthers = impostorCorpse && !corpseHidden;
+        bool showMesh = showCorpseToOthers && !IsOwner;
 
         if (cachedRenderers != null)
         {
             foreach (Renderer rendererComponent in cachedRenderers)
             {
                 if (rendererComponent != null)
-                {
-                    rendererComponent.enabled = !isDead;
-                }
+                    rendererComponent.enabled = showMesh;
             }
         }
 
@@ -116,9 +149,7 @@ public class PlayerModelController : NetworkBehaviour
             foreach (Collider colliderComponent in cachedColliders)
             {
                 if (colliderComponent != null)
-                {
-                    colliderComponent.enabled = !isDead;
-                }
+                    colliderComponent.enabled = showCorpseToOthers && !IsOwner;
             }
         }
     }

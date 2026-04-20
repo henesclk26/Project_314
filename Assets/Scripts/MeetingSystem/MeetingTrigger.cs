@@ -32,15 +32,29 @@ public class MeetingTrigger : NetworkBehaviour
 
         if (isPlayerInRange && Input.GetKeyDown(KeyCode.F))
         {
-            RequestMeetingServerRpc(NetworkManager.Singleton.LocalClientId);
+            RequestMeetingServerRpc(NetworkManager.Singleton.LocalClientId, ulong.MaxValue);
         }
     }
 
     // ─── CLIENT → SERVER ───────────────────────────────────────────────────────
 
     [ServerRpc(RequireOwnership = false)]
-    public void RequestMeetingServerRpc(ulong callerId)
+    public void RequestMeetingServerRpc(ulong callerId, ulong reportedVictimClientId)
     {
+        if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer) return;
+
+        FirstPersonController reporter = GetPlayerById(callerId);
+        if (reporter == null || reporter.isDead.Value) return;
+
+        if (reportedVictimClientId != ulong.MaxValue)
+        {
+            FirstPersonController victim = GetPlayerById(reportedVictimClientId);
+            if (victim == null || !victim.isDead.Value) return;
+            if (victim.deathCause.Value != FirstPersonController.PlayerDeathCause.ImpostorKill) return;
+            if (victim.corpseHidden.Value) return;
+            victim.corpseHidden.Value = true;
+        }
+
         MeetingManager.Instance?.StartMeetingServer();
     }
 
@@ -55,6 +69,8 @@ public class MeetingTrigger : NetworkBehaviour
     [ClientRpc]
     public void OpenMeetingUIClientRpc()
     {
+        MeetingManager.Instance?.OnMeetingUIOpenedOnClient();
+
         if (MeetingUI.Instance != null) MeetingUI.Instance.OpenPanel();
 
         FirstPersonController[] players = FindObjectsByType<FirstPersonController>(FindObjectsSortMode.None);
@@ -72,6 +88,8 @@ public class MeetingTrigger : NetworkBehaviour
     [ClientRpc]
     public void CloseMeetingUIClientRpc()
     {
+        MeetingManager.Instance?.OnMeetingUIClosedOnClient();
+
         if (MeetingUI.Instance != null) MeetingUI.Instance.ClosePanel();
 
         FirstPersonController[] players = FindObjectsByType<FirstPersonController>(FindObjectsSortMode.None);

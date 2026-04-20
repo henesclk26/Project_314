@@ -1086,7 +1086,7 @@ MonoBehaviour:
     m_IsLocked: 0
   m_LastLocalAssetsSearchArea: 1
   m_FolderTreeState:
-    scrollPos: {x: 0, y: 2}
+    scrollPos: {x: 0, y: 0}
     m_SelectedIDs:
     - m_Data: 70304
     m_LastClickedID:
@@ -1098,7 +1098,6 @@ MonoBehaviour:
     - m_Data: 70202
     - m_Data: 70204
     - m_Data: 70206
-    - m_Data: 70304
     - m_Data: 1000000000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
@@ -1346,7 +1345,7 @@ MonoBehaviour:
     m_ControlHash: -371814159
     m_PrefName: Preview_InspectorPreview
   m_LastInspectedObjectInstanceID: -1
-  m_LastVerticalScrollValue: 523
+  m_LastVerticalScrollValue: 0
   m_GlobalObjectId: 
   m_InspectorMode: 0
   m_LockTracker:

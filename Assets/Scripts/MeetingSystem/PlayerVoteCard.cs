@@ -58,6 +58,15 @@ public class PlayerVoteCard : MonoBehaviour
         if(voteButton) voteButton.onClick.AddListener(OnCardClicked);
     }
 
+    /// <summary>
+    /// Yerel oyuncu ölüyse tüm kartlarda oy düğmesini kapatır; canlıysa sadece ölü hedeflere tıklanamaz kalır.
+    /// </summary>
+    public void SetLocalVoterCanParticipate(bool localPlayerCanVote)
+    {
+        if (voteButton == null) return;
+        voteButton.interactable = localPlayerCanVote && !isDead;
+    }
+
     private void OnCardClicked()
     {
         if (isDead) return;

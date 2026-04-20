@@ -22,6 +22,16 @@ using Steamworks;
 
 public class FirstPersonController : NetworkBehaviour
 {
+    /// <summary>
+    /// Ölüm kaynağı: katil kurbanı (ceset raporlanabilir) veya oylamayla elenen (ceset yok, oy listesinde yok).
+    /// </summary>
+    public enum PlayerDeathCause : byte
+    {
+        None = 0,
+        ImpostorKill = 1,
+        Ejected = 2,
+    }
+
     private Rigidbody rb;
 
     #region Camera Movement Variables
@@ -317,7 +327,18 @@ public class FirstPersonController : NetworkBehaviour
     float camRotation;
 
     public NetworkVariable<bool> isDead = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    public NetworkVariable<PlayerDeathCause> deathCause = new NetworkVariable<PlayerDeathCause>(PlayerDeathCause.None, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    /// <summary>
+    /// Katil kurbanı için: false iken ceset görünür/raporlanabilir; rapor sonrası true (görünmez).
+    /// Oylamayla ölen için baştan true.
+    /// </summary>
+    public NetworkVariable<bool> corpseHidden = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     public NetworkVariable<FixedString32Bytes> playerName = new NetworkVariable<FixedString32Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+    public bool CanBeReportedAsBody()
+    {
+        return isDead.Value && deathCause.Value == PlayerDeathCause.ImpostorKill && !corpseHidden.Value;
+    }
 
     // --- Diğer script'lerin kolayca okuyabileceği statik bayrak ---
     public static bool LocalPlayerIsDead { get; private set; } = false;

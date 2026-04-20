@@ -147,7 +147,9 @@ public class KillSystem : NetworkBehaviour
             FirstPersonController victim = netObj.GetComponent<FirstPersonController>();
             if (victim != null)
             {
-                victim.isDead.Value = true; // Bu tüm clientlara senkronize olur
+                victim.deathCause.Value = FirstPersonController.PlayerDeathCause.ImpostorKill;
+                victim.corpseHidden.Value = false;
+                victim.isDead.Value = true;
             }
         }
         KillPlayerClientRpc(targetNetworkObjectId);
