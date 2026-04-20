@@ -26,7 +26,8 @@ public class MeetingManager : MonoBehaviour
 
     private void Update()
     {
-        if (!NetworkManager.Singleton.IsServer) return;
+        var nm = NetworkManager.Singleton;
+        if (nm == null || !nm.IsServer) return;
         if (!IsMeetingActive) return;
 
         MeetingTimer -= Time.deltaTime;
@@ -40,7 +41,8 @@ public class MeetingManager : MonoBehaviour
     // ─── Sunucudan çağrılır (MeetingTrigger'ın ServerRpc'si buraya yönlendirir) ───
     public void StartMeetingServer()
     {
-        if (!NetworkManager.Singleton.IsServer) return;
+        var nm = NetworkManager.Singleton;
+        if (nm == null || !nm.IsServer) return;
         if (IsMeetingActive) return;
 
         IsMeetingActive = true;
@@ -53,7 +55,8 @@ public class MeetingManager : MonoBehaviour
 
     public void SubmitVoteServer(ulong voterId, ulong targetId)
     {
-        if (!NetworkManager.Singleton.IsServer) return;
+        var nm = NetworkManager.Singleton;
+        if (nm == null || !nm.IsServer) return;
         if (!IsMeetingActive) return;
 
         FirstPersonController voter = GetPlayerById(voterId);
@@ -105,7 +108,11 @@ public class MeetingManager : MonoBehaviour
         {
             FirstPersonController eliminated = GetPlayerById(eliminatedPlayerId);
             if (eliminated != null && !eliminated.isDead.Value)
+            {
+                // Önce server'da isDead'i set et — tüm client'lara NetworkVariable olarak senkronize olur
+                eliminated.isDead.Value = true;
                 MeetingTrigger.Singleton?.KillPlayerClientRpc(eliminatedPlayerId);
+            }
         }
 
         MeetingTrigger.Singleton?.CloseMeetingUIClientRpc();
@@ -120,6 +127,9 @@ public class MeetingManager : MonoBehaviour
         FirstPersonController[] players = FindObjectsByType<FirstPersonController>(FindObjectsSortMode.None);
         foreach (var p in players)
         {
+            // Ölü oyuncuları teleport etme — ölüler spectator modunda kalacak
+            if (p.isDead.Value) continue;
+
             int spawnIndex = (int)(p.OwnerClientId % (ulong)spawnPoints.Length);
             Transform pt = spawnPoints[spawnIndex].transform;
             MeetingTrigger.Singleton?.TeleportPlayerClientRpc(p.OwnerClientId, pt.position, pt.rotation);

@@ -77,12 +77,32 @@ public class MeetingTrigger : NetworkBehaviour
         FirstPersonController[] players = FindObjectsByType<FirstPersonController>(FindObjectsSortMode.None);
         foreach (var p in players)
         {
-            if (!p.IsOwner || p.isDead.Value) continue;
-            p.playerCanMove = true;
-            p.cameraCanMove = true;
-            p.lockCursor = true;
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
+            if (!p.IsOwner) continue;
+
+            if (p.isDead.Value)
+            {
+                // Ölü oyuncu: Spectator moduna geri dön
+                p.playerCanMove = false;
+                p.cameraCanMove = false;
+                p.lockCursor = false;
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+
+                // Spectator ipucu yazısını yeniden göster
+                if (RoleManager.Instance != null && RoleManager.Instance.spectatorHintText != null)
+                {
+                    RoleManager.Instance.spectatorHintText.gameObject.SetActive(true);
+                }
+            }
+            else
+            {
+                // Hayatta olan oyuncu: Normal kontrole geri dön
+                p.playerCanMove = true;
+                p.cameraCanMove = true;
+                p.lockCursor = true;
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+            }
         }
     }
 

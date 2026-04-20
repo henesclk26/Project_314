@@ -74,8 +74,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4281479730
-  m_fontColor: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
+    rgba: 4294967295
+  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -351,15 +351,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.10866743, g: 0, b: 0.3433962, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 1
+  m_Sprite: {fileID: 1524443183, guid: d636e7434ead9eb48982363a787c2257, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -433,6 +433,8 @@ MonoBehaviour:
   speakingIcon: {fileID: 8864948339997479284}
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   deadColor: {r: 0.5924529, g: 0.53097194, b: 0.53097194, a: 1}
+  nameTextColor: {r: 0, g: 0, b: 0, a: 1}
+  buttonTextColor: {r: 0.1, g: 0.1, b: 0.1, a: 1}
 --- !u!1 &8864948339997479284
 GameObject:
   m_ObjectHideFlags: 0

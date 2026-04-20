@@ -18,7 +18,7 @@ GameObject:
   - component: {fileID: 8648659095536951456}
   - component: {fileID: 6741210614619587013}
   - component: {fileID: -6176159165562636021}
-  - component: {fileID: -9078341878137900834}
+  - component: {fileID: -1514750948738611405}
   m_Layer: 0
   m_Name: FirstPersonController
   m_TagString: Player
@@ -234,7 +234,49 @@ MonoBehaviour:
   bobAmount: {x: 0, y: 0.05, z: 0}
   invertMovementInput: 0
   invertMouseLook: 0
-  isDead: 0
+  isDead:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 0
+  playerName:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue:
+      utf8LengthInBytes: 0
+      bytes:
+        offset0000:
+          byte0000: 0
+          byte0001: 0
+          byte0002: 0
+          byte0003: 0
+          byte0004: 0
+          byte0005: 0
+          byte0006: 0
+          byte0007: 0
+          byte0008: 0
+          byte0009: 0
+          byte0010: 0
+          byte0011: 0
+          byte0012: 0
+          byte0013: 0
+          byte0014: 0
+          byte0015: 0
+        byte0016: 0
+        byte0017: 0
+        byte0018: 0
+        byte0019: 0
+        byte0020: 0
+        byte0021: 0
+        byte0022: 0
+        byte0023: 0
+        byte0024: 0
+        byte0025: 0
+        byte0026: 0
+        byte0027: 0
+        byte0028: 0
+        byte0029: 0
 --- !u!114 &8648659095536951456
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -309,7 +351,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   killRange: 3
   cooldownTime: 30
---- !u!114 &-9078341878137900834
+--- !u!114 &-1514750948738611405
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -318,12 +360,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 4459864850019384750}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fb9f0f0866c5f8649880a6fb57b80e2f, type: 3}
+  m_Script: {fileID: 11500000, guid: 5894e419984e4cf40a90934e9c3ef00b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MeetingRequester
+  m_EditorClassIdentifier: Assembly-CSharp::ReportBodySystem
   ShowTopMostFoldoutHeaderGroup: 1
-  reportRange: 3
-  reportKey: 114
+  reportRange: 3.5
 --- !u!1 &4459864850190357393
 GameObject:
   m_ObjectHideFlags: 0

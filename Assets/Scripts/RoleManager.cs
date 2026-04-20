@@ -28,6 +28,9 @@ public class RoleManager : NetworkBehaviour
     [Tooltip("Öldükten sonra çıkacak İzleyici Modu bilgi yazısı (TMP)")]
     public TextMeshProUGUI spectatorHintText;
 
+    [Tooltip("Ceset yanındayken çıkacak 'E - Cesedi Bildir' yazısı (TMP)")]
+    public TextMeshProUGUI reportBodyText;
+
     private PlayerRole localPlayerRole = PlayerRole.None;
 
     private void Awake()
