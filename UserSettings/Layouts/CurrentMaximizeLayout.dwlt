@@ -249,11 +249,13 @@ MonoBehaviour:
     m_TreeViewState:
       scrollPos: {x: 0, y: 0}
       m_SelectedIDs:
-      - m_Data: 64104
+      - m_Data: 64494
       m_LastClickedID:
-        m_Data: 0
+        m_Data: 64494
       m_ExpandedIDs:
       - m_Data: -1378
+      - m_Data: 64568
+      - m_Data: 64578
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -904,9 +906,9 @@ MonoBehaviour:
   m_AudioPlay: 0
   m_DebugDrawModesUseInteractiveLightBakingData: 0
   m_Position:
-    m_Target: {x: 475.53677, y: 292.70966, z: 1015.46704}
+    m_Target: {x: 342.11835, y: 418.78177, z: 742.5728}
     speed: 2
-    m_Value: {x: 475.53677, y: 292.70966, z: 1015.46704}
+    m_Value: {x: 350.4967, y: 416.02887, z: 761.47076}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -956,9 +958,9 @@ MonoBehaviour:
     speed: 2
     m_Value: {x: 0, y: 0, z: 0, w: 1}
   m_Size:
-    m_Target: 529.4965
+    m_Target: 210.82904
     speed: 2
-    m_Value: 529.4965
+    m_Value: 220.7634
   m_Ortho:
     m_Target: 1
     speed: 2
@@ -1088,16 +1090,16 @@ MonoBehaviour:
   m_FolderTreeState:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs:
-    - m_Data: 70322
+    - m_Data: 65606
     m_LastClickedID:
-      m_Data: 70322
+      m_Data: 65606
     m_ExpandedIDs:
     - m_Data: 0
-    - m_Data: 70216
-    - m_Data: 70218
-    - m_Data: 70220
-    - m_Data: 70222
-    - m_Data: 70224
+    - m_Data: 65508
+    - m_Data: 65510
+    - m_Data: 65512
+    - m_Data: 65514
+    - m_Data: 65516
     - m_Data: 1000000000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
@@ -1131,11 +1133,12 @@ MonoBehaviour:
       m_Data: 0
     m_ExpandedIDs:
     - m_Data: 0
-    - m_Data: 70216
-    - m_Data: 70218
-    - m_Data: 70220
-    - m_Data: 70222
-    - m_Data: 70224
+    - m_Data: 65508
+    - m_Data: 65510
+    - m_Data: 65512
+    - m_Data: 65514
+    - m_Data: 65516
+    - m_Data: 1000000000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -1163,8 +1166,8 @@ MonoBehaviour:
       m_ResourceFile: 
   m_ListAreaState:
     m_SelectedInstanceIDs:
-    - m_Data: 64104
-    m_LastClickedInstanceID: 64104
+    - m_Data: 64494
+    m_LastClickedInstanceID: 64494
     m_HadKeyboardFocusLastEvent: 0
     m_ExpandedInstanceIDs:
     - m_Data: 91926
@@ -1345,7 +1348,7 @@ MonoBehaviour:
     m_ControlHash: -371814159
     m_PrefName: Preview_InspectorPreview
   m_LastInspectedObjectInstanceID: -1
-  m_LastVerticalScrollValue: 24
+  m_LastVerticalScrollValue: 0
   m_GlobalObjectId: 
   m_InspectorMode: 0
   m_LockTracker:
