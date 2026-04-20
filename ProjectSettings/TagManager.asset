@@ -7,6 +7,7 @@ TagManager:
   - SecondCamera
   - PlayerEyes
   - TeleportPoint
+  - MeetingPoint
   layers:
   - Default
   - TransparentFX
@@ -14,7 +15,7 @@ TagManager:
   - 
   - Water
   - UI
-  - 
+  - Ghost
   - 
   - LocalPlayerModel
   - 

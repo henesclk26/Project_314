@@ -18,6 +18,7 @@ GameObject:
   - component: {fileID: 8648659095536951456}
   - component: {fileID: 6741210614619587013}
   - component: {fileID: -6176159165562636021}
+  - component: {fileID: -9078341878137900834}
   m_Layer: 0
   m_Name: FirstPersonController
   m_TagString: Player
@@ -308,8 +309,21 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   killRange: 3
   cooldownTime: 30
-  killButton: {fileID: 0}
-  cooldownText: {fileID: 0}
+--- !u!114 &-9078341878137900834
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4459864850019384750}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb9f0f0866c5f8649880a6fb57b80e2f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MeetingRequester
+  ShowTopMostFoldoutHeaderGroup: 1
+  reportRange: 3
+  reportKey: 114
 --- !u!1 &4459864850190357393
 GameObject:
   m_ObjectHideFlags: 0

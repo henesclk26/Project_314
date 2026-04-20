@@ -39,7 +39,7 @@ public class KillSystem : NetworkBehaviour
         if (RoleManager.Instance == null) return;
 
         // Katil değilse veya ölüyse UI gizlensin (Rol henüz gelmemişse de gizler)
-        if (RoleManager.Instance.GetLocalPlayerRole() != PlayerRole.Impostor || fpc.isDead)
+        if (RoleManager.Instance.GetLocalPlayerRole() != PlayerRole.Impostor || fpc.isDead.Value)
         {
             if (RoleManager.Instance.killText != null) RoleManager.Instance.killText.gameObject.SetActive(false);
             if (RoleManager.Instance.cooldownText != null) RoleManager.Instance.cooldownText.gameObject.SetActive(false);
@@ -107,7 +107,7 @@ public class KillSystem : NetworkBehaviour
             if (otherFpc == null) otherFpc = hit.GetComponentInParent<FirstPersonController>();
 
             // Başka bir oyuncu bulunduysa, o kişi kendimiz değilse, ölü değilse ve aktif olarak bağlantılıysa
-            if (otherFpc != null && otherFpc != fpc && !otherFpc.isDead && otherFpc.IsSpawned)
+            if (otherFpc != null && otherFpc != fpc && !otherFpc.isDead.Value && otherFpc.IsSpawned)
             {
                 // En yakındakini seçmek için mesafe hesabı (İç içe çok kişi varsa en yakın olanı seçer)
                 float distance = Vector3.Distance(transform.position, otherFpc.transform.position);
@@ -142,7 +142,14 @@ public class KillSystem : NetworkBehaviour
     [ServerRpc]
     private void KillPlayerServerRpc(ulong targetNetworkObjectId)
     {
-        // Sunucu bu isteği alır ve tüm istemcilere (Client'lara) "Şu ID'li kişi öldü" bilgisini yayar.
+        if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(targetNetworkObjectId, out NetworkObject netObj))
+        {
+            FirstPersonController victim = netObj.GetComponent<FirstPersonController>();
+            if (victim != null)
+            {
+                victim.isDead.Value = true; // Bu tüm clientlara senkronize olur
+            }
+        }
         KillPlayerClientRpc(targetNetworkObjectId);
     }
 

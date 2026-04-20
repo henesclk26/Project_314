@@ -33,9 +33,22 @@ public class EscapeMenuManager : MonoBehaviour
         if (escMenuPanel != null)
             escMenuPanel.SetActive(isMenuOpen);
 
-        // Menü açıkken fareyi serbest bırak, kapalıyken kilitle
-        Cursor.lockState = isMenuOpen ? CursorLockMode.None : CursorLockMode.Locked;
-        Cursor.visible = isMenuOpen;
+        if (isMenuOpen)
+        {
+            // Menü açılırken her zaman fareyi serbest bırak
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
+        else
+        {
+            // Menü kapanırken: ölü oyuncunun cursor'ını kilitleme
+            if (!FirstPersonController.LocalPlayerIsDead)
+            {
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+            }
+            // Ölüysek: cursor serbest kalır (spectator için)
+        }
     }
 
     // Bu metodu butonun OnClick() kısmına bağla (Inspector'da görünür)

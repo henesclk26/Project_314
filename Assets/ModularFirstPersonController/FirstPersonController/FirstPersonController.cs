@@ -1,3 +1,4 @@
+#define USE_STEAM
 // CHANGE LOG
 // 
 // CHANGES || version VERSION
@@ -9,6 +10,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Unity.Netcode;
+using Unity.Collections;
+#if USE_STEAM
+using Steamworks;
+#endif
 
 #if UNITY_EDITOR
     using UnityEditor;
@@ -166,7 +171,7 @@ public class FirstPersonController : NetworkBehaviour
         }
     }
 
-    private bool IsLocalPlayer()
+    private bool IsLocalPlayerControlled()
     {
         if (NetworkManager.Singleton == null) return true;
         if (!NetworkManager.Singleton.IsListening) return true;
@@ -175,6 +180,20 @@ public class FirstPersonController : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        base.OnNetworkSpawn();
+        
+        isDead.OnValueChanged += OnDeadChanged;
+        if (isDead.Value) OnDeadChanged(false, true);
+
+        if (IsOwner)
+        {
+            string sName = "Player " + OwnerClientId;
+#if USE_STEAM
+            try { sName = SteamClient.Name; } catch { }
+#endif
+            playerName.Value = sName;
+        }
+
         if (IsOwner)
         {
             // Bu benim karakterim, benim kameram olmalı. Özellikleri açıyorum.
@@ -195,9 +214,17 @@ public class FirstPersonController : NetworkBehaviour
             var listener = playerCamera != null ? playerCamera.GetComponent<AudioListener>() : null;
             if (listener != null) listener.enabled = false;
         }
+    }
 
-        // Not: İlk doğma işlemi OnSceneLoaded (Sahne Yüklendi) fonksiyonuna taşındı.
-        // Çünkü karakterler önce MainMenu'de doğup, sonra haritaya aktarılıyor ve o sıra boşluğa düşüyorlardı.
+    public override void OnNetworkDespawn()
+    {
+        base.OnNetworkDespawn();
+        isDead.OnValueChanged -= OnDeadChanged;
+    }
+
+    private void OnDeadChanged(bool oldVal, bool newVal)
+    {
+        if (newVal) Die();
     }
 
     void OnEnable()
@@ -289,7 +316,11 @@ public class FirstPersonController : NetworkBehaviour
 
     float camRotation;
 
-    [HideInInspector] public bool isDead = false;
+    public NetworkVariable<bool> isDead = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    public NetworkVariable<FixedString32Bytes> playerName = new NetworkVariable<FixedString32Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+    // --- Diğer script'lerin kolayca okuyabileceği statik bayrak ---
+    public static bool LocalPlayerIsDead { get; private set; } = false;
 
     // --- İzleyici (Spectator) Modu Değişkenleri ---
     private int currentSpectateIndex = 0;
@@ -298,11 +329,11 @@ public class FirstPersonController : NetworkBehaviour
 
     private void Update()
     {
-        if (!IsLocalPlayer()) return;
+        if (!IsLocalPlayerControlled()) return;
 
-        if (isDead)
+        if (isDead.Value)
         {
-            HandleSpectator();
+            HandleSpectator(); // Sadece girişleri (tıklamaları) kontrol et
             return;
         }
 
@@ -506,9 +537,17 @@ public class FirstPersonController : NetworkBehaviour
         {
             CycleSpectator(-1);
         }
-        
-        // Asıl izleme kamerasını hedeflenen oyuncuya sabitle
-        SpectateCurrentTarget();
+    }
+
+    private void LateUpdate()
+    {
+        if (!IsLocalPlayerControlled()) return;
+
+        // İzleyici modundaysak, kamera takibini LateUpdate'te yapıyoruz ki titreme (jitter) olmasın.
+        if (isDead.Value)
+        {
+            SpectateCurrentTarget();
+        }
     }
 
     private void CycleSpectator(int direction)
@@ -520,7 +559,7 @@ public class FirstPersonController : NetworkBehaviour
         foreach(var p in allPlayers)
         {
             // Adamlar ölü değilse ve Network olarak oyundaysa ekle
-            if (!p.isDead && p.IsSpawned)
+            if (!p.isDead.Value && p.IsSpawned)
             {
                 alivePlayers.Add(p);
             }
@@ -543,7 +582,7 @@ public class FirstPersonController : NetworkBehaviour
 
     private void SpectateCurrentTarget()
     {
-        if (spectatedPlayer != null && !spectatedPlayer.isDead && spectatedPlayer.IsSpawned)
+        if (spectatedPlayer != null && !spectatedPlayer.isDead.Value && spectatedPlayer.IsSpawned)
         {
             // İzlenen kişinin gözlerine yerleş
             if (playerCamera != null && spectatedPlayer.playerCamera != null)
@@ -562,8 +601,8 @@ public class FirstPersonController : NetworkBehaviour
 
     void FixedUpdate()
     {
-        if (!IsLocalPlayer()) return;
-        if (isDead) return;
+        if (!IsLocalPlayerControlled()) return;
+        if (isDead.Value) return;
 
         #region Movement
 
@@ -729,7 +768,7 @@ public class FirstPersonController : NetworkBehaviour
 
     public void Die()
     {
-        isDead = true;
+        // Not: isDead.Value artık server tarafından set ediliyor.
         playerCanMove = false;
         cameraCanMove = false;
         if (rb != null)
@@ -737,7 +776,7 @@ public class FirstPersonController : NetworkBehaviour
             rb.linearVelocity = Vector3.zero;
         }
 
-        if (IsLocalPlayer())
+        if (IsLocalPlayerControlled())
         {
             Debug.Log("ÖLDÜRÜLDÜN!");
             if (RoleManager.Instance != null && RoleManager.Instance.roleText != null)
@@ -745,13 +784,22 @@ public class FirstPersonController : NetworkBehaviour
                 RoleManager.Instance.roleText.text = "ÖLDÜN!";
                 RoleManager.Instance.roleText.color = Color.gray;
             }
-            
-            // Eğer isterseniz buraya animasyon çalma kodu ekleyebilirsiniz:
-            // GetComponent<Animator>().SetTrigger("Die");
+
+            // Spectator modunu otomatik başlat — ilk hayatta kalana geç
+            spectatorInitialized = false; // Hint mesajını yeniden göster
+            CycleSpectator(1);
+
+            // Cursor'u serbest bırak: sol/sağ tıkla kamera değiştirebilsin
+            lockCursor = false;
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            cursorLockedForGame = false;
+
+            // Statik bayrağı güncelle
+            LocalPlayerIsDead = true;
         }
     }
 }
-
 
 
 // Custom Editor
