@@ -360,7 +360,8 @@ public class LobbyUIManager : MonoBehaviour
         foreach (var member in members)
         {
             var go = Instantiate(playerNamePrefab, playerListContainer);
-            var txt = go.GetComponent<TMP_Text>();
+            // Root'ta TMP_Text yoksa child'larda ara (PlayerEntry prefabı için)
+            var txt = go.GetComponent<TMP_Text>() ?? go.GetComponentInChildren<TMP_Text>();
             if (txt != null)
                 txt.text = member;
         }
@@ -389,7 +390,7 @@ public class LobbyUIManager : MonoBehaviour
         foreach (var client in NetworkManager.Singleton.ConnectedClientsIds)
         {
             var go = Instantiate(playerNamePrefab, playerListContainer);
-            var txt = go.GetComponent<TMP_Text>();
+            var txt = go.GetComponent<TMP_Text>() ?? go.GetComponentInChildren<TMP_Text>();
             if (txt != null)
                 txt.text = $"Oyuncu {index}";
             index++;
