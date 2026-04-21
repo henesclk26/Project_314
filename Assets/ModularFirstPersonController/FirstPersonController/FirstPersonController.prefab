@@ -17,6 +17,13 @@ GameObject:
   - component: {fileID: 4459864850019384740}
   - component: {fileID: 8648659095536951456}
   - component: {fileID: 6741210614619587013}
+<<<<<<< Updated upstream
+=======
+  - component: {fileID: -6176159165562636021}
+  - component: {fileID: -1514750948738611405}
+  - component: {fileID: -908776543210123456}
+  - component: {fileID: 5400778343007217252}
+>>>>>>> Stashed changes
   m_Layer: 0
   m_Name: FirstPersonController
   m_TagString: Player
@@ -291,9 +298,73 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RandomEventController
   ShowTopMostFoldoutHeaderGroup: 1
+<<<<<<< Updated upstream
   eventDuration: 30
   teleportInterval: 10
   teleportPointTag: TeleportPoint
+=======
+--- !u!114 &-6176159165562636021
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4459864850019384750}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3e7537347c6f41446b9ce95be3119d48, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KillSystem
+  ShowTopMostFoldoutHeaderGroup: 1
+  killRange: 3
+  cooldownTime: 30
+--- !u!114 &-1514750948738611405
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4459864850019384750}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5894e419984e4cf40a90934e9c3ef00b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ReportBodySystem
+  ShowTopMostFoldoutHeaderGroup: 1
+  reportRange: 3.5
+--- !u!114 &-908776543210123456
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4459864850019384750}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fff60f88803fa3e4bb8096b8dc4cfcea, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VillageMissionCollector
+  ShowTopMostFoldoutHeaderGroup: 1
+  interactKey: 102
+  requiredGarbageCount: 3
+  promptColor: {r: 1, g: 1, b: 1, a: 1}
+  progressColor: {r: 1, g: 1, b: 1, a: 1}
+  completionColor: {r: 0.35, g: 1, b: 0.45, a: 1}
+  completionMessageDuration: 2.5
+--- !u!114 &5400778343007217252
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4459864850019384750}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07fa37ee1c0d89241a62d6fa4e25b3ec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SwitchToggleMission.PlayerRole
+  role: 0
+>>>>>>> Stashed changes
 --- !u!1 &4459864850190357393
 GameObject:
   m_ObjectHideFlags: 0
