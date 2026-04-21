@@ -19,6 +19,7 @@ GameObject:
   - component: {fileID: 6741210614619587013}
   - component: {fileID: -6176159165562636021}
   - component: {fileID: -1514750948738611405}
+  - component: {fileID: -908776543210123456}
   m_Layer: 0
   m_Name: FirstPersonController
   m_TagString: Player
@@ -239,6 +240,16 @@ MonoBehaviour:
       MinSecondsBetweenUpdates: 0
       MaxSecondsBetweenUpdates: 0
     m_InternalValue: 0
+  deathCause:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 0
+  corpseHidden:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 0
   playerName:
     UpdateTraits:
       MinSecondsBetweenUpdates: 0
@@ -365,6 +376,25 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ReportBodySystem
   ShowTopMostFoldoutHeaderGroup: 1
   reportRange: 3.5
+--- !u!114 &-908776543210123456
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4459864850019384750}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fff60f88803fa3e4bb8096b8dc4cfcea, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VillageMissionCollector
+  ShowTopMostFoldoutHeaderGroup: 1
+  interactKey: 102
+  requiredGarbageCount: 3
+  promptColor: {r: 1, g: 1, b: 1, a: 1}
+  progressColor: {r: 1, g: 1, b: 1, a: 1}
+  completionColor: {r: 0.35, g: 1, b: 0.45, a: 1}
+  completionMessageDuration: 2.5
 --- !u!1 &4459864850190357393
 GameObject:
   m_ObjectHideFlags: 0
