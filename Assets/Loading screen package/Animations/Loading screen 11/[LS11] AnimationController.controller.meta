@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 329d84175c4588a45bea30dff8e948cb
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 185611
+  packageName: Loading screen package
+  packageVersion: 1.0
+  assetPath: Assets/Loading screen package/Animations/Loading screen 11/[LS11] AnimationController.controller
+  uploadId: 409060

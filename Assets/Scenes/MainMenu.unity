@@ -2220,7 +2220,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'v0.0.6
+  m_text: 'v0.0.8
 
 '
   m_isRightToLeft: 0

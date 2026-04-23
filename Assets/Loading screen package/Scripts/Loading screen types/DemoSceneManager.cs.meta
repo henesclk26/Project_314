@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: e7444d35137b2ff45a1591ea7fade80a
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 185611
+  packageName: Loading screen package
+  packageVersion: 1.0
+  assetPath: Assets/Loading screen package/Scripts/Loading screen types/DemoSceneManager.cs
+  uploadId: 409060

@@ -20,6 +20,7 @@ GameObject:
   - component: {fileID: -6176159165562636021}
   - component: {fileID: -1514750948738611405}
   - component: {fileID: -908776543210123456}
+  - component: {fileID: 1394781882610148012}
   m_Layer: 0
   m_Name: FirstPersonController
   m_TagString: Player
@@ -395,6 +396,19 @@ MonoBehaviour:
   progressColor: {r: 1, g: 1, b: 1, a: 1}
   completionColor: {r: 0.35, g: 1, b: 0.45, a: 1}
   completionMessageDuration: 2.5
+--- !u!114 &1394781882610148012
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4459864850019384750}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 94758415a6086a44faf8ca19768b898e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SwitchToggleMission.PlayerRole
+  role: 0
 --- !u!1 &4459864850190357393
 GameObject:
   m_ObjectHideFlags: 0

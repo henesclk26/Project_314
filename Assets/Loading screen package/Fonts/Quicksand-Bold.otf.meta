@@ -1,0 +1,28 @@
+fileFormatVersion: 2
+guid: c1b3d3f4ca82d434ebbe3729e1ff7bb4
+TrueTypeFontImporter:
+  externalObjects: {}
+  serializedVersion: 4
+  fontSize: 16
+  forceTextureCase: -2
+  characterSpacing: 0
+  characterPadding: 1
+  includeFontData: 1
+  fontNames:
+  - Quicksand
+  fallbackFontReferences: []
+  customCharacters: 
+  fontRenderingMode: 0
+  ascentCalculationMode: 1
+  useLegacyBoundsCalculation: 0
+  shouldRoundAdvanceValue: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 185611
+  packageName: Loading screen package
+  packageVersion: 1.0
+  assetPath: Assets/Loading screen package/Fonts/Quicksand-Bold.otf
+  uploadId: 409060

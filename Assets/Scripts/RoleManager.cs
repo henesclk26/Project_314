@@ -1,8 +1,9 @@
 using System.Collections.Generic;
-using UnityEngine;
-using Unity.Netcode;
-using TMPro; // TextMeshPro için gerekli
 using System.Linq;
+using TMPro;
+using Unity.Netcode;
+using UnityEngine;
+using UnityEngine.UI;
 
 public enum PlayerRole
 {
@@ -15,27 +16,34 @@ public class RoleManager : NetworkBehaviour
 {
     public static RoleManager Instance { get; private set; }
 
-    [Header("Arayüz (UI) Ayarları")]
-    [Tooltip("Arayüzde sağ üstte rolü gösterecek TextMeshPro componenti.")]
+    [Header("Arayuz (UI) Ayarlari")]
+    [Tooltip("Arayuzde sag ustte rolu gosterecek TextMeshPro componenti.")]
     public TextMeshProUGUI roleText;
 
-    [Tooltip("Sağ altta belirecek 'E - Öldür' yazısı (TMP)")]
+    [Tooltip("Sag altta belirecek 'E - Oldur' yazisi (TMP)")]
     public TextMeshProUGUI killText;
-    
-    [Tooltip("Bekleme süresi, sayaç yazısı (TMP)")]
+
+    [Tooltip("Bekleme suresi, sayac yazisi (TMP)")]
     public TextMeshProUGUI cooldownText;
 
-    [Tooltip("Öldükten sonra çıkacak İzleyici Modu bilgi yazısı (TMP)")]
+    [Tooltip("Oldukten sonra cikacak Izleyici Modu bilgi yazisi (TMP)")]
     public TextMeshProUGUI spectatorHintText;
 
-    [Tooltip("Ceset yanındayken çıkacak 'E - Cesedi Bildir' yazısı (TMP)")]
+    [Tooltip("Ceset yanindayken cikacak 'E - Cesedi Bildir' yazisi (TMP)")]
     public TextMeshProUGUI reportBodyText;
 
     private PlayerRole localPlayerRole = PlayerRole.None;
+    private GameObject singlePlayerRolePanel;
+    private TextMeshProUGUI singlePlayerRoleTitle;
+    private TextMeshProUGUI singlePlayerRoleHint;
+    private FirstPersonController cachedLocalController;
+    private bool cachedPlayerCanMove;
+    private bool cachedCameraCanMove;
+    private bool hasCachedControlState;
+    private bool singlePlayerChoicePending;
 
     private void Awake()
     {
-        // Singleton pattern
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -48,7 +56,6 @@ public class RoleManager : NetworkBehaviour
 
     private void Start()
     {
-        // Başlangıçta izleyici ipucu yazısını gizle (sadece öldüğünde açılsın)
         if (spectatorHintText != null)
         {
             spectatorHintText.gameObject.SetActive(false);
@@ -64,100 +71,322 @@ public class RoleManager : NetworkBehaviour
     {
         if (IsServer)
         {
-            // Senkronizasyon için sahneler yüklendikten 2 saniye sonra görevleri dağıt (herkes girdiğinde garanti olsun)
             Invoke(nameof(AssignRoles), 2f);
         }
     }
 
-    /// <summary>
-    /// Bu fonksiyon SADECE oyunu kuran kişi (Host/Server) tarafından oyun başladığında çağrılır.
-    /// </summary>
     public void AssignRoles()
     {
-        if (!IsServer) 
+        if (!IsServer)
         {
-            Debug.LogWarning("Roller sadece Sunucu (Server/Host) tarafından dağıtılmalıdır.");
+            Debug.LogWarning("Roller sadece Sunucu (Server/Host) tarafindan dagitilmalidir.");
             return;
         }
 
-        // O an sunucuya bağlı tüm oyuncuların Network ID'lerini bir Listeye alalım
         List<ulong> clientIds = NetworkManager.Singleton.ConnectedClientsIds.ToList();
-        
-        // Listeyi karıştır (Shuffle Algoritması)
         ShuffleList(clientIds);
 
         int playerCount = clientIds.Count;
         int impostorCount = 1;
 
-        // 5 kişiden itibaren 2 katil olsun kuralı
         if (playerCount >= 5)
         {
-            impostorCount = 2; 
+            impostorCount = 2;
         }
 
-        // Oyunda atanması gereken katil sayısından daha az oyuncu varsa (test amaçlı 1 kişi girerseniz diye)
-        if (impostorCount > playerCount) { impostorCount = playerCount; }
+        if (impostorCount > playerCount)
+        {
+            impostorCount = playerCount;
+        }
+
+        if (playerCount == 1)
+        {
+            ulong onlyClientId = clientIds[0];
+            ClientRpcParams clientRpcParams = CreateTargetRpcParams(onlyClientId);
+            ShowSinglePlayerRoleSelectionClientRpc(clientRpcParams);
+            Debug.Log("Tek oyunculu oyun algilandi. Rol secim ekrani gosteriliyor.");
+            return;
+        }
 
         for (int i = 0; i < playerCount; i++)
         {
             ulong targetId = clientIds[i];
-            
-            // Eğer karıştırılmış listemizde ilk 'impostorCount' sırasındaysan katil, yoksan köylüsün.
-            PlayerRole assignedRole = (i < impostorCount) ? PlayerRole.Impostor : PlayerRole.Crewmate;
-
-            // SADECE hedef client'ın alabileceği özel bir mesaj paketi hazırlıyoruz (TargetClientIds)
-            ClientRpcParams clientRpcParams = new ClientRpcParams
-            {
-                Send = new ClientRpcSendParams
-                {
-                    TargetClientIds = new ulong[] { targetId }
-                }
-            };
-
-            // Hedef client a RPC'yi (Network fonksiyonunu) gönder (Sadece kendisine gidecek)
-            ReceiveRoleClientRpc(assignedRole, clientRpcParams);
+            PlayerRole assignedRole = i < impostorCount ? PlayerRole.Impostor : PlayerRole.Crewmate;
+            ReceiveRoleClientRpc(assignedRole, CreateTargetRpcParams(targetId));
         }
-        
-        Debug.Log($"Rol ataması tamamlandı: {playerCount} oyuncunun {impostorCount} tanesi katil yapıldı.");
+
+        Debug.Log($"Rol atamasi tamamlandi: {playerCount} oyuncunun {impostorCount} tanesi katil yapildi.");
     }
 
-    /// <summary>
-    /// Sunucunun sadece hedeflenen istemciye (Client) rolünü ilettiği metot
-    /// </summary>
+    [ClientRpc]
+    private void ShowSinglePlayerRoleSelectionClientRpc(ClientRpcParams clientRpcParams = default)
+    {
+        singlePlayerChoicePending = true;
+        EnsureSinglePlayerRoleSelectionUi();
+        SetLocalPlayerControlLocked(true);
+
+        if (singlePlayerRolePanel != null)
+        {
+            singlePlayerRolePanel.SetActive(true);
+        }
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void SubmitSinglePlayerRoleChoiceServerRpc(PlayerRole chosenRole, ServerRpcParams serverRpcParams = default)
+    {
+        if (!IsServer)
+        {
+            return;
+        }
+
+        if (chosenRole != PlayerRole.Crewmate && chosenRole != PlayerRole.Impostor)
+        {
+            Debug.LogWarning("Gecersiz tek oyuncu rol secimi geldi.");
+            return;
+        }
+
+        if (NetworkManager.Singleton == null || NetworkManager.Singleton.ConnectedClientsIds.Count != 1)
+        {
+            Debug.LogWarning("Tek oyuncu rol secimi, oyuncu sayisi degistigi icin reddedildi.");
+            return;
+        }
+
+        ulong onlyClientId = NetworkManager.Singleton.ConnectedClientsIds[0];
+        if (serverRpcParams.Receive.SenderClientId != onlyClientId)
+        {
+            Debug.LogWarning("Tek oyuncu rol secimi beklenmeyen bir istemciden geldi.");
+            return;
+        }
+
+        ClientRpcParams clientRpcParams = CreateTargetRpcParams(onlyClientId);
+        ReceiveRoleClientRpc(chosenRole, clientRpcParams);
+        HideSinglePlayerRoleSelectionClientRpc(clientRpcParams);
+        Debug.Log("Tek oyuncu kendi rolunu secti: " + chosenRole);
+    }
+
+    [ClientRpc]
+    private void HideSinglePlayerRoleSelectionClientRpc(ClientRpcParams clientRpcParams = default)
+    {
+        singlePlayerChoicePending = false;
+
+        if (singlePlayerRolePanel != null)
+        {
+            singlePlayerRolePanel.SetActive(false);
+        }
+
+        SetLocalPlayerControlLocked(false);
+    }
+
     [ClientRpc]
     private void ReceiveRoleClientRpc(PlayerRole role, ClientRpcParams clientRpcParams = default)
     {
         localPlayerRole = role;
         UpdateRoleUI(role);
-        Debug.Log("Rol atamam ulaştı: " + role.ToString());
+        Debug.Log("Rol atamam ulasti: " + role);
     }
 
-    /// <summary>
-    /// Ekrandaki yazıyı oyuncunun gizli rolüne göre günceller
-    /// </summary>
     private void UpdateRoleUI(PlayerRole role)
     {
         if (roleText == null)
         {
-            Debug.LogWarning("RoleManager'ın içindeki RoleText (TMP) boş! Hierarchy'den atama yapmayı unutmayın.");
+            Debug.LogWarning("RoleManager icindeki RoleText (TMP) bos. Hierarchy'den atama yapmayi unutmayin.");
             return;
         }
 
         if (role == PlayerRole.Impostor)
         {
-            roleText.text = "Rolün: Katil";
+            roleText.text = "Rolun: Katil";
             roleText.color = Color.red;
         }
         else if (role == PlayerRole.Crewmate)
         {
-            roleText.text = "Rolün: Köylü";
+            roleText.text = "Rolun: Koylu";
             roleText.color = Color.green;
+        }
+        else
+        {
+            roleText.text = "Rol Seciliyor...";
+            roleText.color = Color.white;
         }
     }
 
-    /// <summary>
-    /// Fisher-Yates Shuffle algoritması: Listeyi rastgele karıştırır.
-    /// </summary>
+    private void EnsureSinglePlayerRoleSelectionUi()
+    {
+        if (singlePlayerRolePanel != null)
+        {
+            return;
+        }
+
+        Canvas canvas = GameObject.Find("Canvas") != null
+            ? GameObject.Find("Canvas").GetComponent<Canvas>()
+            : FindFirstObjectByType<Canvas>();
+
+        if (canvas == null)
+        {
+            Debug.LogWarning("Tek oyuncu rol secim ekrani icin Canvas bulunamadi.");
+            return;
+        }
+
+        singlePlayerRolePanel = CreateUiObject("SinglePlayerRolePanel", canvas.transform, typeof(Image));
+        RectTransform panelRect = singlePlayerRolePanel.GetComponent<RectTransform>();
+        panelRect.anchorMin = new Vector2(0.5f, 0.5f);
+        panelRect.anchorMax = new Vector2(0.5f, 0.5f);
+        panelRect.pivot = new Vector2(0.5f, 0.5f);
+        panelRect.anchoredPosition = Vector2.zero;
+        panelRect.sizeDelta = new Vector2(520f, 280f);
+
+        Image panelImage = singlePlayerRolePanel.GetComponent<Image>();
+        panelImage.color = new Color(0f, 0f, 0f, 0.88f);
+
+        singlePlayerRoleTitle = CreateText("TitleText", singlePlayerRolePanel.transform, "Rolunu Sec", 34f);
+        RectTransform titleRect = singlePlayerRoleTitle.rectTransform;
+        titleRect.anchorMin = new Vector2(0.5f, 1f);
+        titleRect.anchorMax = new Vector2(0.5f, 1f);
+        titleRect.pivot = new Vector2(0.5f, 1f);
+        titleRect.anchoredPosition = new Vector2(0f, -24f);
+        titleRect.sizeDelta = new Vector2(420f, 52f);
+
+        singlePlayerRoleHint = CreateText("HintText", singlePlayerRolePanel.transform, "Tek kisi basladin. Koylu veya Katil olmayi sec.", 24f);
+        RectTransform hintRect = singlePlayerRoleHint.rectTransform;
+        hintRect.anchorMin = new Vector2(0.5f, 0.5f);
+        hintRect.anchorMax = new Vector2(0.5f, 0.5f);
+        hintRect.pivot = new Vector2(0.5f, 0.5f);
+        hintRect.anchoredPosition = new Vector2(0f, 36f);
+        hintRect.sizeDelta = new Vector2(440f, 80f);
+
+        Button villagerButton = CreateButton("VillagerButton", singlePlayerRolePanel.transform, "Koylu", new Vector2(-110f, -78f));
+        villagerButton.onClick.RemoveAllListeners();
+        villagerButton.onClick.AddListener(() => OnSinglePlayerRoleChosen(PlayerRole.Crewmate));
+
+        Button killerButton = CreateButton("KillerButton", singlePlayerRolePanel.transform, "Katil", new Vector2(110f, -78f));
+        killerButton.onClick.RemoveAllListeners();
+        killerButton.onClick.AddListener(() => OnSinglePlayerRoleChosen(PlayerRole.Impostor));
+
+        singlePlayerRolePanel.SetActive(false);
+    }
+
+    private void OnSinglePlayerRoleChosen(PlayerRole chosenRole)
+    {
+        if (!singlePlayerChoicePending)
+        {
+            return;
+        }
+
+        singlePlayerChoicePending = false;
+        SubmitSinglePlayerRoleChoiceServerRpc(chosenRole);
+    }
+
+    private void SetLocalPlayerControlLocked(bool isLocked)
+    {
+        if (cachedLocalController == null)
+        {
+            GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
+            if (playerObject != null)
+            {
+                cachedLocalController = playerObject.GetComponent<FirstPersonController>();
+            }
+        }
+
+        if (cachedLocalController != null)
+        {
+            if (isLocked)
+            {
+                if (!hasCachedControlState)
+                {
+                    cachedPlayerCanMove = cachedLocalController.playerCanMove;
+                    cachedCameraCanMove = cachedLocalController.cameraCanMove;
+                    hasCachedControlState = true;
+                }
+
+                cachedLocalController.playerCanMove = false;
+                cachedLocalController.cameraCanMove = false;
+            }
+            else if (hasCachedControlState)
+            {
+                cachedLocalController.playerCanMove = cachedPlayerCanMove;
+                cachedLocalController.cameraCanMove = cachedCameraCanMove;
+                hasCachedControlState = false;
+            }
+        }
+
+        Cursor.visible = isLocked;
+        Cursor.lockState = isLocked ? CursorLockMode.None : CursorLockMode.Locked;
+    }
+
+    private static ClientRpcParams CreateTargetRpcParams(ulong clientId)
+    {
+        return new ClientRpcParams
+        {
+            Send = new ClientRpcSendParams
+            {
+                TargetClientIds = new[] { clientId }
+            }
+        };
+    }
+
+    private static GameObject CreateUiObject(string objectName, Transform parent, params System.Type[] extraComponents)
+    {
+        Transform existing = parent.Find(objectName);
+        GameObject uiObject = existing != null
+            ? existing.gameObject
+            : new GameObject(objectName, typeof(RectTransform));
+
+        if (existing == null)
+        {
+            uiObject.transform.SetParent(parent, false);
+        }
+
+        for (int i = 0; i < extraComponents.Length; i++)
+        {
+            if (uiObject.GetComponent(extraComponents[i]) == null)
+            {
+                uiObject.AddComponent(extraComponents[i]);
+            }
+        }
+
+        return uiObject;
+    }
+
+    private static TextMeshProUGUI CreateText(string objectName, Transform parent, string content, float fontSize)
+    {
+        GameObject textObject = CreateUiObject(objectName, parent, typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+        TextMeshProUGUI text = textObject.GetComponent<TextMeshProUGUI>();
+        text.font = TMP_Settings.defaultFontAsset != null
+            ? TMP_Settings.defaultFontAsset
+            : Resources.Load<TMP_FontAsset>("LiberationSans SDF");
+        text.text = content;
+        text.fontSize = fontSize;
+        text.color = Color.white;
+        text.alignment = TextAlignmentOptions.Center;
+        text.raycastTarget = false;
+        return text;
+    }
+
+    private static Button CreateButton(string objectName, Transform parent, string label, Vector2 anchoredPosition)
+    {
+        GameObject buttonObject = CreateUiObject(objectName, parent, typeof(CanvasRenderer), typeof(Image), typeof(Button));
+        RectTransform buttonRect = buttonObject.GetComponent<RectTransform>();
+        buttonRect.anchorMin = new Vector2(0.5f, 0.5f);
+        buttonRect.anchorMax = new Vector2(0.5f, 0.5f);
+        buttonRect.pivot = new Vector2(0.5f, 0.5f);
+        buttonRect.anchoredPosition = anchoredPosition;
+        buttonRect.sizeDelta = new Vector2(180f, 52f);
+
+        Image buttonImage = buttonObject.GetComponent<Image>();
+        buttonImage.color = new Color(0.18f, 0.18f, 0.18f, 1f);
+
+        TextMeshProUGUI labelText = CreateText("Label", buttonObject.transform, label, 24f);
+        RectTransform labelRect = labelText.rectTransform;
+        labelRect.anchorMin = Vector2.zero;
+        labelRect.anchorMax = Vector2.one;
+        labelRect.offsetMin = Vector2.zero;
+        labelRect.offsetMax = Vector2.zero;
+
+        Button button = buttonObject.GetComponent<Button>();
+        button.targetGraphic = buttonImage;
+        return button;
+    }
+
     private void ShuffleList<T>(List<T> list)
     {
         System.Random rng = new System.Random();
