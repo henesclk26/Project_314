@@ -155,7 +155,7 @@ public class LobbyUIManager : MonoBehaviour
         }
     }
 
-    private void OnExitGame()
+    public void OnExitGame()
     {
         Debug.Log("Oyundan çıkılıyor...");
         #if UNITY_EDITOR

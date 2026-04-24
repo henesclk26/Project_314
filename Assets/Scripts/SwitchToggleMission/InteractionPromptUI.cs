@@ -62,7 +62,7 @@ namespace SwitchToggleMission
             }
 
             TryCachePlayer();
-            if (promptText == null || cachedRole == null || !cachedRole.IsVillager() || SwitchMinigameUI.HasOpenInstance())
+            if (promptText == null || !CanLocalPlayerUse() || SwitchMinigameUI.HasOpenInstance() || (GameManager.Instance != null && GameManager.Instance.isGameOver))
             {
                 HidePrompt();
                 return;
@@ -134,6 +134,18 @@ namespace SwitchToggleMission
             {
                 cachedRole = cachedPlayer.GetComponent<PlayerRole>();
             }
+        }
+
+        private bool CanLocalPlayerUse()
+        {
+            // If the project uses RoleManager, treat only Crewmate as allowed.
+            if (RoleManager.Instance != null)
+            {
+                return RoleManager.Instance.GetLocalPlayerRole() == global::PlayerRole.Crewmate;
+            }
+
+            // Fallback to SwitchToggleMission.PlayerRole if present.
+            return cachedRole != null && cachedRole.IsVillager();
         }
 
         private InteractableObject FindClosestInteractable()

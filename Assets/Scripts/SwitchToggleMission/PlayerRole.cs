@@ -1,7 +1,4 @@
 using UnityEngine;
-using UnityEngine.UI;
-using TMPro;
-using UnityEngine.EventSystems;
 
 namespace SwitchToggleMission
 {
@@ -17,6 +14,13 @@ namespace SwitchToggleMission
 
         public bool IsVillager()
         {
+            // Prefer the project's authoritative role system if present.
+            // This keeps SwitchToggleMission in sync with RoleManager (Crewmate/Impostor).
+            if (RoleManager.Instance != null)
+            {
+                return RoleManager.Instance.GetLocalPlayerRole() == global::PlayerRole.Crewmate;
+            }
+
             return role == PlayerRoleType.Villager;
         }
     }

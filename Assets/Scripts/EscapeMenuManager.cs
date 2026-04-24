@@ -44,8 +44,11 @@ public class EscapeMenuManager : MonoBehaviour
             // Menü kapanırken: ölü oyuncunun cursor'ını kilitleme
             if (!FirstPersonController.LocalPlayerIsDead)
             {
-                Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible = false;
+                if (GameManager.Instance == null || !GameManager.Instance.isGameOver)
+                {
+                    Cursor.lockState = CursorLockMode.Locked;
+                    Cursor.visible = false;
+                }
             }
             // Ölüysek: cursor serbest kalır (spectator için)
         }

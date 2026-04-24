@@ -150,6 +150,11 @@ public class KillSystem : NetworkBehaviour
                 victim.deathCause.Value = FirstPersonController.PlayerDeathCause.ImpostorKill;
                 victim.corpseHidden.Value = false;
                 victim.isDead.Value = true;
+
+                if (GameManager.Instance != null)
+                {
+                    GameManager.Instance.OnPlayerDied(targetNetworkObjectId);
+                }
             }
         }
         KillPlayerClientRpc(targetNetworkObjectId);

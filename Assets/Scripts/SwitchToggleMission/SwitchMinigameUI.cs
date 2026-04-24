@@ -160,6 +160,10 @@ namespace SwitchToggleMission
                 }
 
                 ShowTaskComplete();
+                if (GameManager.Instance != null && Unity.Netcode.NetworkManager.Singleton != null)
+                {
+                    GameManager.Instance.CompleteMissionServerRpc(Unity.Netcode.NetworkManager.Singleton.LocalClientId, "Switch");
+                }
                 CancelInvoke(nameof(CloseMinigame));
                 Invoke(nameof(CloseMinigame), 1.5f);
             }
@@ -325,6 +329,12 @@ namespace SwitchToggleMission
 
         private void SetCursorState(bool freeCursor)
         {
+            if (!freeCursor && GameManager.Instance != null && GameManager.Instance.isGameOver)
+            {
+                Cursor.visible = true;
+                Cursor.lockState = CursorLockMode.None;
+                return;
+            }
             Cursor.visible = freeCursor;
             Cursor.lockState = freeCursor ? CursorLockMode.None : CursorLockMode.Locked;
         }
@@ -370,8 +380,11 @@ namespace SwitchToggleMission
 
             if (hasCachedCameraState)
             {
-                cachedPlayerController.cameraCanMove = cachedCameraCanMove;
-                cachedPlayerController.playerCanMove = cachedPlayerCanMove;
+                if (GameManager.Instance == null || !GameManager.Instance.isGameOver)
+                {
+                    cachedPlayerController.cameraCanMove = cachedCameraCanMove;
+                    cachedPlayerController.playerCanMove = cachedPlayerCanMove;
+                }
                 hasCachedCameraState = false;
             }
         }

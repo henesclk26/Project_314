@@ -108,11 +108,21 @@ public class RoleManager : NetworkBehaviour
             return;
         }
 
+        List<ulong> impostorIds = new List<ulong>();
+        List<ulong> crewmateIds = new List<ulong>();
+
         for (int i = 0; i < playerCount; i++)
         {
             ulong targetId = clientIds[i];
             PlayerRole assignedRole = i < impostorCount ? PlayerRole.Impostor : PlayerRole.Crewmate;
+            if (assignedRole == PlayerRole.Impostor) impostorIds.Add(targetId);
+            else crewmateIds.Add(targetId);
             ReceiveRoleClientRpc(assignedRole, CreateTargetRpcParams(targetId));
+        }
+
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.StartGame(crewmateIds, impostorIds);
         }
 
         Debug.Log($"Rol atamasi tamamlandi: {playerCount} oyuncunun {impostorCount} tanesi katil yapildi.");
@@ -161,6 +171,17 @@ public class RoleManager : NetworkBehaviour
         ClientRpcParams clientRpcParams = CreateTargetRpcParams(onlyClientId);
         ReceiveRoleClientRpc(chosenRole, clientRpcParams);
         HideSinglePlayerRoleSelectionClientRpc(clientRpcParams);
+
+        List<ulong> impostorIds = new List<ulong>();
+        List<ulong> crewmateIds = new List<ulong>();
+        if (chosenRole == PlayerRole.Impostor) impostorIds.Add(onlyClientId);
+        else crewmateIds.Add(onlyClientId);
+
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.StartGame(crewmateIds, impostorIds);
+        }
+
         Debug.Log("Tek oyuncu kendi rolunu secti: " + chosenRole);
     }
 

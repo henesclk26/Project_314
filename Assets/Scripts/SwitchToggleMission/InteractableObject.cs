@@ -36,7 +36,7 @@ namespace SwitchToggleMission
         private void Update()
         {
             TryCachePlayer();
-            if (cachedPlayer == null || cachedRole == null || !cachedRole.IsVillager())
+            if (cachedPlayer == null || !CanLocalPlayerUse())
             {
                 return;
             }
@@ -45,6 +45,8 @@ namespace SwitchToggleMission
             {
                 return;
             }
+
+            if (GameManager.Instance != null && GameManager.Instance.isGameOver) return;
 
             if (Input.GetKeyDown(KeyCode.F))
             {
@@ -57,6 +59,13 @@ namespace SwitchToggleMission
         {
             TryCachePlayer();
             if (cachedPlayer == null)
+            {
+                return false;
+            }
+
+            // Hard gate: non-villagers should never be considered "in range" for computers,
+            // so other systems (like prompt selection) won't surface interaction either.
+            if (!CanLocalPlayerUse())
             {
                 return false;
             }
@@ -92,6 +101,18 @@ namespace SwitchToggleMission
             {
                 cachedRole = cachedPlayer.GetComponent<PlayerRole>();
             }
+        }
+
+        private bool CanLocalPlayerUse()
+        {
+            // If the project uses RoleManager, treat only Crewmate as allowed.
+            if (RoleManager.Instance != null)
+            {
+                return RoleManager.Instance.GetLocalPlayerRole() == global::PlayerRole.Crewmate;
+            }
+
+            // Fallback to local component role (if used in some scenes/tests).
+            return cachedRole != null && cachedRole.IsVillager();
         }
 
         private void CacheBounds()

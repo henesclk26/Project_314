@@ -221,6 +221,11 @@ public class VillageMissionCollector : NetworkBehaviour
         collectedGarbageIds.Clear();
         UpdateProgressUi();
         ShowMissionCompleted();
+
+        if (GameManager.Instance != null && NetworkManager.Singleton != null)
+        {
+            GameManager.Instance.CompleteMissionServerRpc(NetworkManager.Singleton.LocalClientId, "Collector");
+        }
     }
 
     private void ShowPromptForCurrentInteractable()

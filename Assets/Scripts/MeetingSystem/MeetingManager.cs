@@ -151,6 +151,12 @@ public class MeetingManager : MonoBehaviour
                 eliminated.deathCause.Value = FirstPersonController.PlayerDeathCause.Ejected;
                 eliminated.corpseHidden.Value = true;
                 eliminated.isDead.Value = true;
+                
+                if (GameManager.Instance != null)
+                {
+                    GameManager.Instance.OnPlayerDied(eliminatedPlayerId);
+                }
+                
                 MeetingTrigger.Singleton?.KillPlayerClientRpc(eliminatedPlayerId);
             }
         }

@@ -114,12 +114,15 @@ public class MeetingTrigger : NetworkBehaviour
             }
             else
             {
-                // Hayatta olan oyuncu: Normal kontrole geri dön
-                p.playerCanMove = true;
-                p.cameraCanMove = true;
-                p.lockCursor = true;
-                Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible = false;
+                if (GameManager.Instance == null || !GameManager.Instance.isGameOver)
+                {
+                    // Hayatta olan oyuncu: Normal kontrole geri dön
+                    p.playerCanMove = true;
+                    p.cameraCanMove = true;
+                    p.lockCursor = true;
+                    Cursor.lockState = CursorLockMode.Locked;
+                    Cursor.visible = false;
+                }
             }
         }
     }
