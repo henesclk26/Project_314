@@ -1,0 +1,34 @@
+:root {
+}
+
+.button {
+    width: 400px;
+    height: 100px;
+    align-self: center;
+    justify-content: flex-start;
+    align-items: auto;
+    align-content: auto;
+    top: 250px;
+    right: 700px;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    border-bottom-right-radius: 20px;
+    border-bottom-left-radius: 20px;
+    margin-bottom: 15px;
+    background-image: url("project://database/Assets/%C4%B0mages/9lz0B.png?fileID=1353773517&guid=717698daad03eef41a2cb43f9a79f066&type=3#9lz0B_0");
+    color: rgb(255, 255, 255);
+}
+
+.button:hover {
+    scale: 1.1 1.1;
+    -unity-background-image-tint-color: rgb(0, 255, 199);
+    background-color: rgb(12, 101, 81);
+}
+
+.image {
+    transition-timing-function: ease;
+}
+
+.image:hover {
+    scale: 1.1 1.1;
+}

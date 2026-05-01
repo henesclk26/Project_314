@@ -1,0 +1,7 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI%20Toolkit/esc_menu.uss?fileID=7433441132597879392&amp;guid=ada23e263efdae94b92585d81c722857&amp;type=3#esc_menu"/>
+    <ui:VisualElement name="EscMenu" style="flex-grow: 1; position: absolute; height: 571px; width: 591px; top: 194px; left: 749px; justify-content: center; background-color: rgb(255, 255, 255); background-image: url(&quot;project://database/Assets/%C4%B0mages/vote_card.png?fileID=1524443183&amp;guid=d636e7434ead9eb48982363a787c2257&amp;type=3#vote_card_0&quot;); border-top-left-radius: 10px; border-top-right-radius: 10px; border-bottom-right-radius: 10px; border-bottom-left-radius: 10px;">
+        <ui:Button text="Settings" name="SettingsButton" class="button"/>
+        <ui:Button text="Quit Game" name="QuitGameButton" class="button"/>
+    </ui:VisualElement>
+</ui:UXML>

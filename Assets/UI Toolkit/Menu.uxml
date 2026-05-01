@@ -1,0 +1,10 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:Style src="project://database/Assets/UI%20Toolkit/menu_uss.uss?fileID=7433441132597879392&amp;guid=c14abe3f11243074ba4f0dd65efb5aa0&amp;type=3#menu_uss"/>
+    <ui:VisualElement style="flex-grow: 1; background-color: rgb(255, 255, 255); background-image: url(&quot;project://database/Assets/%C4%B0mages/menuback.png?fileID=-41123892&amp;guid=f2c5c63a073280043b1e1681fe2b87c1&amp;type=3#menuback_0&quot;);">
+        <ui:Button name="btn-private-game" text="Private Game" class="button" style="font-size: 36px;"/>
+        <ui:Button name="btn-public-game" text="Public Game" class="button" style="font-size: 36px;"/>
+        <ui:Button name="btn-settings" text="Settings" class="button" style="font-size: 36px;"/>
+        <ui:Button name="btn-quit-game" text="Quit Game" class="button" style="font-size: 36px;"/>
+        <ui:Image class="image" style="width: 500px; height: 100px; align-content: auto; align-self: center; background-image: url(&quot;project://database/Assets/%C4%B0mages/logo.png?fileID=1521233329&amp;guid=67757db3ee2dccb40bfe87945501cda5&amp;type=3#logo_0&quot;); margin-bottom: 0; padding-bottom: 0; bottom: 400px;"/>
+    </ui:VisualElement>
+</ui:UXML>

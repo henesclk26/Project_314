@@ -1,0 +1,16 @@
+:root {
+}
+
+.button {
+    width: 400px;
+    height: 100px;
+    align-self: center;
+    margin-bottom: 30px;
+    font-size: 36px;
+    background-image: url("project://database/Assets/%C4%B0mages/9lz0B.png?fileID=1353773517&guid=717698daad03eef41a2cb43f9a79f066&type=3#9lz0B_0");
+    color: rgb(255, 255, 255);
+}
+
+.button:hover {
+    scale: 1.1 1.1;
+}
