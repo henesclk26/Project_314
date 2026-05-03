@@ -34,6 +34,10 @@ public class FirstPersonController : NetworkBehaviour
 
     private Rigidbody rb;
 
+    [Header("Animation")]
+    public Animator animator;
+    public string speedParameterName = "Speed";
+
     #region Camera Movement Variables
 
     public Camera playerCamera;
@@ -166,6 +170,7 @@ public class FirstPersonController : NetworkBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        if (animator == null) animator = GetComponentInChildren<Animator>();
 
         crosshairObject = GetComponentInChildren<Image>();
 
@@ -195,6 +200,13 @@ public class FirstPersonController : NetworkBehaviour
         isDead.OnValueChanged += OnDeadChanged;
         if (isDead.Value) OnDeadChanged(false, true);
 
+        playerColorIndex.OnValueChanged += OnColorChanged;
+        if (IsServer)
+        {
+            playerColorIndex.Value = (int)(OwnerClientId % 16) + 1;
+        }
+        ApplyPlayerColor(playerColorIndex.Value);
+
         if (IsOwner)
         {
             string sName = "Player " + OwnerClientId;
@@ -213,6 +225,17 @@ public class FirstPersonController : NetworkBehaviour
             var listener = playerCamera != null ? playerCamera.GetComponent<AudioListener>() : null;
             if (listener != null) listener.enabled = true;
 
+            // Kendi vücudumuzu içeriden görmemek için Animator'un bağlı olduğu modeldeki tüm parçaları bulup otomatik gizliyoruz (sadece gölge kalıyor)
+            if (animator != null)
+            {
+                Renderer[] bodyRenderers = animator.GetComponentsInChildren<Renderer>();
+                foreach (Renderer r in bodyRenderers)
+                {
+                    if (r != null)
+                        r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly;
+                }
+            }
+
             Debug.Log("Kendi karakterim doğdu, kamera aktif edildi.");
         }
         else
@@ -230,6 +253,61 @@ public class FirstPersonController : NetworkBehaviour
     {
         base.OnNetworkDespawn();
         isDead.OnValueChanged -= OnDeadChanged;
+        playerColorIndex.OnValueChanged -= OnColorChanged;
+    }
+
+    private void OnColorChanged(int oldVal, int newVal)
+    {
+        ApplyPlayerColor(newVal);
+    }
+
+    private static readonly string[] PlayerColorHexes = new string[]
+    {
+        "#FFFFFF", // 0 (Kullanılmıyor, fallback)
+        "#FFFFFF", // 1: Beyaz
+        "#FF0000", // 2: Kırmızı
+        "#00FF00", // 3: Yeşil
+        "#FFFF00", // 4: Sarı
+        "#FF8000", // 5: Turuncu
+        "#800080", // 6: Mor
+        "#0000FF", // 7: Mavi
+        "#FF66B2", // 8: Pembe
+        "#808080", // 9: Gri
+        "#663300", // 10: Kahverengi
+        "#D4AF37", // 11: Altın
+        "#F5F5DC", // 12: Bej
+        "#000080", // 13: Lacivert
+        "#40E0D0", // 14: Turkuaz
+        "#800000", // 15: Bordo
+        "#4B5320"  // 16: Haki
+    };
+
+    private void ApplyPlayerColor(int colorIndex)
+    {
+        if (colorIndex < 1 || colorIndex > 16) colorIndex = 1;
+        
+        Color targetColor = Color.white;
+        ColorUtility.TryParseHtmlString(PlayerColorHexes[colorIndex], out targetColor);
+
+        Renderer[] allRenderers = GetComponentsInChildren<Renderer>(true);
+        foreach (Renderer rend in allRenderers)
+        {
+            Material[] sharedMats = rend.materials; // Geçici dizi üzerinden işlem
+            bool changed = false;
+            for (int i = 0; i < sharedMats.Length; i++)
+            {
+                // Material atandıktan sonra adına " (Instance)" eklendiği için StartsWith kullanılır
+                if (sharedMats[i].name.StartsWith("Renkdegisenbolum"))
+                {
+                    sharedMats[i].color = targetColor;
+                    changed = true;
+                }
+            }
+            if (changed)
+            {
+                rend.materials = sharedMats; // Diziyi geri ata
+            }
+        }
     }
 
     private void OnDeadChanged(bool oldVal, bool newVal)
@@ -334,6 +412,8 @@ public class FirstPersonController : NetworkBehaviour
     /// </summary>
     public NetworkVariable<bool> corpseHidden = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     public NetworkVariable<FixedString32Bytes> playerName = new NetworkVariable<FixedString32Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    public NetworkVariable<float> networkAnimSpeed = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    public NetworkVariable<int> playerColorIndex = new NetworkVariable<int>(1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
     public bool CanBeReportedAsBody()
     {
@@ -350,6 +430,21 @@ public class FirstPersonController : NetworkBehaviour
 
     private void Update()
     {
+        if (animator != null)
+        {
+            float currentSpeed = 0f;
+            if (IsLocalPlayerControlled())
+            {
+                currentSpeed = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z).magnitude;
+                if (IsSpawned) networkAnimSpeed.Value = currentSpeed;
+            }
+            else
+            {
+                currentSpeed = networkAnimSpeed.Value;
+            }
+            animator.SetFloat(speedParameterName, currentSpeed);
+        }
+
         if (!IsLocalPlayerControlled()) return;
 
         if (isDead.Value)
