@@ -39,7 +39,7 @@
             {
                 "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089",
                 "key": "ShapeComponent.SettingsEnabled",
-                "value": "{\"m_Value\":false}"
+                "value": "{\"m_Value\":true}"
             },
             {
                 "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089",
@@ -74,17 +74,17 @@
             {
                 "type": "System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089",
                 "key": "ShapeBuilder.ActiveShapeIndex",
-                "value": "{\"m_Value\":1}"
+                "value": "{\"m_Value\":10}"
             },
             {
                 "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
                 "key": "ShapeBuilder.LastSize.Cube",
-                "value": "{\"m_Value\":{\"x\":-0.9876565933227539,\"y\":3.5264334678649904,\"z\":9.557090759277344}}"
+                "value": "{\"m_Value\":{\"x\":-8.0,\"y\":0.10000000149011612,\"z\":5.0}}"
             },
             {
                 "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
                 "key": "ShapeBuilder.LastSize.Stairs",
-                "value": "{\"m_Value\":{\"x\":2.986325740814209,\"y\":3.0844407081604006,\"z\":4.6308064460754398}}"
+                "value": "{\"m_Value\":{\"x\":7.419336318969727,\"y\":6.979858875274658,\"z\":-8.958780288696289}}"
             },
             {
                 "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
@@ -94,27 +94,27 @@
             {
                 "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
                 "key": "ShapeBuilder.LastSize.Arch",
-                "value": "{\"m_Value\":{\"x\":5.541451454162598,\"y\":3.579437255859375,\"z\":1.8619542121887208}}"
+                "value": "{\"m_Value\":{\"x\":9.732864379882813,\"y\":7.9020256996154789,\"z\":9.184951782226563}}"
             },
             {
                 "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
                 "key": "ShapeBuilder.LastSize.Pipe",
-                "value": "{\"m_Value\":{\"x\":1.0781984329223633,\"y\":2.77089262008667,\"z\":0.021127700805664064}}"
+                "value": "{\"m_Value\":{\"x\":9.53741455078125,\"y\":12.850641250610352,\"z\":9.883041381835938}}"
             },
             {
                 "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
                 "key": "ShapeBuilder.LastSize.Plane",
-                "value": "{\"m_Value\":{\"x\":-9.452125549316407,\"y\":0.0,\"z\":-10.670010566711426}}"
+                "value": "{\"m_Value\":{\"x\":-10.0,\"y\":0.0,\"z\":10.0}}"
             },
             {
                 "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
                 "key": "ShapeBuilder.LastSize.Torus",
-                "value": "{\"m_Value\":{\"x\":0.029153823852539064,\"y\":2.331854820251465,\"z\":4.096199035644531}}"
+                "value": "{\"m_Value\":{\"x\":9.375473022460938,\"y\":13.775162696838379,\"z\":9.902907371520996}}"
             },
             {
                 "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
                 "key": "ShapeBuilder.LastSize.Cone",
-                "value": "{\"m_Value\":{\"x\":-9.815179824829102,\"y\":6.6422553062438969,\"z\":3.6461308002471926}}"
+                "value": "{\"m_Value\":{\"x\":9.293746948242188,\"y\":14.091912269592286,\"z\":8.572368621826172}}"
             },
             {
                 "type": "UnityEngine.Vector3, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null",
