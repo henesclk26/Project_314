@@ -396,10 +396,7 @@ public class FirstPersonController : NetworkBehaviour
         #endregion
         
         // Başlangıçta Spectator yazısını kapat
-        if (IsOwner && RoleManager.Instance != null && RoleManager.Instance.spectatorHintText != null)
-        {
-            RoleManager.Instance.spectatorHintText.gameObject.SetActive(false);
-        }
+
     }
 
     float camRotation;
@@ -453,12 +450,19 @@ public class FirstPersonController : NetworkBehaviour
             return;
         }
 
-        // EĞER ŞU AN ANA MENÜDE (LOBİDE) İSEK: Fareyi göster ve karakteri dondur!
-        if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "MainMenu")
+        // EĞER ŞU AN ANA MENÜDE VEYA LOBİDE İSEK: Fareyi göster, karakteri dondur ve crosshair'ı kapat!
+        bool isMainMenu = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "MainMenu";
+        bool isLobbyMode = GameManager.Instance == null || !GameManager.Instance.isGameStarted.Value;
+
+        if (isMainMenu || isLobbyMode)
         {
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
             cursorLockedForGame = false;
+            if (crosshairObject != null && crosshairObject.gameObject.activeSelf)
+            {
+                crosshairObject.gameObject.SetActive(false);
+            }
             return; 
         }
         // EĞER OYUN SAHNESİNE GEÇTİYSEK VE FARE HENÜZ KİLİTLENMEDİYSE: Kilitle!
@@ -467,6 +471,10 @@ public class FirstPersonController : NetworkBehaviour
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
             cursorLockedForGame = true;
+            if (crosshair && crosshairObject != null && !crosshairObject.gameObject.activeSelf)
+            {
+                crosshairObject.gameObject.SetActive(true);
+            }
         }
 
         #region Camera
@@ -637,11 +645,7 @@ public class FirstPersonController : NetworkBehaviour
     {
         if (!spectatorInitialized)
         {
-            if (RoleManager.Instance != null && RoleManager.Instance.spectatorHintText != null)
-            {
-                RoleManager.Instance.spectatorHintText.gameObject.SetActive(true);
-                RoleManager.Instance.spectatorHintText.text = "Sol Tık: Sonraki Oyuncu   |   Sağ Tık: Önceki Oyuncu"; // Veya Inspector'dan girdiğiniz değer kalabilir
-            }
+            // Spectator hint text references removed
             spectatorInitialized = true;
         }
 
@@ -719,6 +723,10 @@ public class FirstPersonController : NetworkBehaviour
     {
         if (!IsLocalPlayerControlled()) return;
         if (isDead.Value) return;
+
+        bool isMainMenu = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "MainMenu";
+        bool isLobbyMode = GameManager.Instance == null || !GameManager.Instance.isGameStarted.Value;
+        if (isMainMenu || isLobbyMode) return;
 
         #region Movement
 
@@ -895,11 +903,8 @@ public class FirstPersonController : NetworkBehaviour
         if (IsLocalPlayerControlled())
         {
             Debug.Log("ÖLDÜRÜLDÜN!");
-            if (RoleManager.Instance != null && RoleManager.Instance.roleText != null)
-            {
-                RoleManager.Instance.roleText.text = "ÖLDÜN!";
-                RoleManager.Instance.roleText.color = Color.gray;
-            }
+            // Role manager references removed
+
 
             // Spectator modunu otomatik başlat — ilk hayatta kalana geç
             spectatorInitialized = false; // Hint mesajını yeniden göster

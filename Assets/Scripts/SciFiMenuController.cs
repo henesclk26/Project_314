@@ -1,50 +1,122 @@
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 /// <summary>
 /// Sci-fi-map sahnesinde menü → oyun geçişini yönetir.
-/// Ayrı bir GameObject'e eklenir (Main Menu'ye DEĞİL).
-/// Inspector'dan menuObject ve fpc sürükle-bırak ile atanır.
 /// </summary>
 public class SciFiMenuController : MonoBehaviour
 {
     [Header("Inspector'dan Ata")]
-    [Tooltip("Sahnedeki Main Menu GameObject'i (UIDocument olan)")]
     public GameObject menuObject;
-
-    [Tooltip("Sahnedeki FirstPersonController GameObject'i")]
+    public GameObject privateLobbyObject;
+    public GameObject publicLobbyObject;
     public FirstPersonController fpc;
+
+    private UIToolkitLobbyBridge _lobbyBridge;
+
+    private void Awake()
+    {
+        _lobbyBridge = GetComponent<UIToolkitLobbyBridge>();
+        if (_lobbyBridge == null)
+            _lobbyBridge = gameObject.AddComponent<UIToolkitLobbyBridge>();
+
+        _lobbyBridge.OnGameStarting += OnNetworkGameStarting;
+    }
+
+    private void OnDestroy()
+    {
+        if (_lobbyBridge != null)
+            _lobbyBridge.OnGameStarting -= OnNetworkGameStarting;
+
+        if (MultiplayerManager.Instance != null)
+            MultiplayerManager.Instance.OnDisconnectedByHost -= OnHostDisconnected;
+    }
+
+    private void OnHostDisconnected()
+    {
+        // Host left — use ShowMainMenu to fully reset to main menu state
+        Debug.Log("[SciFiMenuController] Host disconnected, resetting to main menu.");
+        ShowMainMenu();
+    }
 
     private void Start()
     {
-        // ── Menü açıkken FPC'yi tamamen kapat ──
-        if (fpc != null)
-        {
-            fpc.enabled = false;  // Update/FixedUpdate çalışmasın
+        DisableMenuFpc();
 
-            // Kamerayı AÇIK bırak ki sahne renderlansin (No cameras rendering hatası olmasın)
-            // FPC.enabled=false olduğu için input almayacak zaten
-            if (fpc.playerCamera != null)
-            {
-                fpc.playerCamera.gameObject.SetActive(true);
-                var listener = fpc.playerCamera.GetComponent<AudioListener>();
-                if (listener != null) listener.enabled = true;
-            }
-        }
-
-        // Cursor serbest (menüde tıklayabilmek için)
         UnityEngine.Cursor.lockState = CursorLockMode.None;
         UnityEngine.Cursor.visible = true;
 
-        // Menüyü göster
-        if (menuObject != null)
-            menuObject.SetActive(true);
+        // Subscribe to host disconnect so the menu resets if it fires on this scene
+        if (MultiplayerManager.Instance != null)
+            MultiplayerManager.Instance.OnDisconnectedByHost += OnHostDisconnected;
 
-        // UI butonlarını bağla
-        SetupButtons();
+        if (privateLobbyObject != null) privateLobbyObject.SetActive(false);
+        if (publicLobbyObject != null) publicLobbyObject.SetActive(false);
+
+        if (IsInActiveNetworkSession())
+        {
+            if (GameManager.Instance != null && GameManager.Instance.isGameStarted.Value)
+            {
+                EnterGameplayMode(hideMenusOnly: true);
+                return;
+            }
+            else if (MultiplayerManager.Instance != null && MultiplayerManager.Instance.HasActiveLobby)
+            {
+                if (MultiplayerManager.Instance.CurrentLobbyIsPrivate)
+                {
+                    OpenActivePrivateLobby();
+                }
+                else
+                {
+                    OpenActivePublicLobby();
+                }
+                return;
+            }
+        }
+
+        if (menuObject != null) menuObject.SetActive(true);
+        SetupMainMenuButtons();
     }
 
-    private void SetupButtons()
+    private void OpenActivePrivateLobby()
+    {
+        DisableMenuFpc();
+
+        if (menuObject != null) menuObject.SetActive(false);
+        if (privateLobbyObject == null) return;
+
+        privateLobbyObject.SetActive(true);
+        var root = privateLobbyObject.GetComponent<UIDocument>().rootVisualElement;
+        _lobbyBridge.BindPrivateLobby(root, OnLeaveLobby);
+        _lobbyBridge.OpenPrivateLobbyDirectly();
+    }
+
+    private void OpenActivePublicLobby()
+    {
+        DisableMenuFpc();
+
+        if (menuObject != null) menuObject.SetActive(false);
+        if (publicLobbyObject == null) return;
+
+        publicLobbyObject.SetActive(true);
+        var root = publicLobbyObject.GetComponent<UIDocument>().rootVisualElement;
+        _lobbyBridge.BindPublicLobby(root, OnLeavePublicLobby);
+        _lobbyBridge.OpenPublicLobbyDirectly();
+    }
+
+    private bool _gameplayModeEntered = false;
+
+    private void Update()
+    {
+        if (!_gameplayModeEntered && IsInActiveNetworkSession() && GameManager.Instance != null && GameManager.Instance.isGameStarted.Value)
+        {
+            _gameplayModeEntered = true;
+            EnterGameplayMode(hideMenusOnly: false);
+        }
+    }
+
+    private void SetupMainMenuButtons()
     {
         var uiDoc = menuObject != null ? menuObject.GetComponent<UIDocument>() : null;
         if (uiDoc == null)
@@ -54,53 +126,139 @@ public class SciFiMenuController : MonoBehaviour
         }
 
         var root = uiDoc.rootVisualElement;
-
-        var btnPrivate = root.Q<Button>("btn-private-game");
-        var btnPublic  = root.Q<Button>("btn-public-game");
-        var btnQuit    = root.Q<Button>("btn-quit-game");
-
-        if (btnPrivate != null) btnPrivate.clicked += OnStartGame;
-        if (btnPublic  != null) btnPublic.clicked  += OnStartGame;
-        if (btnQuit    != null) btnQuit.clicked    += OnQuitGame;
-
-        Debug.Log($"[SciFiMenuController] Butonlar bağlandı. Private={btnPrivate != null}, Public={btnPublic != null}, Quit={btnQuit != null}");
+        root.Q<Button>("btn-private-game")?.RegisterCallback<ClickEvent>(_ => OnPrivateGameClicked());
+        root.Q<Button>("btn-public-game")?.RegisterCallback<ClickEvent>(_ => OnPublicGameClicked());
+        root.Q<Button>("btn-quit-game")?.RegisterCallback<ClickEvent>(_ => OnQuitGame());
     }
 
-    private void OnStartGame()
+    private void OnPrivateGameClicked()
     {
-        Debug.Log("[SciFiMenuController] Oyun başlatılıyor...");
+        DisableMenuFpc();
 
-        // ── FPC'yi aç ──
-        if (fpc != null)
+        if (menuObject != null) menuObject.SetActive(false);
+        if (privateLobbyObject == null) return;
+
+        privateLobbyObject.SetActive(true);
+        var root = privateLobbyObject.GetComponent<UIDocument>().rootVisualElement;
+        _lobbyBridge.BindPrivateLobby(root, OnLeaveLobby);
+        UIToolkitLobbyBridge.SwitchPrivatePanel(root, "panel-selection");
+    }
+
+    private void OnPublicGameClicked()
+    {
+        DisableMenuFpc();
+
+        if (menuObject != null) menuObject.SetActive(false);
+        if (publicLobbyObject == null) return;
+
+        publicLobbyObject.SetActive(true);
+        var root = publicLobbyObject.GetComponent<UIDocument>().rootVisualElement;
+        _lobbyBridge.BindPublicLobby(root, OnLeavePublicLobby);
+        UIToolkitLobbyBridge.SwitchPublicPanel(root, "panel-selection");
+    }
+
+    private async void OnLeaveLobby()
+    {
+        if (privateLobbyObject != null)
         {
-            // Kamerayı aktif et
-            if (fpc.playerCamera != null)
-            {
-                fpc.playerCamera.gameObject.SetActive(true);
-                var listener = fpc.playerCamera.GetComponent<AudioListener>();
-                if (listener != null) listener.enabled = true;
-            }
-
-            // Hareket ve fare kontrolünü aç
-            fpc.playerCanMove = true;
-            fpc.cameraCanMove = true;
-
-            // FPC component'ini aktif et (Update çalışsın)
-            fpc.enabled = true;
+            var root = privateLobbyObject.GetComponent<UIDocument>()?.rootVisualElement;
+            if (root != null)
+                await _lobbyBridge.OnLeavePrivateLobbyForMenuAsync();
         }
 
-        // Cursor'u kilitle
+        _lobbyBridge.Unbind();
+        if (privateLobbyObject != null) privateLobbyObject.SetActive(false);
+        ReturnToMainMenuUi();
+    }
+
+    private async void OnLeavePublicLobby()
+    {
+        if (publicLobbyObject != null)
+        {
+            var root = publicLobbyObject.GetComponent<UIDocument>()?.rootVisualElement;
+            if (root != null)
+                await _lobbyBridge.OnLeavePublicLobbyForMenuAsync();
+        }
+
+        _lobbyBridge.Unbind();
+        if (publicLobbyObject != null) publicLobbyObject.SetActive(false);
+        ReturnToMainMenuUi();
+    }
+
+    private void ReturnToMainMenuUi()
+    {
+        DisableMenuFpc();
+        if (menuObject != null) menuObject.SetActive(true);
+        SetupMainMenuButtons();
+    }
+
+    private void OnNetworkGameStarting()
+    {
+        EnterGameplayMode(hideMenusOnly: false);
+    }
+
+    private void EnterGameplayMode(bool hideMenusOnly)
+    {
+        HideMenuFpcObject();
+
+        if (menuObject != null) menuObject.SetActive(false);
+        if (privateLobbyObject != null) privateLobbyObject.SetActive(false);
+        if (publicLobbyObject != null) publicLobbyObject.SetActive(false);
+
         UnityEngine.Cursor.lockState = CursorLockMode.Locked;
         UnityEngine.Cursor.visible = false;
+    }
 
-        // Menüyü kapat
-        if (menuObject != null)
-            menuObject.SetActive(false);
+    private void DisableMenuFpc()
+    {
+        if (fpc == null) return;
+
+        if (!fpc.gameObject.activeSelf)
+            fpc.gameObject.SetActive(true);
+
+        fpc.enabled = false;
+        fpc.playerCanMove = false;
+        fpc.cameraCanMove = false;
+
+        HideFpcReticle();
+
+        if (fpc.playerCamera != null)
+        {
+            fpc.playerCamera.gameObject.SetActive(true);
+            var listener = fpc.playerCamera.GetComponent<AudioListener>();
+            if (listener != null) listener.enabled = true;
+        }
+    }
+
+    private void HideFpcReticle()
+    {
+        if (fpc == null) return;
+
+        var reticleTransform = fpc.transform.Find("Reticle");
+        if (reticleTransform != null)
+        {
+            reticleTransform.gameObject.SetActive(false);
+            return;
+        }
+
+        var reticleImage = fpc.GetComponentInChildren<UnityEngine.UI.Image>(true);
+        if (reticleImage != null)
+            reticleImage.gameObject.SetActive(false);
+    }
+
+    private void HideMenuFpcObject()
+    {
+        if (fpc != null)
+            fpc.gameObject.SetActive(false);
+    }
+
+    private static bool IsInActiveNetworkSession()
+    {
+        return NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening;
     }
 
     private void OnQuitGame()
     {
-        Debug.Log("[SciFiMenuController] Oyundan çıkılıyor...");
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
 #else
@@ -108,30 +266,22 @@ public class SciFiMenuController : MonoBehaviour
 #endif
     }
 
-    /// <summary>
-    /// ESC menüsünden ana menüye dönüşte çağrılır.
-    /// Start ile aynı mantığı yeniden çalıştırır.
-    /// </summary>
-    public void ShowMainMenu()
+    public async void ShowMainMenu()
     {
-        // FPC'yi durdur
-        if (fpc != null)
-        {
-            fpc.enabled = false;
-            fpc.playerCanMove = false;
-            fpc.cameraCanMove = false;
-        }
+        _gameplayModeEntered = false;
+        if (MultiplayerManager.Instance != null && MultiplayerManager.Instance.HasActiveLobby)
+            await MultiplayerManager.Instance.LeaveLobby();
 
-        // Cursor serbest
+        _lobbyBridge.Unbind();
+        DisableMenuFpc();
+
         UnityEngine.Cursor.lockState = CursorLockMode.None;
         UnityEngine.Cursor.visible = true;
 
-        // Menüyü göster
-        if (menuObject != null)
-            menuObject.SetActive(true);
+        if (privateLobbyObject != null) privateLobbyObject.SetActive(false);
+        if (publicLobbyObject != null) publicLobbyObject.SetActive(false);
+        if (menuObject != null) menuObject.SetActive(true);
 
-        // Butonları TEKRAR bağla (UIDocument yeniden aktif olunca
-        // visual tree sıfırdan oluşur, eski handler'lar ölür)
-        SetupButtons();
+        SetupMainMenuButtons();
     }
 }

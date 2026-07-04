@@ -6,14 +6,13 @@ using System.Collections;
 public class EscapeMenuManager : MonoBehaviour
 {
     [Header("ESC Menü Paneli")]
-    public GameObject escMenuPanel; // Inspector'dan bağlanacak UI paneli
+    public GameObject escMenuPanel;
 
     private bool isMenuOpen = false;
-    private bool isReturning = false; // Çift tıklama koruması
+    private bool isReturning = false;
 
     void Start()
     {
-        // Oyun başladığında menü kapalı olsun
         if (escMenuPanel != null)
             escMenuPanel.SetActive(false);
     }
@@ -21,9 +20,7 @@ public class EscapeMenuManager : MonoBehaviour
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.Escape) && !isReturning)
-        {
             ToggleMenu();
-        }
     }
 
     public void ToggleMenu()
@@ -35,26 +32,19 @@ public class EscapeMenuManager : MonoBehaviour
 
         if (isMenuOpen)
         {
-            // Menü açılırken her zaman fareyi serbest bırak
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
         }
-        else
+        else if (!FirstPersonController.LocalPlayerIsDead)
         {
-            // Menü kapanırken: ölü oyuncunun cursor'ını kilitleme
-            if (!FirstPersonController.LocalPlayerIsDead)
+            if (GameManager.Instance == null || !GameManager.Instance.isGameOver)
             {
-                if (GameManager.Instance == null || !GameManager.Instance.isGameOver)
-                {
-                    Cursor.lockState = CursorLockMode.Locked;
-                    Cursor.visible = false;
-                }
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
             }
-            // Ölüysek: cursor serbest kalır (spectator için)
         }
     }
 
-    // Bu metodu butonun OnClick() kısmına bağla (Inspector'da görünür)
     public void ReturnToMainMenu()
     {
         if (isReturning) return;
@@ -64,40 +54,33 @@ public class EscapeMenuManager : MonoBehaviour
 
     private IEnumerator ReturnToMainMenuCoroutine()
     {
-        Debug.Log("Ana menüye dönülüyor - Agresif Temizlik Başlatıldı...");
-
-        // 1. UI ve Zaman Ayarları
         Time.timeScale = 1f;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
-        // 2. Network Kapatma
-        if (NetworkManager.Singleton != null)
+        if (MultiplayerManager.Instance != null && MultiplayerManager.Instance.HasActiveLobby)
         {
-            GameObject networkManagerObject = NetworkManager.Singleton.gameObject;
+            var leaveTask = MultiplayerManager.Instance.LeaveLobby();
+            while (!leaveTask.IsCompleted)
+                yield return null;
+        }
+        else if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+        {
             NetworkManager.Singleton.Shutdown();
-            
-            // Shutdown'un işlemesi için biraz bekle
             yield return new WaitForSecondsRealtime(0.1f);
-            
-            // Agresif temizlik: NetworkManager objesini sahneden tamamen sil
-            // Bu, MainMenu'ye gidince çakışma yaşanmasını engeller
-            Destroy(networkManagerObject);
         }
 
-        // 3. Lobi Temizliği (MultiplayerManager DontDestroyOnLoad olduğu için silmiyoruz ama içini boşaltıyoruz)
-        if (MultiplayerManager.Instance != null)
+        var menuController = Object.FindFirstObjectByType<SciFiMenuController>();
+        if (menuController != null)
         {
-            try
-            {
-                _ = MultiplayerManager.Instance.LeaveLobby();
-            }
-            catch { }
+            menuController.ShowMainMenu();
+            isReturning = false;
+            if (escMenuPanel != null) escMenuPanel.SetActive(false);
+            isMenuOpen = false;
+            yield break;
         }
 
-        yield return new WaitForSecondsRealtime(0.1f);
-
-        // 4. Sahne Yükle
         SceneManager.LoadScene("MainMenu");
+        isReturning = false;
     }
 }

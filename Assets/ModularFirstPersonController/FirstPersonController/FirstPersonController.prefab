@@ -16,11 +16,6 @@ GameObject:
   - component: {fileID: 5756482913775645634}
   - component: {fileID: 4459864850019384740}
   - component: {fileID: 8648659095536951456}
-  - component: {fileID: 6741210614619587013}
-  - component: {fileID: -6176159165562636021}
-  - component: {fileID: -1514750948738611405}
-  - component: {fileID: -908776543210123456}
-  - component: {fileID: 1394781882610148012}
   m_Layer: 0
   m_Name: FirstPersonController
   m_TagString: Player
@@ -164,7 +159,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 3443505607
+  GlobalObjectIdHash: 3477631080
   InScenePlacedSourceGlobalObjectIdHash: 3477631080
   DeferredDespawnTick: 0
   Ownership: 1
@@ -348,80 +343,6 @@ MonoBehaviour:
   SwitchTransformSpaceWhenParented: 0
   Interpolate: 1
   SlerpPosition: 0
---- !u!114 &6741210614619587013
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4459864850019384750}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dc3e1f323f07d31449b656f230c6e215, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RandomEventController
-  ShowTopMostFoldoutHeaderGroup: 1
---- !u!114 &-6176159165562636021
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4459864850019384750}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3e7537347c6f41446b9ce95be3119d48, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::KillSystem
-  ShowTopMostFoldoutHeaderGroup: 1
-  killRange: 3
-  cooldownTime: 30
---- !u!114 &-1514750948738611405
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4459864850019384750}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5894e419984e4cf40a90934e9c3ef00b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ReportBodySystem
-  ShowTopMostFoldoutHeaderGroup: 1
-  reportRange: 3.5
---- !u!114 &-908776543210123456
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4459864850019384750}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fff60f88803fa3e4bb8096b8dc4cfcea, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::VillageMissionCollector
-  ShowTopMostFoldoutHeaderGroup: 1
-  interactKey: 102
-  requiredGarbageCount: 3
-  promptColor: {r: 1, g: 1, b: 1, a: 1}
-  progressColor: {r: 1, g: 1, b: 1, a: 1}
-  completionColor: {r: 0.35, g: 1, b: 0.45, a: 1}
-  completionMessageDuration: 2.5
---- !u!114 &1394781882610148012
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4459864850019384750}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 94758415a6086a44faf8ca19768b898e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SwitchToggleMission.PlayerRole
-  role: 0
 --- !u!1 &4459864850190357393
 GameObject:
   m_ObjectHideFlags: 0

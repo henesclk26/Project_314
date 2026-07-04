@@ -1,0 +1,12 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI%20Toolkit/lobby.uss?fileID=7433441132597879392&amp;guid=411f2916eaa09774baa5df4d64b49157&amp;type=3#lobby"/>
+    <ui:VisualElement style="flex-grow: 1; background-image: url(&quot;project://database/Assets/%C4%B0mages/menuback.png?fileID=2800000&amp;guid=f2c5c63a073280043b1e1681fe2b87c1&amp;type=3#menuback&quot;);">
+        <ui:VisualElement name="VisualElement" class="visualElement" style="flex-grow: 1; -unity-background-scale-mode: stretch-to-fill; opacity: 1; display: flex; position: absolute; width: 1493px; height: 770px; top: 126px; left: 211px; background-color: rgb(45, 152, 142); align-items: center; justify-content: center; align-self: center; align-content: auto; border-top-left-radius: 10px; border-top-right-radius: 10px; border-bottom-right-radius: 10px; border-bottom-left-radius: 10px;">
+            <ui:Label text="Oda Kodu: " name="roomCodeLabel" style="align-items: center; justify-content: center; align-self: center; height: 89px; width: 281px; position: absolute; top: 30px; left: 3px; font-size: 30px; -unity-text-align: middle-left;"/>
+            <ui:Label text="Oyuncular " style="align-items: center; justify-content: center; align-self: center; height: 89px; width: 281px; position: absolute; top: 71px; left: 571px; font-size: 30px; -unity-text-align: middle-center;"/>
+            <ui:ListView style="width: 387px; height: 416px; position: absolute; top: 143px; left: 523px; background-color: rgb(132, 132, 132);"/>
+            <ui:Button text="Oyunu Başlat" name="startBtn" class="button" style="top: 634px; left: 550px; width: 317px; height: 76px; font-size: 30px;"/>
+            <ui:Button text="Lobiden Ayrıl" name="leaveBtn" class="button" style="top: 654px; left: 1213px; width: 230px; height: 47px; font-size: 20px;"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

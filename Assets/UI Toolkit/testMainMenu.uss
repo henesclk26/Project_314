@@ -1,0 +1,193 @@
+:root {
+    --color-bg-dark: rgba(8, 14, 22, 0.85);
+    --color-accent-cyan: rgb(0, 240, 255);
+    --color-accent-cyan-dim: rgba(0, 240, 255, 0.3);
+    --color-accent-yellow: rgb(255, 196, 0);
+    --color-text-white: rgb(230, 242, 255);
+    --color-text-grey: rgba(200, 220, 240, 0.6);
+}
+
+.menu-background {
+    flex-grow: 1;
+    background-image: url("project://database/Assets/%C4%B0mages/menuback.png?fileID=-41123892&guid=f2c5c63a073280043b1e1681fe2b87c1&type=3#menuback_0");
+    -unity-background-scale-mode: scale-and-crop;
+    justify-content: space-between;
+    flex-direction: row;
+    padding: 60px 80px;
+    align-items: center;
+}
+
+/* Semi-transparent dark overlay to make text readable and pop out */
+.menu-overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(5, 10, 18, 0.45);
+}
+
+.menu-left-panel {
+    width: 480px;
+    height: 100%;
+    background-color: rgba(6, 12, 22, 0.85);
+    border-width: 1px;
+    border-color: rgba(0, 240, 255, 0.2);
+    border-radius: 8px;
+    padding: 50px 40px;
+    justify-content: space-between;
+}
+
+.menu-right-panel {
+    width: 420px;
+    background-color: rgba(6, 12, 22, 0.7);
+    border-width: 1px;
+    border-color: rgba(0, 240, 255, 0.15);
+    border-radius: 8px;
+    padding: 35px;
+    align-self: center;
+    margin-right: 20px;
+}
+
+.logo-container {
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 40px;
+}
+
+.logo-img {
+    width: 380px;
+    height: 120px;
+    background-image: url("project://database/Assets/%C4%B0mages/logo.png?fileID=1521233329&guid=67757db3ee2dccb40bfe87945501cda5&type=3#logo_0");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.title-separator {
+    height: 2px;
+    background-color: rgba(0, 240, 255, 0.15);
+    margin-bottom: 40px;
+    position: relative;
+    justify-content: center;
+    align-items: center;
+}
+
+.title-separator-dot {
+    width: 8px;
+    height: 8px;
+    background-color: rgb(0, 240, 255);
+    border-radius: 4px;
+    position: absolute;
+}
+
+.button-container {
+    flex-grow: 1;
+    justify-content: center;
+}
+
+/* Sci-fi Button styling */
+.menu-btn {
+    height: 58px;
+    margin-bottom: 20px;
+    background-color: rgba(10, 25, 40, 0.4);
+    border-width: 1px;
+    border-left-width: 4px;
+    border-color: rgba(0, 240, 255, 0.25);
+    border-left-color: rgba(0, 240, 255, 0.4);
+    border-radius: 4px;
+    color: rgb(200, 230, 255);
+    font-size: 18px;
+    -unity-font-style: bold;
+    justify-content: center;
+    align-items: center;
+    padding-left: 20px;
+    /* Smooth transitions */
+    transition-property: background-color, border-color, border-left-color, color, translate, scale;
+    transition-duration: 0.15s;
+    transition-timing-function: ease-out;
+}
+
+.menu-btn:hover {
+    background-color: rgba(0, 240, 255, 0.12);
+    border-color: rgb(0, 240, 255);
+    border-left-color: rgb(0, 240, 255);
+    color: rgb(0, 240, 255);
+    scale: 1.03 1.03;
+    translate: 8px 0;
+}
+
+.menu-btn:active {
+    background-color: rgba(0, 240, 255, 0.25);
+    scale: 0.98 0.98;
+    translate: 4px 0;
+}
+
+.menu-footer {
+    border-top-width: 1px;
+    border-top-color: rgba(0, 240, 255, 0.15);
+    padding-top: 20px;
+    align-items: center;
+}
+
+.footer-version {
+    color: rgba(0, 240, 255, 0.5);
+    font-size: 12px;
+    -unity-font-style: bold;
+}
+
+.footer-credits {
+    color: rgba(200, 220, 240, 0.4);
+    font-size: 11px;
+    margin-top: 5px;
+}
+
+/* Info Panel / Right panel details */
+.info-title {
+    color: rgb(0, 240, 255);
+    font-size: 18px;
+    -unity-font-style: bold;
+    margin-bottom: 15px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(0, 240, 255, 0.25);
+    padding-bottom: 8px;
+}
+
+.info-content {
+    margin-bottom: 20px;
+}
+
+.info-text {
+    color: rgb(200, 220, 240);
+    font-size: 13px;
+    margin-bottom: 10px;
+    white-space: normal;
+}
+
+.controls-grid {
+    margin-top: 15px;
+}
+
+.control-row {
+    flex-direction: row;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.control-key-box {
+    background-color: rgba(255, 196, 0, 0.15);
+    border-width: 1px;
+    border-color: rgb(255, 196, 0);
+    border-radius: 3px;
+    padding: 2px 8px;
+    color: rgb(255, 196, 0);
+    font-size: 11px;
+    -unity-font-style: bold;
+}
+
+.control-action {
+    color: rgb(230, 240, 255);
+    font-size: 13px;
+    align-self: center;
+}

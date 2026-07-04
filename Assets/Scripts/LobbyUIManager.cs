@@ -1,19 +1,11 @@
-#define USE_STEAM // Steam'i iptal edip UGS'ye donmek icin bu satiri silin veya basina // koyun
-
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using Unity.Netcode;
-
-#if USE_STEAM
-using Steamworks.Data;
-#else
 using Unity.Services.Lobbies.Models;
-#endif
 
-public class LobbyUIManager : MonoBehaviour
-{
+public class LobbyUIManager : MonoBehaviour{
     [Header("Panels / İç İçe Menüler")]
     public GameObject selectionPanel; // İlk çıkan ekran (Private/Public seçimi)
     public GameObject privateGamePanel; // Host ve Şifre girilen menü
@@ -60,12 +52,7 @@ public class LobbyUIManager : MonoBehaviour
     public Transform playerListContainer;
     public GameObject playerNamePrefab;
 
-#if USE_STEAM
-    private SteamMultiplayerManager NetworkMgr => SteamMultiplayerManager.Instance;
-#else
     private MultiplayerManager NetworkMgr => MultiplayerManager.Instance;
-#endif
-
     private void Start()
     {
         // --- SÜPER UI RESET ---
@@ -184,25 +171,19 @@ public class LobbyUIManager : MonoBehaviour
 
         int maxP = maxPlayersSlider != null ? Mathf.RoundToInt(maxPlayersSlider.value) : 14;
         
-        await NetworkMgr.CreatePublicLobby(lName, maxP);
-        ShowInLobby(lName);
-    }
+        if (await NetworkMgr.CreatePublicLobby(lName, maxP))
+            ShowInLobby(lName);    }
 
     private async void OnCreatePrivate()
     {
         if (NetworkMgr == null) return;
 
-        // Lobi adı: "[SteamAdı]'s Lobby"
-        string steamName = "Player";
-#if USE_STEAM
-        steamName = Steamworks.SteamClient.Name;
-#endif
-        string lName = $"{steamName}'s Lobby";
-        int maxP = 14; // Sabit maksimum
-        
-        await NetworkMgr.CreatePrivateLobby(lName, maxP);
-        ShowInLobby(lName);
-    }
+        string playerName = "Player";
+        string lName = $"{playerName}'s Lobby";
+        int maxP = 14;
+
+        if (await NetworkMgr.CreatePrivateLobby(lName, maxP))
+            ShowInLobby(lName);    }
 
     private async void OnJoinPrivate()
     {
@@ -211,9 +192,8 @@ public class LobbyUIManager : MonoBehaviour
         string code = joinCodeInput.text;
         if (string.IsNullOrEmpty(code)) return;
 
-        await NetworkMgr.JoinByCode(code);
-        ShowInLobby("Lobiye Katılındı.");
-    }
+        if (await NetworkMgr.JoinByCode(code))
+            ShowInLobby(NetworkMgr.CurrentLobbyName);    }
 
     public async void OnRefreshPublicLobbies()
     {
@@ -255,28 +235,8 @@ public class LobbyUIManager : MonoBehaviour
 
     public async void JoinLobbyById(string lobbyId)
     {
-#if USE_STEAM
-        // Kapasite kontrolü: Lobi doluysa girişi engelle
-        var steamMgr = SteamMultiplayerManager.Instance;
-        if (steamMgr != null && steamMgr.HasActiveLobby)
-        {
-            int memberCount = steamMgr.GetLobbyMembers().Count;
-            int maxP = NetworkMgr.CurrentLobbyMaxPlayers;
-            if (memberCount >= maxP)
-            {
-                Debug.LogWarning("Lobi dolu, katılınamadı.");
-                return;
-            }
-        }
-#endif
-        await NetworkMgr.JoinById(lobbyId);
-        string lobbName = "Lobiye Katılındı";
-#if USE_STEAM
-        if (SteamMultiplayerManager.Instance != null && SteamMultiplayerManager.Instance.HasActiveLobby)
-            lobbName = SteamMultiplayerManager.Instance.GetLobbyName();
-#endif
-        ShowInLobby(lobbName);
-    }
+        if (await NetworkMgr.JoinById(lobbyId))
+            ShowInLobby(NetworkMgr.CurrentLobbyName);    }
 
     private async void OnLeaveLobby()
     {
@@ -325,16 +285,12 @@ public class LobbyUIManager : MonoBehaviour
             NetworkManager.Singleton.OnClientDisconnectCallback += OnClientChanged;
         }
 
-#if USE_STEAM
-        // Steam üye değişikliklerini de dinle
-        if (SteamMultiplayerManager.Instance != null)
+        if (MultiplayerManager.Instance != null)
         {
-            SteamMultiplayerManager.Instance.OnLobbyMembersChanged -= RefreshPlayerList;
-            SteamMultiplayerManager.Instance.OnLobbyMembersChanged += RefreshPlayerList;
+            MultiplayerManager.Instance.OnLobbyPlayersChanged -= RefreshPlayerList;
+            MultiplayerManager.Instance.OnLobbyPlayersChanged += RefreshPlayerList;
         }
-#endif
     }
-
     private void OnClientChanged(ulong clientId)
     {
         RefreshPlayerList();
@@ -346,40 +302,28 @@ public class LobbyUIManager : MonoBehaviour
 
         foreach (Transform child in playerListContainer) Destroy(child.gameObject);
 
-#if USE_STEAM
-        // Steam: Lobideki üyelerin isimlerini doğrudan Steam'den çek
-        var steamMgr = SteamMultiplayerManager.Instance;
-        if (steamMgr == null || !steamMgr.HasActiveLobby)
+        var players = NetworkMgr.GetLobbyPlayers();
+        if (players.Count > 0)
         {
-            ShowNetcodePlayerList();
+            foreach (var player in players)
+            {
+                var go = Instantiate(playerNamePrefab, playerListContainer);
+                var txt = go.GetComponent<TMP_Text>() ?? go.GetComponentInChildren<TMP_Text>();
+                if (txt != null)
+                    txt.text = player.DisplayName;
+            }
+
+            if (privatePlayerCountText != null)
+            {
+                if (NetworkMgr.CurrentLobbyIsPrivate)
+                    privatePlayerCountText.text = $"{players.Count}";
+                else
+                    privatePlayerCountText.text = $"{players.Count}/{NetworkMgr.CurrentLobbyMaxPlayers}";
+            }
             return;
         }
 
-        var members = steamMgr.GetLobbyMembers();
-
-        foreach (var member in members)
-        {
-            var go = Instantiate(playerNamePrefab, playerListContainer);
-            // Root'ta TMP_Text yoksa child'larda ara (PlayerEntry prefabı için)
-            var txt = go.GetComponent<TMP_Text>() ?? go.GetComponentInChildren<TMP_Text>();
-            if (txt != null)
-                txt.text = member;
-        }
-
-        // Oyuncu sayısı text'lerini güncelle
-        if (privatePlayerCountText != null)
-        {
-            if (NetworkMgr.CurrentLobbyIsPrivate)
-                // Private: sadece kaç kişi var (örn: "3")
-                privatePlayerCountText.text = $"{members.Count}";
-            else
-                // Public: kaç/maksimum (örn: "1/9")
-                privatePlayerCountText.text = $"{members.Count}/{NetworkMgr.CurrentLobbyMaxPlayers}";
-        }
-#else
-        ShowNetcodePlayerList();
-#endif
-    }
+        ShowNetcodePlayerList();    }
 
 
     private void ShowNetcodePlayerList()

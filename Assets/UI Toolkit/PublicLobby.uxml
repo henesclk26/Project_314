@@ -1,0 +1,11 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI%20Toolkit/lobby.uss?fileID=7433441132597879392&amp;guid=411f2916eaa09774baa5df4d64b49157&amp;type=3#lobby"/>
+    <ui:VisualElement style="flex-grow: 1; background-image: url(&quot;project://database/Assets/%C4%B0mages/menuback.png?fileID=2800000&amp;guid=f2c5c63a073280043b1e1681fe2b87c1&amp;type=3#menuback&quot;);">
+        <ui:VisualElement class="visualElement" style="flex-grow: 1; position: absolute; height: 780px; width: 1407px; top: 155px; left: 250px; background-color: rgb(13, 165, 207); border-top-left-radius: 5px; border-top-right-radius: 5px; border-bottom-right-radius: 5px; border-bottom-left-radius: 5px;">
+            <ui:Button text="Lobiye Katıl" name="loginBtn" class="button" style="top: 65px; left: 53px; width: 273px; height: 55px; font-size: 30px;"/>
+            <ui:ListView name="lobbyListView" style="background-color: rgb(17, 15, 58); position: absolute; width: 972px; top: 43px; left: 378px; height: 700px; border-top-left-radius: 5px; border-top-right-radius: 5px; border-bottom-right-radius: 5px; border-bottom-left-radius: 5px;"/>
+            <ui:Button text="Ana Menüye Dön" name="exitBtn" class="button" style="top: 691px; left: 92px; width: 193px; height: 47px; font-size: 20px;"/>
+            <ui:Button text="Lobi Oluştur" name="createLobbyBtn" enable-rich-text="true" class="button" style="top: 178px; left: 56px; width: 273px; height: 55px; font-size: 30px;"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

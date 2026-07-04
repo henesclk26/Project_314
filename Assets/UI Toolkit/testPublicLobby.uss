@@ -1,0 +1,256 @@
+/* ============================================================
+   testPublicLobby.uss — Public Lobby ek stilleri
+   Temel stiller testPrivateLobby.uss üzerinden yüklenir
+   ============================================================ */
+
+/* ── Geniş kart (server browser) ── */
+.lobby-card-wide {
+    width: 680px;
+    min-height: 520px;
+}
+
+/* ── Lobby browser header row ── */
+.lobby-list-header-row {
+    flex-direction: row;
+    align-items: center;
+    padding: 8px 14px;
+    margin-bottom: 6px;
+    background-color: rgba(0, 240, 255, 0.06);
+    border-width: 1px;
+    border-color: rgba(0, 240, 255, 0.15);
+    border-radius: 4px;
+}
+
+.lobby-list-col-name {
+    flex-grow: 1;
+    color: rgba(0, 240, 255, 0.55);
+    font-size: 11px;
+    -unity-font-style: bold;
+}
+
+.lobby-list-col-players {
+    width: 80px;
+    color: rgba(0, 240, 255, 0.55);
+    font-size: 11px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+.lobby-list-col-status {
+    width: 70px;
+    color: rgba(0, 240, 255, 0.55);
+    font-size: 11px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-right;
+}
+
+/* ── Lobby list ── */
+.lobby-list-container {
+    flex-grow: 1;
+    min-height: 220px;
+    max-height: 300px;
+    background-color: rgba(0, 0, 0, 0.25);
+    border-width: 1px;
+    border-color: rgba(0, 240, 255, 0.1);
+    border-radius: 5px;
+    padding: 6px 8px;
+    margin-bottom: 20px;
+}
+
+.lobby-list-container .unity-scroll-view {
+    flex-grow: 1;
+}
+
+.lobby-item {
+    flex-direction: row;
+    align-items: center;
+    padding: 12px 14px;
+    margin-bottom: 4px;
+    background-color: rgba(0, 240, 255, 0.03);
+    border-width: 1px;
+    border-color: rgba(0, 240, 255, 0.08);
+    border-radius: 4px;
+    transition-property: background-color, border-color, translate;
+    transition-duration: 0.12s;
+    transition-timing-function: ease-out;
+}
+
+.lobby-item:hover {
+    background-color: rgba(0, 240, 255, 0.08);
+    border-color: rgba(0, 240, 255, 0.25);
+    translate: 4px 0;
+}
+
+.lobby-item-selected {
+    background-color: rgba(0, 240, 255, 0.12);
+    border-color: rgba(0, 240, 255, 0.45);
+    border-left-width: 3px;
+    border-left-color: rgb(0, 240, 255);
+}
+
+.lobby-item-name {
+    flex-grow: 1;
+    color: rgb(220, 235, 255);
+    font-size: 14px;
+    -unity-font-style: bold;
+}
+
+.lobby-item-players {
+    width: 80px;
+    color: rgb(255, 196, 0);
+    font-size: 13px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+.lobby-item-status {
+    width: 70px;
+    color: rgb(100, 240, 180);
+    font-size: 11px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-right;
+}
+
+.lobby-item-status-full {
+    color: rgba(255, 120, 120, 0.85);
+}
+
+/* ── Form fields ── */
+.field-label {
+    color: rgba(0, 240, 255, 0.6);
+    font-size: 12px;
+    -unity-font-style: bold;
+    margin-bottom: 8px;
+}
+
+.room-name-field {
+    height: 52px;
+    margin-bottom: 28px;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-width: 1px;
+    border-color: rgba(0, 240, 255, 0.25);
+    border-radius: 5px;
+    color: rgb(230, 242, 255);
+    font-size: 16px;
+}
+
+.room-name-field .unity-text-field__input {
+    background-color: rgba(0, 0, 0, 0.3);
+    border-width: 0;
+    color: rgb(230, 242, 255);
+    font-size: 16px;
+    padding: 8px 16px;
+}
+
+.room-name-field:focus .unity-text-field__input {
+    border-width: 0;
+    background-color: rgba(0, 240, 255, 0.05);
+}
+
+/* ── Player count slider ── */
+.slider-section {
+    margin-bottom: 30px;
+    padding: 18px 20px;
+    background-color: rgba(0, 240, 255, 0.04);
+    border-width: 1px;
+    border-color: rgba(0, 240, 255, 0.15);
+    border-radius: 6px;
+}
+
+.slider-section > .field-label {
+    margin-bottom: 12px;
+}
+
+.player-count-display {
+    flex-direction: row;
+    justify-content: center;
+    align-items: baseline;
+    margin-bottom: 16px;
+    padding: 12px 20px;
+    background-color: rgba(0, 240, 255, 0.05);
+    border-width: 1px;
+    border-color: rgba(0, 240, 255, 0.2);
+    border-radius: 6px;
+}
+
+.player-count-value {
+    color: rgb(255, 196, 0);
+    font-size: 32px;
+    -unity-font-style: bold;
+    margin-right: 8px;
+}
+
+.player-count-suffix {
+    color: rgba(200, 220, 240, 0.65);
+    font-size: 14px;
+    -unity-font-style: bold;
+}
+
+.player-count-slider {
+    height: 20px;
+    margin-bottom: 6px;
+}
+
+.player-count-slider .unity-base-slider__tracker {
+    height: 6px;
+    background-color: rgba(0, 0, 0, 0.35);
+    border-width: 1px;
+    border-color: rgba(0, 240, 255, 0.2);
+    border-radius: 3px;
+}
+
+.player-count-slider .unity-base-slider__dragger {
+    width: 18px;
+    height: 18px;
+    background-color: rgb(0, 240, 255);
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.3);
+    border-radius: 9px;
+    margin-top: -6px;
+}
+
+.player-count-slider .unity-base-slider__dragger:hover {
+    background-color: rgb(100, 255, 255);
+    scale: 1.1 1.1;
+}
+
+.player-count-slider .unity-base-slider__fill {
+    background-color: rgba(0, 240, 255, 0.35);
+    border-radius: 3px;
+}
+
+.slider-range-row {
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.slider-range-label {
+    color: rgba(200, 220, 240, 0.4);
+    font-size: 11px;
+}
+
+/* ── Active lobby info row ── */
+.room-info-row {
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 18px;
+    padding: 8px 16px;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-width: 1px;
+    border-color: rgba(0, 240, 255, 0.1);
+    border-radius: 4px;
+}
+
+.room-info-label {
+    color: rgba(200, 220, 240, 0.55);
+    font-size: 12px;
+    -unity-font-style: bold;
+    margin-right: 8px;
+}
+
+.room-info-value {
+    color: rgb(255, 196, 0);
+    font-size: 14px;
+    -unity-font-style: bold;
+}

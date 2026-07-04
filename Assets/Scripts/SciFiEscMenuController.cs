@@ -107,10 +107,13 @@ public class SciFiEscMenuController : MonoBehaviour
     /// <summary>
     /// Menüyü aç/kapa toggle'ı
     /// </summary>
-    private void ToggleMenu()
+private void ToggleMenu()
     {
         isMenuOpen = !isMenuOpen;
         SetMenuVisible(isMenuOpen);
+
+        // Runtime'da owner olan FPC'yi bul (inspector referansı prefab olabilir, spawn'dan sonra geçersiz)
+        FirstPersonController activeFpc = GetOwnerFpc();
 
         if (isMenuOpen)
         {
@@ -118,10 +121,10 @@ public class SciFiEscMenuController : MonoBehaviour
             UnityEngine.Cursor.lockState = CursorLockMode.None;
             UnityEngine.Cursor.visible = true;
 
-            if (fpc != null)
+            if (activeFpc != null)
             {
-                fpc.playerCanMove = false;
-                fpc.cameraCanMove = false;
+                activeFpc.playerCanMove = false;
+                activeFpc.cameraCanMove = false;
             }
         }
         else
@@ -130,10 +133,10 @@ public class SciFiEscMenuController : MonoBehaviour
             UnityEngine.Cursor.lockState = CursorLockMode.Locked;
             UnityEngine.Cursor.visible = false;
 
-            if (fpc != null)
+            if (activeFpc != null)
             {
-                fpc.playerCanMove = true;
-                fpc.cameraCanMove = true;
+                activeFpc.playerCanMove = true;
+                activeFpc.cameraCanMove = true;
             }
         }
     }
@@ -183,5 +186,33 @@ public class SciFiEscMenuController : MonoBehaviour
         {
             menuController.ShowMainMenu();
         }
+    }
+
+
+/// <summary>
+    /// Sahnedeki spawn olmuş ve IsOwner olan FirstPersonController'ı döner.
+    /// Inspector referansı prefab olabileceğinden runtime'da dinamik olarak aranır.
+    /// </summary>
+private FirstPersonController GetOwnerFpc()
+    {
+        // Sahnedeki tüm FPC'leri bul (prefablar dahil olmaz)
+        var allFpcs = FindObjectsByType<FirstPersonController>(FindObjectsSortMode.None);
+
+        // Network aktifse Owner olanı bul
+        if (Unity.Netcode.NetworkManager.Singleton != null && Unity.Netcode.NetworkManager.Singleton.IsListening)
+        {
+            foreach (var f in allFpcs)
+            {
+                if (f.IsOwner) return f;
+            }
+        }
+        
+        // Offline/Editor testinde veya owner bulunamazsa sahnedeki ilk FPC'yi dön
+        if (allFpcs.Length > 0) return allFpcs[0];
+
+        // Fallback: inspector referansı sahnedeyse onu dön (prefab değilse)
+        if (fpc != null && fpc.gameObject.scene.IsValid()) return fpc;
+
+        return null;
     }
 }

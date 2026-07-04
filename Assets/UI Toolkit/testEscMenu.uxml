@@ -1,0 +1,23 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI%20Toolkit/testEscMenu.uss?fileID=7433441132597879392&amp;guid=52a1d805a2e8bac408d7b4d968cd59c4&amp;type=3#testEscMenu"/>
+    <ui:VisualElement name="EscMenu" class="esc-overlay">
+        <ui:VisualElement class="esc-card">
+            <ui:VisualElement class="esc-corner-tl"/>
+            <ui:VisualElement class="esc-corner-br"/>
+            <ui:VisualElement class="esc-top-bar"/>
+            <ui:VisualElement class="esc-header">
+                <ui:VisualElement class="esc-icon"/>
+                <ui:Label text="OYUN DURAKLATILDI" class="esc-title"/>
+            </ui:VisualElement>
+            <ui:Label text="GAME SESSION SUSPENDED" class="esc-subtitle"/>
+            <ui:VisualElement class="esc-separator">
+                <ui:VisualElement class="esc-separator-dot"/>
+            </ui:VisualElement>
+            <ui:Button name="SettingsButton" text="AYARLAR" class="esc-btn"/>
+            <ui:Button name="QuitGameButton" text="OYUNDAN ÇIK" class="esc-btn esc-btn-danger"/>
+            <ui:VisualElement class="esc-footer">
+                <ui:Label text="DEVAM ETMEK İÇİN ESC&apos;YE BASIN" class="esc-footer-text"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

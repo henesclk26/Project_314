@@ -1,9 +1,10 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
-using Unity.Networking.Transport.Relay;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
 using Unity.Services.Lobbies;
@@ -12,16 +13,32 @@ using Unity.Services.Relay;
 using Unity.Services.Relay.Models;
 using UnityEngine;
 
+
+public struct LobbyPlayerInfo
+{
+    public string Id;
+    public string DisplayName;
+}
+
 public class MultiplayerManager : MonoBehaviour
 {
     public static MultiplayerManager Instance { get; private set; }
-    public string CurrentJoinCode { get; private set; } // Relay Katılım Şifresi
-    public string CurrentLobbyCode => currentLobby?.LobbyCode; // Gerçek Lobby (Oda) Şifresi
+
+    public string CurrentJoinCode { get; private set; }
+    public string CurrentLobbyCode => currentLobby?.LobbyCode;
+    public string CurrentLobbyName => currentLobby?.Name ?? string.Empty;
     public bool CurrentLobbyIsPrivate => currentLobby != null && currentLobby.IsPrivate;
     public int CurrentLobbyMaxPlayers => currentLobby != null ? currentLobby.MaxPlayers : 14;
+    public bool HasActiveLobby => currentLobby != null;
+    public bool IsReady { get; private set; }
+    public bool IsGameInProgress { get; set; } = false;
+
+    public event Action OnLobbyPlayersChanged;
+    public event Action OnDisconnectedByHost;
 
     private Lobby currentLobby;
     private CancellationTokenSource heartbeatToken;
+    private bool _isLeavingIntentionally;
 
     void Awake()
     {
@@ -30,70 +47,143 @@ public class MultiplayerManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
-    async void Start()
+async void Start()
     {
-        var options = new InitializationOptions();
-        // Aynı bilgisayarda iki oyun açıldığında (Editor ve Build) kimliklerin karışmaması için rastgele profil oluşturuyoruz
-        options.SetProfile("Player_" + UnityEngine.Random.Range(0, 100000).ToString());
-
-        await UnityServices.InitializeAsync(options);
-        await AuthenticationService.Instance.SignInAnonymouslyAsync();
-        Debug.Log("UGS bağlantısı başarılı. Player ID: " + AuthenticationService.Instance.PlayerId);
-    }
-
-    // ─── PUBLIC LOBİ OLUŞTUR ───────────────────────────
-    public async Task CreatePublicLobby(string lobbyName, int maxPlayers)
-    {
-        Allocation allocation = await RelayService.Instance.CreateAllocationAsync(maxPlayers - 1);
-        string relayJoinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
-        CurrentJoinCode = relayJoinCode;
-
-        var options = new CreateLobbyOptions
+        try
         {
-            IsPrivate = false,
-            Data = new Dictionary<string, DataObject>
-            {
-                { "RelayCode", new DataObject(DataObject.VisibilityOptions.Public, relayJoinCode) }
-            }
-        };
+            var options = new InitializationOptions();
+            options.SetProfile("Player_" + UnityEngine.Random.Range(0, 100000).ToString());
 
-        currentLobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, maxPlayers, options);
+            // Vivox kurulu ama kullanılmıyor; otomatik init hatasını önlemek için devre dışı bırak
+            options.SetOption("com.unity.services.vivox", false);
 
-        SetRelayHostData(allocation);
-        NetworkManager.Singleton.StartHost();
-        StartHeartbeat();
-
-        Debug.Log($"Public lobi oluşturuldu | Kod: {currentLobby.LobbyCode}");
-    }
-
-    // ─── PRIVATE LOBİ OLUŞTUR ──────────────────────────
-    public async Task CreatePrivateLobby(string lobbyName, int maxPlayers)
-    {
-        Allocation allocation = await RelayService.Instance.CreateAllocationAsync(maxPlayers - 1);
-        string relayJoinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
-        CurrentJoinCode = relayJoinCode;
-
-        var options = new CreateLobbyOptions
+            await UnityServices.InitializeAsync(options);
+            await AuthenticationService.Instance.SignInAnonymouslyAsync();
+            IsReady = true;
+            Debug.Log("UGS bağlantısı başarılı. Player ID: " + AuthenticationService.Instance.PlayerId);
+        }
+        catch (Exception e)
         {
-            IsPrivate = true,
-            Data = new Dictionary<string, DataObject>
-            {
-                { "RelayCode", new DataObject(DataObject.VisibilityOptions.Member, relayJoinCode) }
-            }
-        };
-
-        currentLobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, maxPlayers, options);
-
-        SetRelayHostData(allocation);
-        NetworkManager.Singleton.StartHost();
-        StartHeartbeat();
-
-        Debug.Log($"Private lobi oluşturuldu | Lobi Kodu: {currentLobby.LobbyCode}");
+            IsReady = false;
+            Debug.LogError("[MultiplayerManager] UGS başlatılamadı: " + e.Message);
+        }
     }
 
-    // ─── LOBİYE KOD İLE KATIL ──────────────────────────
-    public async Task JoinByCode(string lobbyCode)
+    public async Task<bool> WaitUntilReadyAsync(int timeoutMs = 15000)
     {
+        var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+        while (!IsReady && DateTime.UtcNow < deadline)
+            await Task.Delay(100);
+        return IsReady;
+    }
+
+    public IReadOnlyList<LobbyPlayerInfo> GetLobbyPlayers()
+    {
+        if (currentLobby?.Players == null)
+            return Array.Empty<LobbyPlayerInfo>();
+
+        return currentLobby.Players
+            .Select(p => new LobbyPlayerInfo
+            {
+                Id = p.Id,
+                DisplayName = GetPlayerDisplayName(p)
+            })
+            .ToList();
+    }
+
+    public async Task RefreshCurrentLobbyAsync()
+    {
+        if (currentLobby == null) return;
+
+        try
+        {
+            currentLobby = await LobbyService.Instance.GetLobbyAsync(currentLobby.Id);
+            OnLobbyPlayersChanged?.Invoke();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning("[MultiplayerManager] Lobi yenilenemedi: " + e.Message);
+        }
+    }
+
+    public async Task<bool> CreatePublicLobby(string lobbyName, int maxPlayers)
+    {
+        if (!await EnsureReadyAsync()) return false;
+
+        try
+        {
+            Allocation allocation = await RelayService.Instance.CreateAllocationAsync(maxPlayers - 1);
+            string relayJoinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
+            CurrentJoinCode = relayJoinCode;
+
+            var options = new CreateLobbyOptions
+            {
+                IsPrivate = false,
+                Player = CreateLocalPlayerData(),
+                Data = new Dictionary<string, DataObject>
+                {
+                    { "RelayCode", new DataObject(DataObject.VisibilityOptions.Public, relayJoinCode) }
+                }
+            };
+
+            currentLobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, maxPlayers, options);
+
+            SetRelayHostData(allocation);
+            NetworkManager.Singleton.StartHost();
+            StartHeartbeat();
+            OnLobbyPlayersChanged?.Invoke();
+
+            Debug.Log($"Public lobi oluşturuldu | Kod: {currentLobby.LobbyCode}");
+            return true;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("[MultiplayerManager] Public lobi oluşturulamadı: " + e.Message);
+            return false;
+        }
+    }
+
+    public async Task<bool> CreatePrivateLobby(string lobbyName, int maxPlayers)
+    {
+        if (!await EnsureReadyAsync()) return false;
+
+        try
+        {
+            Allocation allocation = await RelayService.Instance.CreateAllocationAsync(maxPlayers - 1);
+            string relayJoinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
+            CurrentJoinCode = relayJoinCode;
+
+            var options = new CreateLobbyOptions
+            {
+                IsPrivate = true,
+                Player = CreateLocalPlayerData(),
+                Data = new Dictionary<string, DataObject>
+                {
+                    { "RelayCode", new DataObject(DataObject.VisibilityOptions.Member, relayJoinCode) }
+                }
+            };
+
+            currentLobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, maxPlayers, options);
+
+            SetRelayHostData(allocation);
+            NetworkManager.Singleton.StartHost();
+            StartHeartbeat();
+            OnLobbyPlayersChanged?.Invoke();
+
+            Debug.Log($"Private lobi oluşturuldu | Lobi Kodu: {currentLobby.LobbyCode}");
+            return true;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("[MultiplayerManager] Private lobi oluşturulamadı: " + e.Message);
+            return false;
+        }
+    }
+
+    public async Task<bool> JoinByCode(string lobbyCode)
+    {
+        if (!await EnsureReadyAsync()) return false;
+
         try
         {
             currentLobby = await LobbyService.Instance.JoinLobbyByCodeAsync(lobbyCode);
@@ -103,34 +193,51 @@ public class MultiplayerManager : MonoBehaviour
             JoinAllocation joinAllocation = await RelayService.Instance.JoinAllocationAsync(relayCode);
 
             SetRelayClientData(joinAllocation);
+            SubscribeToNetworkShutdown();
             NetworkManager.Singleton.StartClient();
+            OnLobbyPlayersChanged?.Invoke();
 
             Debug.Log($"Lobiye katılındı: {currentLobby.Name}");
+            return true;
         }
-        catch (System.Exception e)
+        catch (Exception e)
         {
             Debug.LogError("Lobiye katılamadı. Kod yanlış olabilir: " + e.Message);
+            return false;
         }
     }
 
-    // ─── LOBİYE ID İLE KATIL ───────────────────────────
-    public async Task JoinById(string lobbyId)
+    public async Task<bool> JoinById(string lobbyId)
     {
-        currentLobby = await LobbyService.Instance.JoinLobbyByIdAsync(lobbyId);
+        if (!await EnsureReadyAsync()) return false;
 
-        string relayCode = currentLobby.Data["RelayCode"].Value;
-        CurrentJoinCode = relayCode;
-        JoinAllocation joinAllocation = await RelayService.Instance.JoinAllocationAsync(relayCode);
+        try
+        {
+            currentLobby = await LobbyService.Instance.JoinLobbyByIdAsync(lobbyId);
 
-        SetRelayClientData(joinAllocation);
-        NetworkManager.Singleton.StartClient();
+            string relayCode = currentLobby.Data["RelayCode"].Value;
+            CurrentJoinCode = relayCode;
+            JoinAllocation joinAllocation = await RelayService.Instance.JoinAllocationAsync(relayCode);
 
-        Debug.Log($"Lobiye ID ile katılındı: {currentLobby.Name}");
+            SetRelayClientData(joinAllocation);
+            SubscribeToNetworkShutdown();
+            NetworkManager.Singleton.StartClient();
+            OnLobbyPlayersChanged?.Invoke();
+
+            Debug.Log($"Lobiye ID ile katılındı: {currentLobby.Name}");
+            return true;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("[MultiplayerManager] Lobiye katılamadı: " + e.Message);
+            return false;
+        }
     }
 
-    // ─── PUBLIC LOBİLERİ LİSTELE ───────────────────────
     public async Task<List<Lobby>> GetPublicLobbies()
     {
+        if (!await EnsureReadyAsync()) return new List<Lobby>();
+
         var options = new QueryLobbiesOptions
         {
             Count = 20,
@@ -145,16 +252,16 @@ public class MultiplayerManager : MonoBehaviour
             QueryResponse response = await LobbyService.Instance.QueryLobbiesAsync(options);
             return response.Results;
         }
-        catch (System.Exception e)
+        catch (Exception e)
         {
-            Debug.LogError($"[LobbyService] Public lobiler getirilirken geçici hata: {e.Message}");
-            return null;
+            Debug.LogError($"[LobbyService] Public lobiler getirilirken hata: {e.Message}");
+            return new List<Lobby>();
         }
     }
 
-    // ─── LOBİDEN AYRIL ─────────────────────────────────
     public async Task LeaveLobby()
     {
+        _isLeavingIntentionally = true;
         heartbeatToken?.Cancel();
 
         if (currentLobby != null)
@@ -166,36 +273,71 @@ public class MultiplayerManager : MonoBehaviour
                     AuthenticationService.Instance.PlayerId
                 );
             }
-            catch { /* Ignored if lobby deleted */ }
+            catch { /* lobby already deleted */ }
         }
 
-        NetworkManager.Singleton.Shutdown();
+        UnsubscribeFromNetworkShutdown();
+
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+            NetworkManager.Singleton.Shutdown();
+
         currentLobby = null;
         CurrentJoinCode = "";
+        IsGameInProgress = false;
+        _isLeavingIntentionally = false;
+        OnLobbyPlayersChanged?.Invoke();
     }
 
-    // ─── OYUNU BAŞLAT ──────────────────────────────────
     public async void StartGame(string sceneName)
     {
-        if (NetworkManager.Singleton.IsServer)
+        if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer) return;
+
+        if (currentLobby != null)
         {
-            if (currentLobby != null)
+            try
             {
-                try
-                {
-                    await LobbyService.Instance.UpdateLobbyAsync(currentLobby.Id, new UpdateLobbyOptions { IsLocked = true });
-                    Debug.Log("Lobi başlatıldı, yeni oyuncu girişine kapatıldı.");
-                }
-                catch (System.Exception e)
-                {
-                    Debug.LogWarning("Lobi kilitlenirken hata: " + e.Message);
-                }
+                await LobbyService.Instance.UpdateLobbyAsync(currentLobby.Id, new UpdateLobbyOptions { IsLocked = true });
+                Debug.Log("Lobi başlatıldı, yeni oyuncu girişine kapatıldı.");
             }
-            NetworkManager.Singleton.SceneManager.LoadScene(sceneName, UnityEngine.SceneManagement.LoadSceneMode.Single);
+            catch (Exception e)
+            {
+                Debug.LogWarning("Lobi kilitlenirken hata: " + e.Message);
+            }
         }
+
+        IsGameInProgress = true;
+        NetworkManager.Singleton.SceneManager.LoadScene(sceneName, UnityEngine.SceneManagement.LoadSceneMode.Single);
     }
 
-    // ─── YARDIMCI FONKSİYONLAR ─────────────────────────
+    private static Player CreateLocalPlayerData()
+    {
+        string shortId = AuthenticationService.Instance.PlayerId;
+        if (shortId.Length > 4) shortId = shortId.Substring(0, 4);
+
+        return new Player
+        {
+            Data = new Dictionary<string, PlayerDataObject>
+            {
+                { "PlayerName", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, $"Oyuncu {shortId}") }
+            }
+        };
+    }
+
+    private async Task<bool> EnsureReadyAsync()
+    {
+        if (IsReady) return true;
+        Debug.LogWarning("[MultiplayerManager] UGS henüz hazır değil, bekleniyor...");
+        return await WaitUntilReadyAsync();
+    }
+
+    private static string GetPlayerDisplayName(Player player)
+    {
+        if (player.Data != null && player.Data.TryGetValue("PlayerName", out var data))
+            return data.Value;
+
+        return "Oyuncu " + player.Id.Substring(0, Math.Min(4, player.Id.Length));
+    }
+
     private void SetRelayHostData(Allocation allocation)
     {
         var relayServerData = allocation.ToRelayServerData("dtls");
@@ -210,21 +352,67 @@ public class MultiplayerManager : MonoBehaviour
 
     private void StartHeartbeat()
     {
+        heartbeatToken?.Cancel();
         heartbeatToken = new CancellationTokenSource();
         _ = HeartbeatLoop(heartbeatToken.Token);
     }
 
     private async Task HeartbeatLoop(CancellationToken token)
     {
-        while (!token.IsCancellationRequested)
+        while (!token.IsCancellationRequested && currentLobby != null)
         {
-            await LobbyService.Instance.SendHeartbeatPingAsync(currentLobby.Id);
+            try
+            {
+                await LobbyService.Instance.SendHeartbeatPingAsync(currentLobby.Id);
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("[MultiplayerManager] Heartbeat hatası: " + e.Message);
+            }
+
             await Task.Delay(15000, token);
         }
+    }
+
+    private void SubscribeToNetworkShutdown()
+    {
+        if (NetworkManager.Singleton != null)
+            NetworkManager.Singleton.OnClientStopped += OnClientStopped;
+    }
+
+    private void UnsubscribeFromNetworkShutdown()
+    {
+        if (NetworkManager.Singleton != null)
+            NetworkManager.Singleton.OnClientStopped -= OnClientStopped;
+    }
+
+    private void OnClientStopped(bool isHost)
+    {
+        // Only handle unexpected disconnects (host left while we were a client)
+        if (_isLeavingIntentionally || _isQuitting) return;
+
+        Debug.LogWarning("[MultiplayerManager] Host disconnected — returning to main menu.");
+
+        UnsubscribeFromNetworkShutdown();
+        heartbeatToken?.Cancel();
+        currentLobby = null;
+        CurrentJoinCode = "";
+        IsGameInProgress = false;
+
+        OnDisconnectedByHost?.Invoke();
+    }
+
+    private bool _isQuitting;
+
+    void OnApplicationQuit()
+    {
+        _isQuitting = true;
     }
 
     void OnDestroy()
     {
         heartbeatToken?.Cancel();
+        if (!_isQuitting)
+            UnsubscribeFromNetworkShutdown();
     }
 }

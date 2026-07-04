@@ -1,0 +1,192 @@
+/* ============================================================
+   testEscMenu.uss  —  Pause / Escape Menu Stylesheet
+   Sci-fi design language: dark glass, cyan accents, yellow trim
+   ============================================================ */
+
+/* ── Root variables (mirrors the rest of the test* suite) ── */
+:root {
+    --color-bg-dark:         rgba(8, 14, 22, 0.92);
+    --color-accent-cyan:     rgb(0, 240, 255);
+    --color-accent-cyan-dim: rgba(0, 240, 255, 0.25);
+    --color-accent-yellow:   rgb(255, 196, 0);
+    --color-text-white:      rgb(230, 242, 255);
+    --color-text-grey:       rgba(200, 220, 240, 0.55);
+}
+
+/* ── Full-screen dim overlay ── */
+.esc-overlay {
+    position: absolute;
+    left: 0; top: 0; right: 0; bottom: 0;
+    background-color: rgba(4, 8, 16, 0.72);
+    flex-grow: 1;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ── Central glass card ── */
+.esc-card {
+    width: 420px;
+    background-color: rgba(6, 13, 24, 0.88);
+    border-width: 1px;
+    border-color: rgba(0, 240, 255, 0.22);
+    border-radius: 8px;
+    padding: 42px 40px 36px 40px;
+    align-items: stretch;
+}
+
+/* ── Top accent bar ── */
+.esc-top-bar {
+    height: 3px;
+    background-color: rgb(0, 240, 255);
+    border-radius: 2px;
+    margin-bottom: 32px;
+    /* Glow via box-shadow equivalent: layered border trick */
+}
+
+/* ── Header row: icon + title ── */
+.esc-header {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.esc-icon {
+    width: 28px;
+    height: 28px;
+    background-color: rgba(0, 240, 255, 0.12);
+    border-width: 1px;
+    border-color: rgba(0, 240, 255, 0.5);
+    border-radius: 4px;
+    margin-right: 14px;
+}
+
+.esc-title {
+    color: rgb(0, 240, 255);
+    font-size: 22px;
+    -unity-font-style: bold;
+    -unity-text-align: upper-left;
+    letter-spacing: 4px;
+}
+
+/* ── Subtitle / status tag ── */
+.esc-subtitle {
+    color: rgba(200, 220, 240, 0.5);
+    font-size: 11px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    margin-bottom: 30px;
+    padding-left: 42px;    /* aligns with title text */
+}
+
+/* ── Separator line + centre dot ── */
+.esc-separator {
+    height: 1px;
+    background-color: rgba(0, 240, 255, 0.18);
+    margin-bottom: 30px;
+    position: relative;
+    align-items: center;
+    justify-content: center;
+}
+
+.esc-separator-dot {
+    width: 6px;
+    height: 6px;
+    background-color: rgb(0, 240, 255);
+    border-radius: 3px;
+    position: absolute;
+}
+
+/* ── Buttons ── */
+.esc-btn {
+    height: 54px;
+    margin-bottom: 14px;
+    background-color: rgba(10, 25, 40, 0.35);
+    border-width: 1px;
+    border-left-width: 4px;
+    border-color: rgba(0, 240, 255, 0.22);
+    border-left-color: rgba(0, 240, 255, 0.45);
+    border-radius: 4px;
+    color: rgb(200, 230, 255);
+    font-size: 15px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    justify-content: center;
+    align-items: center;
+
+    /* Transitions */
+    transition-property: background-color, border-color, border-left-color, color, translate, scale;
+    transition-duration: 0.15s;
+    transition-timing-function: ease-out;
+}
+
+.esc-btn:hover {
+    background-color: rgba(0, 240, 255, 0.10);
+    border-color: rgb(0, 240, 255);
+    border-left-color: rgb(0, 240, 255);
+    color: rgb(0, 240, 255);
+    scale: 1.02 1.02;
+    translate: 6px 0;
+}
+
+.esc-btn:active {
+    background-color: rgba(0, 240, 255, 0.22);
+    scale: 0.97 0.97;
+    translate: 3px 0;
+}
+
+/* ── Last button: Quit — yellow danger accent ── */
+.esc-btn-danger {
+    border-left-color: rgba(255, 196, 0, 0.55);
+    border-color: rgba(255, 196, 0, 0.20);
+    color: rgba(255, 220, 100, 0.85);
+}
+
+.esc-btn-danger:hover {
+    background-color: rgba(255, 196, 0, 0.10);
+    border-color: rgb(255, 196, 0);
+    border-left-color: rgb(255, 196, 0);
+    color: rgb(255, 196, 0);
+    scale: 1.02 1.02;
+    translate: 6px 0;
+}
+
+.esc-btn-danger:active {
+    background-color: rgba(255, 196, 0, 0.20);
+    scale: 0.97 0.97;
+    translate: 3px 0;
+}
+
+/* ── Footer ── */
+.esc-footer {
+    border-top-width: 1px;
+    border-top-color: rgba(0, 240, 255, 0.12);
+    padding-top: 18px;
+    margin-top: 4px;
+    align-items: center;
+}
+
+.esc-footer-text {
+    color: rgba(0, 240, 255, 0.4);
+    font-size: 10px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+}
+
+/* ── Corner decorations ── */
+.esc-corner-tl {
+    position: absolute;
+    top: 0; left: 0;
+    width: 18px; height: 18px;
+    border-top-width: 2px;
+    border-left-width: 2px;
+    border-color: rgba(0, 240, 255, 0.6);
+}
+
+.esc-corner-br {
+    position: absolute;
+    bottom: 0; right: 0;
+    width: 18px; height: 18px;
+    border-bottom-width: 2px;
+    border-right-width: 2px;
+    border-color: rgba(0, 240, 255, 0.6);
+}

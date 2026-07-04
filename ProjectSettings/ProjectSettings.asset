@@ -949,7 +949,7 @@ PlayerSettings:
   qualitySettingsNames: []
   projectName: Random Event
   organizationId: unity_f500c70f36735b045a0a
-  cloudEnabled: 0
+  cloudEnabled: 1
   legacyClampBlendShapeWeights: 0
   hmiLoadingImage: {fileID: 0}
   platformRequiresReadableAssets: 0

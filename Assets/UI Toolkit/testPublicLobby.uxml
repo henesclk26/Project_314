@@ -1,0 +1,79 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI%20Toolkit/testPrivateLobby.uss?fileID=7433441132597879392&amp;guid=5ca93aa1e3f11394d99fe08c7725c131&amp;type=3#testPrivateLobby"/>
+    <Style src="project://database/Assets/UI%20Toolkit/testPublicLobby.uss?fileID=7433441132597879392&amp;guid=a8f3c2e91b4d5f6789a0b1c2d3e4f5a6&amp;type=3#testPublicLobby"/>
+    <ui:VisualElement class="lobby-background">
+        <ui:VisualElement class="lobby-overlay"/>
+        <ui:VisualElement name="panel-selection" class="lobby-card">
+            <ui:VisualElement class="panel-header">
+                <ui:Label text="PUBLIC LOBBY" class="panel-title"/>
+                <ui:Label text="Yeni bir oda kur veya açık lobilere katıl" class="panel-subtitle"/>
+                <ui:VisualElement class="panel-separator"/>
+            </ui:VisualElement>
+            <ui:Button name="btn-host-game" text="OYUN KUR" class="lobby-btn-primary"/>
+            <ui:Button name="btn-join-game" text="OYUNA KATIL" class="lobby-btn-primary"/>
+            <ui:Button name="btn-back-to-menu" text="ANA MENÜYE DÖN" class="lobby-btn-secondary"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="panel-browser" class="lobby-card lobby-card-wide hidden">
+            <ui:VisualElement class="panel-header">
+                <ui:Label text="AÇIK LOBİLER" class="panel-title"/>
+                <ui:Label text="Katılmak istediğiniz odayı seçin" class="panel-subtitle"/>
+                <ui:VisualElement class="panel-separator"/>
+            </ui:VisualElement>
+            <ui:VisualElement class="lobby-list-header-row">
+                <ui:Label text="ODA ADI" class="lobby-list-col-name"/>
+                <ui:Label text="OYUNCU" class="lobby-list-col-players"/>
+                <ui:Label text="DURUM" class="lobby-list-col-status"/>
+            </ui:VisualElement>
+            <ui:ScrollView name="lobbyListContainer" class="lobby-list-container"/>
+            <ui:Button name="btn-confirm-join" text="SEÇİLİ LOBİYE KATIL" class="lobby-btn-primary"/>
+            <ui:Button name="btn-back-to-selection" text="GERİ DÖN" class="lobby-btn-secondary"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="panel-host-setup" class="lobby-card hidden">
+            <ui:VisualElement class="panel-header">
+                <ui:Label text="ODA KUR" class="panel-title"/>
+                <ui:Label text="Oda adını belirleyin ve oyuncu sayısını ayarlayın" class="panel-subtitle"/>
+                <ui:VisualElement class="panel-separator"/>
+            </ui:VisualElement>
+            <ui:Label text="ODA ADI" class="field-label"/>
+            <ui:TextField name="roomNameInput" placeholder-text="Oda adını girin..." class="room-name-field"/>
+            <ui:VisualElement class="slider-section">
+                <ui:Label text="MAKSİMUM OYUNCU SAYISI" class="field-label"/>
+                <ui:VisualElement class="player-count-display">
+                    <ui:Label name="playerCountLabel" text="8" class="player-count-value"/>
+                    <ui:Label text="OYUNCU" class="player-count-suffix"/>
+                </ui:VisualElement>
+                <ui:SliderInt name="playerCountSlider" low-value="4" high-value="12" value="8" class="player-count-slider"/>
+                <ui:VisualElement class="slider-range-row">
+                    <ui:Label text="4" class="slider-range-label"/>
+                    <ui:Label text="12" class="slider-range-label"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:Button name="btn-confirm-host" text="ODAYI KUR" class="lobby-btn-primary"/>
+            <ui:Button name="btn-back-host-setup" text="GERİ DÖN" class="lobby-btn-secondary"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="panel-lobby" class="lobby-card hidden">
+            <ui:VisualElement class="panel-header">
+                <ui:Label text="ODA KURULDU" class="panel-title"/>
+                <ui:Label text="Diğer oyuncuların katılmasını bekleyin" class="panel-subtitle"/>
+                <ui:VisualElement class="panel-separator"/>
+            </ui:VisualElement>
+            <ui:VisualElement class="room-code-container">
+                <ui:Label text="ODA ADI:" class="room-code-label"/>
+                <ui:Label name="roomNameLabel" text="------" class="room-code-value"/>
+            </ui:VisualElement>
+            <ui:VisualElement class="room-info-row">
+                <ui:Label text="OYUNCU:" class="room-info-label"/>
+                <ui:Label name="lobbyPlayerCountLabel" text="1 / 8" class="room-info-value"/>
+            </ui:VisualElement>
+            <ui:Label text="OYUNCULAR" class="player-list-header"/>
+            <ui:ScrollView name="playerListContainer" class="player-list-container">
+                <ui:VisualElement class="player-item">
+                    <ui:VisualElement class="player-icon"/>
+                    <ui:Label text="Bekleniyor..." class="player-name"/>
+                </ui:VisualElement>
+            </ui:ScrollView>
+            <ui:Button name="startBtn" text="OYUNU BAŞLAT" class="lobby-btn-start"/>
+            <ui:Button name="leaveBtn" text="LOBİDEN AYRIL" class="lobby-btn-secondary"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

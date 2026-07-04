@@ -1,0 +1,70 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:Style src="project://database/Assets/UI%20Toolkit/testPrivateLobby.uss"/>
+    <ui:VisualElement class="lobby-background">
+        <ui:VisualElement class="lobby-overlay" />
+
+        <!-- ═══════════════════════════════════════════════
+             PANEL 1: Selection Screen (Oyun Kur / Oyuna Katıl)
+             ═══════════════════════════════════════════════ -->
+        <ui:VisualElement name="panel-selection" class="lobby-card">
+            <ui:VisualElement class="panel-header">
+                <ui:Label text="PRIVATE LOBBY" class="panel-title" />
+                <ui:Label text="Yeni bir oda kur veya mevcut bir odaya katıl" class="panel-subtitle" />
+                <ui:VisualElement class="panel-separator" />
+            </ui:VisualElement>
+
+            <ui:Button name="btn-host-game" text="OYUN KUR" class="lobby-btn-primary" />
+            <ui:Button name="btn-join-game" text="OYUNA KATIL" class="lobby-btn-primary" />
+
+            <ui:Button name="btn-back-to-menu" text="ANA MENÜYE DÖN" class="lobby-btn-secondary" />
+        </ui:VisualElement>
+
+        <!-- ═══════════════════════════════════════════════
+             PANEL 2: Host Lobby (Oda Kuruldu)
+             ═══════════════════════════════════════════════ -->
+        <ui:VisualElement name="panel-host-lobby" class="lobby-card hidden">
+            <ui:VisualElement class="panel-header">
+                <ui:Label text="ODA KURULDU" class="panel-title" />
+                <ui:Label text="Diğer oyuncuların katılmasını bekleyin" class="panel-subtitle" />
+                <ui:VisualElement class="panel-separator" />
+            </ui:VisualElement>
+
+            <!-- Room code display -->
+            <ui:VisualElement class="room-code-container">
+                <ui:Label text="ODA KODU:" class="room-code-label" />
+                <ui:Label name="roomCodeLabel" text="------" class="room-code-value" />
+            </ui:VisualElement>
+
+            <!-- Player list -->
+            <ui:Label text="OYUNCULAR" class="player-list-header" />
+            <ui:ScrollView name="playerListContainer" class="player-list-container">
+                <!-- Player items will be populated dynamically -->
+                <ui:VisualElement class="player-item">
+                    <ui:VisualElement class="player-icon" />
+                    <ui:Label text="Bekleniyor..." class="player-name" />
+                </ui:VisualElement>
+            </ui:ScrollView>
+
+            <ui:Button name="startBtn" text="OYUNU BAŞLAT" class="lobby-btn-start" />
+            <ui:Button name="leaveBtn" text="LOBİDEN AYRIL" class="lobby-btn-secondary" />
+        </ui:VisualElement>
+
+        <!-- ═══════════════════════════════════════════════
+             PANEL 3: Join Screen (Kod Giriş)
+             ═══════════════════════════════════════════════ -->
+        <ui:VisualElement name="panel-join" class="lobby-card hidden">
+            <ui:VisualElement class="panel-header">
+                <ui:Label text="ODAYA KATIL" class="panel-title" />
+                <ui:Label text="Oda kodunu girin ve bağlanın" class="panel-subtitle" />
+                <ui:VisualElement class="panel-separator" />
+            </ui:VisualElement>
+
+            <ui:TextField name="joinCodeInput" class="join-code-field" />
+            <ui:Label text="Oda sahibinden aldığınız 6 haneli kodu giriniz" class="join-code-hint" />
+
+            <ui:Button name="btn-confirm-join" text="KATIL" class="lobby-btn-primary" />
+            <ui:Button name="btn-back-to-selection" text="GERİ DÖN" class="lobby-btn-secondary" />
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+</ui:UXML>
