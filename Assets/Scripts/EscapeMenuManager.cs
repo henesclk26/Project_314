@@ -80,7 +80,7 @@ public class EscapeMenuManager : MonoBehaviour
             yield break;
         }
 
-        SceneManager.LoadScene("MainMenu");
+        SceneManager.LoadScene("sci-fi-map");
         isReturning = false;
     }
 }

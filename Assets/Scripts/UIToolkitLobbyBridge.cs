@@ -24,6 +24,68 @@ public class UIToolkitLobbyBridge : MonoBehaviour
     private Coroutine _lobbyRefreshRoutine;
     private bool _isBusy;
 
+    private IVisualElementScheduledItem _spinnerTask;
+    private float _spinnerRotation = 0f;
+
+    private void StartSpinner(VisualElement spinner)
+    {
+        StopSpinner();
+        if (spinner == null) return;
+        _spinnerRotation = 0f;
+        _spinnerTask = spinner.schedule.Execute(() =>
+        {
+            _spinnerRotation = (_spinnerRotation + 12f) % 360f;
+            spinner.style.rotate = new Rotate(Angle.Degrees(_spinnerRotation));
+        }).Every(16);
+    }
+
+    private void StopSpinner()
+    {
+        _spinnerTask?.Pause();
+        _spinnerTask = null;
+    }
+
+    private async Awaitable RunWithLoadingScreen(VisualElement root, bool isPublic, string loadingText, System.Func<Awaitable> lobbyAction)
+    {
+        if (root == null)
+        {
+            await lobbyAction();
+            return;
+        }
+
+        var textLabel = root.Q<Label>("lbl-loading-text");
+        if (textLabel != null)
+        {
+            textLabel.text = loadingText;
+        }
+
+        var spinner = root.Q<VisualElement>("loading-spinner");
+
+        if (isPublic)
+        {
+            SwitchPublicPanel(root, "panel-loading");
+        }
+        else
+        {
+            SwitchPrivatePanel(root, "panel-loading");
+        }
+
+        StartSpinner(spinner);
+
+        try
+        {
+            await lobbyAction();
+        }
+        finally
+        {
+            StopSpinner();
+            if (spinner != null)
+            {
+                spinner.style.rotate = new Rotate(Angle.Degrees(0f));
+            }
+        }
+    }
+
     public event Action OnGameStarting;
 
     public void BindPublicLobby(VisualElement root, Action onBackToMenu = null)
@@ -129,7 +191,12 @@ public class UIToolkitLobbyBridge : MonoBehaviour
             roomName = "Adsız Oda";
 
         int maxPlayers = slider != null ? slider.value : 8;
-        bool ok = await Network.CreatePublicLobby(roomName, maxPlayers);
+
+        bool ok = false;
+        await RunWithLoadingScreen(_publicRoot, true, "Oda Kuruluyor...", async () =>
+        {
+            ok = await Network.CreatePublicLobby(roomName, maxPlayers);
+        });
 
         _isBusy = false;
         SetPublicButtonsEnabled(true);
@@ -141,6 +208,7 @@ public class UIToolkitLobbyBridge : MonoBehaviour
         }
         else
         {
+            SwitchPublicPanel(_publicRoot, "panel-host-setup");
             SetPublicStatus("Lobi oluşturulamadı. UGS bağlantısını kontrol edin.");
         }
     }
@@ -156,7 +224,11 @@ public class UIToolkitLobbyBridge : MonoBehaviour
         _isBusy = true;
         SetPublicButtonsEnabled(false);
 
-        bool ok = await Network.JoinById(_selectedLobbyId);
+        bool ok = false;
+        await RunWithLoadingScreen(_publicRoot, true, "Lobiye Katılınıyor...", async () =>
+        {
+            ok = await Network.JoinById(_selectedLobbyId);
+        });
 
         _isBusy = false;
         SetPublicButtonsEnabled(true);
@@ -168,6 +240,7 @@ public class UIToolkitLobbyBridge : MonoBehaviour
         }
         else
         {
+            SwitchPublicPanel(_publicRoot, "panel-browser");
             SetPublicStatus("Lobiye katılınamadı.");
         }
     }
@@ -190,7 +263,12 @@ public class UIToolkitLobbyBridge : MonoBehaviour
         _isBusy = true;
 
         string lobbyName = $"Oyuncu {AuthenticationService.Instance.PlayerId.Substring(0, 4)}";
-        bool ok = await Network.CreatePrivateLobby(lobbyName, PrivateMaxPlayers);
+
+        bool ok = false;
+        await RunWithLoadingScreen(_privateRoot, false, "Oda Kuruluyor...", async () =>
+        {
+            ok = await Network.CreatePrivateLobby(lobbyName, PrivateMaxPlayers);
+        });
 
         _isBusy = false;
 
@@ -205,6 +283,7 @@ public class UIToolkitLobbyBridge : MonoBehaviour
         }
         else
         {
+            SwitchPrivatePanel(_privateRoot, "panel-selection");
             SetPrivateStatus("Private lobi oluşturulamadı.");
         }
     }
@@ -222,7 +301,13 @@ public class UIToolkitLobbyBridge : MonoBehaviour
         }
 
         _isBusy = true;
-        bool ok = await Network.JoinByCode(code);
+
+        bool ok = false;
+        await RunWithLoadingScreen(_privateRoot, false, "Lobiye Katılınıyor...", async () =>
+        {
+            ok = await Network.JoinByCode(code);
+        });
+
         _isBusy = false;
 
         if (ok)
@@ -232,6 +317,7 @@ public class UIToolkitLobbyBridge : MonoBehaviour
         }
         else
         {
+            SwitchPrivatePanel(_privateRoot, "panel-join");
             SetPrivateStatus("Geçersiz oda kodu veya lobi dolu.");
         }
     }
@@ -493,6 +579,7 @@ public class UIToolkitLobbyBridge : MonoBehaviour
         SetPanelVisible(root, "panel-browser", panelName == "panel-browser");
         SetPanelVisible(root, "panel-host-setup", panelName == "panel-host-setup");
         SetPanelVisible(root, "panel-lobby", panelName == "panel-lobby");
+        SetPanelVisible(root, "panel-loading", panelName == "panel-loading");
     }
 
     public static void SwitchPrivatePanel(VisualElement root, string panelName)
@@ -500,6 +587,7 @@ public class UIToolkitLobbyBridge : MonoBehaviour
         SetPanelVisible(root, "panel-selection", panelName == "panel-selection");
         SetPanelVisible(root, "panel-host-lobby", panelName == "panel-host-lobby");
         SetPanelVisible(root, "panel-join", panelName == "panel-join");
+        SetPanelVisible(root, "panel-loading", panelName == "panel-loading");
     }
 
     private static void SetPanelVisible(VisualElement root, string panelName, bool visible)

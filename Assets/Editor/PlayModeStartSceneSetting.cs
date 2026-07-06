@@ -6,7 +6,7 @@ using UnityEngine;
 public class PlayModeStartSceneSetting
 {
     private const string ToggleKey = "PlayModeStartFromMainMenu";
-    private const string MainMenuScenePath = "Assets/Scenes/MainMenu.unity";
+    private const string MainMenuScenePath = "Assets/Scenes/sci-fi-map.unity";
 
     static PlayModeStartSceneSetting()
     {

@@ -276,3 +276,14 @@
 .hidden {
     display: none;
 }
+
+/* ── Loading Spinner ── */
+.loading-spinner {
+    width: 60px;
+    height: 60px;
+    border-radius: 30px;
+    border-width: 5px;
+    border-color: rgba(0, 240, 255, 0.15);
+    border-top-color: rgb(0, 240, 255);
+    align-self: center;
+}

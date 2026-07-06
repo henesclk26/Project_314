@@ -104,7 +104,7 @@ public class LobbyUIManager : MonoBehaviour{
         joinPrivateBtn?.onClick.AddListener(OnJoinPrivate);
         refreshLobbiesBtn?.onClick.AddListener(OnRefreshPublicLobbies);
         leaveLobbyBtn?.onClick.AddListener(OnLeaveLobby);
-        startGameBtn?.onClick.AddListener(() => NetworkMgr.StartGame("test_map"));
+        startGameBtn?.onClick.AddListener(() => NetworkMgr.StartGame("sci-fi-map"));
 
         // Oyun başlarken ilk seçimi (Selection) göster:
         SwitchPanel(selectionPanel);
