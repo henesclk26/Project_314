@@ -67,7 +67,7 @@ MonoBehaviour:
   m_SerializedViewNames: []
   m_SerializedViewValues: []
   m_PlayModeViewName: GameView
-  m_ShowGizmos: 0
+  m_ShowGizmos: 1
   m_TargetDisplay: 0
   m_ClearColor: {r: 0, g: 0, b: 0, a: 0}
   m_TargetSize: {x: 1920, y: 1080}
@@ -77,7 +77,7 @@ MonoBehaviour:
   m_EnterPlayModeBehavior: 0
   m_UseMipMap: 0
   m_VSyncEnabled: 0
-  m_Gizmos: 0
+  m_Gizmos: 1
   m_Stats: 0
   m_SelectedSizes: 03000000000000000000000000000000000000000000000000000000000000000000000000000000
   m_ZoomArea:
@@ -97,7 +97,7 @@ MonoBehaviour:
     m_HSlider: 0
     m_VSlider: 0
     m_IgnoreScrollWheelUntilClicked: 0
-    m_EnableMouseInput: 1
+    m_EnableMouseInput: 0
     m_EnableSliderZoomHorizontal: 0
     m_EnableSliderZoomVertical: 0
     m_UniformScale: 1
@@ -252,11 +252,8 @@ MonoBehaviour:
       m_LastClickedID:
         m_Data: 0
       m_ExpandedIDs:
-      - m_Data: -152856
-      - m_Data: -152594
-      - m_Data: -146136
-      - m_Data: -141378
-      - m_Data: -141202
+      - m_Data: -1400
+      - m_Data: -1396
       - m_Data: -1376
       m_RenameOverlay:
         m_UserAcceptedRename: 0
@@ -909,9 +906,9 @@ MonoBehaviour:
   m_AudioPlay: 0
   m_DebugDrawModesUseInteractiveLightBakingData: 0
   m_Position:
-    m_Target: {x: -48.779697, y: 2.747658, z: 4.018326}
+    m_Target: {x: -68.71293, y: 3.794913, z: -17.389172}
     speed: 2
-    m_Value: {x: -48.779697, y: 2.747658, z: 4.018326}
+    m_Value: {x: -68.71293, y: 3.794913, z: -17.389172}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -957,13 +954,13 @@ MonoBehaviour:
     m_GridAxis: 1
     m_gridOpacity: 0.506
   m_Rotation:
-    m_Target: {x: -0.08166045, y: 0.7007251, z: -0.08131995, w: -0.70409626}
+    m_Target: {x: 0.018431515, y: -0.7296906, z: -0.019733673, w: -0.6834065}
     speed: 2
-    m_Value: {x: -0.081658475, y: 0.70070815, z: -0.08131798, w: -0.7040792}
+    m_Value: {x: 0.01948542, y: -0.7285534, z: -0.020796897, w: -0.68439585}
   m_Size:
-    m_Target: 3.7715728
+    m_Target: 1.1366318
     speed: 2
-    m_Value: 3.7715728
+    m_Value: 1.1366318
   m_Ortho:
     m_Target: 0
     speed: 2
@@ -1181,7 +1178,7 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/Loading screen package/Prefabs
+    - Assets/ithappy/Sci-Fi_Props/Prefabs/Box
     m_Globs: []
     m_ProductIds: 
     m_AnyWithAssetOrigin: 0
@@ -1191,51 +1188,62 @@ MonoBehaviour:
   m_ViewMode: 1
   m_StartGridSize: 72
   m_LastFolders:
-  - Assets/Loading screen package/Prefabs
+  - Assets/ithappy/Sci-Fi_Props/Prefabs/Box
   m_LastFoldersGridSize: 72
   m_LastProjectPath: C:\unityProjects\Random Event
   m_LockTracker:
     m_IsLocked: 0
   m_LastLocalAssetsSearchArea: 1
   m_FolderTreeState:
-    scrollPos: {x: 0, y: 180}
+    scrollPos: {x: 0, y: 559}
     m_SelectedIDs:
-    - m_Data: 1659084
+    - m_Data: 80676
     m_LastClickedID:
-      m_Data: 1659084
+      m_Data: 80676
     m_ExpandedIDs:
     - m_Data: 0
-    - m_Data: 61878
-    - m_Data: 73736
-    - m_Data: 73738
-    - m_Data: 73740
-    - m_Data: 73744
-    - m_Data: 73746
-    - m_Data: 73750
-    - m_Data: 73754
-    - m_Data: 73758
-    - m_Data: 73760
-    - m_Data: 73766
-    - m_Data: 73768
-    - m_Data: 74132
-    - m_Data: 74136
-    - m_Data: 74138
-    - m_Data: 74326
-    - m_Data: 160300
-    - m_Data: 160502
-    - m_Data: 160578
-    - m_Data: 160674
-    - m_Data: 160910
-    - m_Data: 160984
-    - m_Data: 161410
-    - m_Data: 161496
-    - m_Data: 162060
-    - m_Data: 162228
-    - m_Data: 162512
-    - m_Data: 162606
-    - m_Data: 162808
-    - m_Data: 163016
-    - m_Data: 1659088
+    - m_Data: 63686
+    - m_Data: 80132
+    - m_Data: 80134
+    - m_Data: 80136
+    - m_Data: 80138
+    - m_Data: 80140
+    - m_Data: 80142
+    - m_Data: 80144
+    - m_Data: 80146
+    - m_Data: 80148
+    - m_Data: 80150
+    - m_Data: 80152
+    - m_Data: 80154
+    - m_Data: 80156
+    - m_Data: 80158
+    - m_Data: 80160
+    - m_Data: 80162
+    - m_Data: 80164
+    - m_Data: 80166
+    - m_Data: 80168
+    - m_Data: 80170
+    - m_Data: 80172
+    - m_Data: 80174
+    - m_Data: 80176
+    - m_Data: 80178
+    - m_Data: 80180
+    - m_Data: 80182
+    - m_Data: 80184
+    - m_Data: 80186
+    - m_Data: 80188
+    - m_Data: 80550
+    - m_Data: 80554
+    - m_Data: 80556
+    - m_Data: 80562
+    - m_Data: 80564
+    - m_Data: 80586
+    - m_Data: 80588
+    - m_Data: 80596
+    - m_Data: 143222
+    - m_Data: 145470
+    - m_Data: 146626
+    - m_Data: 146640
     - m_Data: 1000000000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
@@ -1269,37 +1277,36 @@ MonoBehaviour:
       m_Data: 0
     m_ExpandedIDs:
     - m_Data: 0
-    - m_Data: 61878
-    - m_Data: 73736
-    - m_Data: 73738
-    - m_Data: 73740
-    - m_Data: 73744
-    - m_Data: 73746
-    - m_Data: 73750
-    - m_Data: 73754
-    - m_Data: 73758
-    - m_Data: 73760
-    - m_Data: 73766
-    - m_Data: 73768
-    - m_Data: 74136
-    - m_Data: 74138
-    - m_Data: 74326
-    - m_Data: 160300
-    - m_Data: 160502
-    - m_Data: 160578
-    - m_Data: 160674
-    - m_Data: 160910
-    - m_Data: 160984
-    - m_Data: 161410
-    - m_Data: 161496
-    - m_Data: 162060
-    - m_Data: 162228
-    - m_Data: 162512
-    - m_Data: 162606
-    - m_Data: 162808
-    - m_Data: 163016
-    - m_Data: 1659088
-    - m_Data: 1000000000
+    - m_Data: 63686
+    - m_Data: 80132
+    - m_Data: 80134
+    - m_Data: 80136
+    - m_Data: 80138
+    - m_Data: 80140
+    - m_Data: 80142
+    - m_Data: 80144
+    - m_Data: 80146
+    - m_Data: 80148
+    - m_Data: 80150
+    - m_Data: 80152
+    - m_Data: 80154
+    - m_Data: 80156
+    - m_Data: 80158
+    - m_Data: 80160
+    - m_Data: 80162
+    - m_Data: 80164
+    - m_Data: 80166
+    - m_Data: 80168
+    - m_Data: 80170
+    - m_Data: 80172
+    - m_Data: 80174
+    - m_Data: 80176
+    - m_Data: 80178
+    - m_Data: 80180
+    - m_Data: 80182
+    - m_Data: 80184
+    - m_Data: 80186
+    - m_Data: 80188
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -1328,7 +1335,7 @@ MonoBehaviour:
   m_ListAreaState:
     m_SelectedInstanceIDs: []
     m_LastClickedInstanceID: 0
-    m_HadKeyboardFocusLastEvent: 0
+    m_HadKeyboardFocusLastEvent: 1
     m_ExpandedInstanceIDs:
     - m_Data: 66290
     - m_Data: 66334
