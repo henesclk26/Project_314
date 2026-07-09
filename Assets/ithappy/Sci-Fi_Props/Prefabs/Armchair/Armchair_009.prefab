@@ -5,6 +5,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 5781e08cfd2b77142b3d93de554ad869, type: 3}
@@ -56,17 +57,54 @@ PrefabInstance:
       value: Armchair_009
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 5781e08cfd2b77142b3d93de554ad869, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4925579905588599484}
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 5781e08cfd2b77142b3d93de554ad869, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: -7856558235453833300}
   m_SourcePrefab: {fileID: 100100000, guid: 5781e08cfd2b77142b3d93de554ad869, type: 3}
 --- !u!4 &2841403358176719581 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 5781e08cfd2b77142b3d93de554ad869, type: 3}
   m_PrefabInstance: {fileID: 2370028313621353782}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &3181056328001513575 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 5781e08cfd2b77142b3d93de554ad869, type: 3}
+  m_PrefabInstance: {fileID: 2370028313621353782}
+  m_PrefabAsset: {fileID: 0}
+--- !u!64 &-7856558235453833300
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3181056328001513575}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 3022869229859179656, guid: 5781e08cfd2b77142b3d93de554ad869, type: 3}
 --- !u!1001 &3693609938208649049
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 2841403358176719581}
     m_Modifications:
     - target: {fileID: 8582025223307425253, guid: cd03d6a035f7c4d4b8137c3d806fbe21, type: 3}
@@ -118,4 +156,12 @@ PrefabInstance:
       value: Armchair_009_Chair_01
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: cd03d6a035f7c4d4b8137c3d806fbe21, type: 3}
+--- !u!4 &4925579905588599484 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8582025223307425253, guid: cd03d6a035f7c4d4b8137c3d806fbe21, type: 3}
+  m_PrefabInstance: {fileID: 3693609938208649049}
+  m_PrefabAsset: {fileID: 0}

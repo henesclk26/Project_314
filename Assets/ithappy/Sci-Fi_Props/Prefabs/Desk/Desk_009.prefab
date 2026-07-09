@@ -5,6 +5,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 7374f3576c244a44a9ba1971eb88df2a, type: 3}
@@ -56,4 +57,37 @@ PrefabInstance:
       value: Desk_009
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 7374f3576c244a44a9ba1971eb88df2a, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3538998584738332118}
   m_SourcePrefab: {fileID: 100100000, guid: 7374f3576c244a44a9ba1971eb88df2a, type: 3}
+--- !u!1 &772291939676694793 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 7374f3576c244a44a9ba1971eb88df2a, type: 3}
+  m_PrefabInstance: {fileID: 465791318579123288}
+  m_PrefabAsset: {fileID: 0}
+--- !u!64 &3538998584738332118
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 772291939676694793}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: -4489622391878422147, guid: 7374f3576c244a44a9ba1971eb88df2a, type: 3}

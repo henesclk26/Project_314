@@ -5,6 +5,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 0bde50bc3ce55a1428adf4fa65610a68, type: 3}
@@ -52,7 +53,7 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -7511558181221131132, guid: 0bde50bc3ce55a1428adf4fa65610a68, type: 3}
-      propertyPath: m_Materials.Array.data[1]
+      propertyPath: 'm_Materials.Array.data[1]'
       value: 
       objectReference: {fileID: 2100000, guid: 9aec8aaeea96e4f4095b255a13308216, type: 2}
     - target: {fileID: 919132149155446097, guid: 0bde50bc3ce55a1428adf4fa65610a68, type: 3}
@@ -60,4 +61,37 @@ PrefabInstance:
       value: Armchair_013_Armrest_02
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 0bde50bc3ce55a1428adf4fa65610a68, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7359726842416633864}
   m_SourcePrefab: {fileID: 100100000, guid: 0bde50bc3ce55a1428adf4fa65610a68, type: 3}
+--- !u!1 &8558540631883886415 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 0bde50bc3ce55a1428adf4fa65610a68, type: 3}
+  m_PrefabInstance: {fileID: 8793105159139004958}
+  m_PrefabAsset: {fileID: 0}
+--- !u!64 &7359726842416633864
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8558540631883886415}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: -6504937788346227367, guid: 0bde50bc3ce55a1428adf4fa65610a68, type: 3}
