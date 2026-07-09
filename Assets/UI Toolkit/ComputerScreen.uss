@@ -1,0 +1,310 @@
+/* ComputerScreen.uss */
+:root {
+    --color-bg-dark: rgba(8, 14, 22, 0.98);
+    --color-panel-bg: rgba(6, 12, 22, 0.95);
+    --color-accent-cyan: rgb(0, 240, 255);
+    --color-accent-cyan-dim: rgba(0, 240, 255, 0.25);
+    --color-accent-yellow: rgb(255, 196, 0);
+    --color-accent-red: rgb(255, 80, 80);
+    --color-accent-green: rgb(0, 255, 128);
+    --color-text-white: rgb(230, 242, 255);
+    --color-text-grey: rgba(200, 220, 240, 0.6);
+}
+
+.hidden {
+    display: none;
+}
+
+/* ── Interaction Prompt ── */
+.prompt-container {
+    position: absolute;
+    bottom: 20%;
+    left: 0;
+    right: 0;
+    align-items: center;
+}
+
+.prompt-box {
+    background-color: rgba(6, 12, 22, 0.8);
+    border-width: 1px;
+    border-color: rgba(0, 240, 255, 0.4);
+    border-radius: 6px;
+    padding: 8px 16px;
+    flex-direction: row;
+    align-items: center;
+}
+
+.prompt-key {
+    background-color: rgba(255, 196, 0, 0.15);
+    border-width: 1px;
+    border-color: rgb(255, 196, 0);
+    border-radius: 3px;
+    padding: 4px 8px;
+    color: rgb(255, 196, 0);
+    font-size: 16px;
+    -unity-font-style: bold;
+    margin-right: 12px;
+}
+
+.prompt-text {
+    color: rgb(230, 240, 255);
+    font-size: 18px;
+    -unity-font-style: bold;
+}
+
+/* ── Full-screen background ── */
+.computer-overlay {
+    position: absolute;
+    left: 0; top: 0; right: 0; bottom: 0;
+    background-color: rgba(5, 10, 18, 0.6);
+    justify-content: center;
+    align-items: center;
+    transition-property: opacity;
+    transition-duration: 0.25s;
+    opacity: 0;
+}
+
+.computer-overlay.open {
+    opacity: 1;
+}
+
+/* ── Main Monitor Screen ── */
+.computer-screen {
+    width: 100%;
+    height: 100%;
+    background-color: var(--color-bg-dark);
+    border-width: 0;
+    border-radius: 0;
+    padding: 20px;
+    transition-property: scale;
+    transition-duration: 0.25s;
+    transition-timing-function: ease-out-back;
+    scale: 0.8 0.8;
+}
+
+.computer-overlay.open .computer-screen {
+    scale: 1 1;
+}
+
+/* ── Header ── */
+.screen-header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--color-accent-cyan-dim);
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+}
+
+.header-title-container {
+    flex-direction: row;
+    align-items: center;
+}
+
+.header-icon {
+    width: 32px;
+    height: 32px;
+    background-color: var(--color-accent-cyan);
+    -unity-background-image-tint-color: var(--color-bg-dark);
+    margin-right: 12px;
+    border-radius: 16px;
+}
+
+.header-title {
+    color: var(--color-accent-cyan);
+    font-size: 24px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+}
+
+.close-btn {
+    width: 36px;
+    height: 36px;
+    background-color: rgba(255, 80, 80, 0.1);
+    border-width: 1px;
+    border-color: rgba(255, 80, 80, 0.4);
+    border-radius: 18px;
+    color: rgb(255, 120, 120);
+    font-size: 16px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    transition-property: background-color, scale;
+    transition-duration: 0.15s;
+}
+
+.close-btn:hover {
+    background-color: rgba(255, 80, 80, 0.3);
+    scale: 1.1 1.1;
+}
+
+/* ── Email Panel ── */
+.email-panel {
+    flex-grow: 1;
+    flex-direction: row;
+}
+
+.inbox-list-container {
+    width: 300px;
+    border-right-width: 1px;
+    border-right-color: var(--color-accent-cyan-dim);
+    padding-right: 15px;
+}
+
+.inbox-title {
+    color: var(--color-text-white);
+    font-size: 18px;
+    -unity-font-style: bold;
+    margin-bottom: 15px;
+}
+
+.email-list {
+    flex-grow: 1;
+}
+
+/* ── Email Row Item ── */
+.email-row {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    background-color: rgba(0, 240, 255, 0.05);
+    border-width: 1px;
+    border-color: rgba(0, 240, 255, 0.1);
+    border-radius: 4px;
+    padding: 10px;
+    margin-bottom: 8px;
+    transition-property: background-color, border-color;
+    transition-duration: 0.1s;
+}
+
+.email-row:hover {
+    background-color: rgba(0, 240, 255, 0.15);
+    border-color: rgba(0, 240, 255, 0.4);
+}
+
+.email-row.selected {
+    background-color: rgba(0, 240, 255, 0.2);
+    border-color: rgb(0, 240, 255);
+}
+
+.email-row-subject {
+    color: var(--color-text-white);
+    font-size: 14px;
+    flex-shrink: 1;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.email-row-time {
+    color: var(--color-text-grey);
+    font-size: 12px;
+}
+
+/* ── Email Detail ── */
+.email-detail-container {
+    flex-grow: 1;
+    padding-left: 15px;
+    background-color: rgba(0, 240, 255, 0.03);
+    border-width: 1px;
+    border-color: rgba(0, 240, 255, 0.1);
+    border-radius: 4px;
+    margin-left: 10px;
+    padding: 20px;
+}
+
+.detail-header {
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(0, 240, 255, 0.15);
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.detail-label {
+    color: var(--color-text-white);
+    font-size: 16px;
+    margin-bottom: 5px;
+}
+
+.detail-body {
+    color: var(--color-accent-cyan);
+    font-size: 16px;
+    white-space: normal;
+}
+
+/* ── Password Panel ── */
+.password-panel {
+    flex-grow: 1;
+    justify-content: center;
+    align-items: center;
+}
+
+.terminal-box {
+    width: 400px;
+    background-color: rgba(0, 240, 255, 0.05);
+    border-width: 1px;
+    border-color: rgba(0, 240, 255, 0.3);
+    border-radius: 4px;
+    padding: 30px;
+    align-items: center;
+}
+
+.terminal-title {
+    color: var(--color-text-white);
+    font-size: 18px;
+    -unity-font-style: bold;
+    margin-bottom: 20px;
+}
+
+.password-field {
+    width: 100%;
+    height: 40px;
+    margin-bottom: 20px;
+}
+
+.password-field .unity-text-field__input {
+    background-color: rgba(0, 0, 0, 0.5);
+    border-width: 1px;
+    border-color: var(--color-accent-cyan);
+    color: var(--color-accent-cyan);
+    font-size: 18px;
+    -unity-text-align: middle-center;
+    letter-spacing: 2px;
+}
+
+.submit-btn {
+    width: 100%;
+    height: 45px;
+    background-color: rgba(0, 240, 255, 0.15);
+    border-width: 1px;
+    border-color: var(--color-accent-cyan);
+    border-radius: 4px;
+    color: var(--color-accent-cyan);
+    font-size: 16px;
+    -unity-font-style: bold;
+    transition-property: background-color, scale;
+    transition-duration: 0.1s;
+}
+
+.submit-btn:hover {
+    background-color: rgba(0, 240, 255, 0.3);
+    scale: 1.02 1.02;
+}
+
+.submit-btn:active {
+    background-color: rgba(0, 240, 255, 0.5);
+    scale: 0.98 0.98;
+}
+
+.status-label {
+    margin-top: 20px;
+    font-size: 18px;
+    -unity-font-style: bold;
+}
+
+.status-denied {
+    color: var(--color-accent-red);
+}
+
+.status-granted {
+    color: var(--color-accent-green);
+}

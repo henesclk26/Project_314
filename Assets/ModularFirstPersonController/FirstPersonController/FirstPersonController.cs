@@ -471,9 +471,14 @@ public class FirstPersonController : NetworkBehaviour
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
             cursorLockedForGame = true;
-            if (crosshair && crosshairObject != null && !crosshairObject.gameObject.activeSelf)
+        }
+
+        // Crosshair'i kameranın hareket edebilme durumuna (UI açık/kapalı) göre ayarla
+        if (crosshair && crosshairObject != null)
+        {
+            if (crosshairObject.gameObject.activeSelf != cameraCanMove)
             {
-                crosshairObject.gameObject.SetActive(true);
+                crosshairObject.gameObject.SetActive(cameraCanMove);
             }
         }
 

@@ -1,0 +1,52 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI%20Toolkit/ComputerScreen.uss"/>
+    
+    <!-- Interaction Prompt -->
+    <ui:VisualElement name="prompt-container" class="prompt-container hidden">
+        <ui:VisualElement class="prompt-box">
+            <ui:Label text="F" class="prompt-key"/>
+            <ui:Label text="Bilgisayara Bak" class="prompt-text"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+    
+    <!-- Computer Overlay & Screen -->
+    <ui:VisualElement name="computer-overlay" class="computer-overlay hidden">
+        <ui:VisualElement name="computer-screen" class="computer-screen">
+            
+            <!-- Header -->
+            <ui:VisualElement class="screen-header">
+                <ui:VisualElement class="header-title-container">
+                    <ui:VisualElement class="header-icon"/>
+                    <ui:Label name="header-title" text="GALACTIC MAIL" class="header-title"/>
+                </ui:VisualElement>
+                <ui:Button name="close-btn" text="X" class="close-btn"/>
+            </ui:VisualElement>
+            
+            <!-- Email Panel -->
+            <ui:VisualElement name="email-panel" class="email-panel hidden">
+                <ui:VisualElement class="inbox-list-container">
+                    <ui:Label text="INBOX" class="inbox-title"/>
+                    <ui:ScrollView name="email-list" class="email-list"/>
+                </ui:VisualElement>
+                <ui:VisualElement class="email-detail-container">
+                    <ui:VisualElement class="detail-header">
+                        <ui:Label name="detail-sender" text="Sender: " class="detail-label"/>
+                        <ui:Label name="detail-subject" text="Subject: " class="detail-label"/>
+                    </ui:VisualElement>
+                    <ui:Label name="detail-body" text="" class="detail-body"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            
+            <!-- Password Panel -->
+            <ui:VisualElement name="password-panel" class="password-panel hidden">
+                <ui:VisualElement class="terminal-box">
+                    <ui:Label text="ENTER ACCESS CODE:" class="terminal-title"/>
+                    <ui:TextField name="password-field" class="password-field" password="true"/>
+                    <ui:Button name="submit-btn" text="ENTER" class="submit-btn"/>
+                    <ui:Label name="status-label" text="" class="status-label hidden"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

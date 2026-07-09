@@ -98,6 +98,10 @@ public class SciFiEscMenuController : MonoBehaviour
         // ESC için GetKeyDown kullanıyoruz çünkü sadece basıldığında
         // bir kez toggle yapmak istiyoruz, sürekli değil.
         // =========================================================
+
+        if (ComputerUIManager.Instance != null && (ComputerUIManager.Instance.IsComputerOpen || ComputerUIManager.Instance.WasClosedThisFrame))
+            return;
+
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             ToggleMenu();

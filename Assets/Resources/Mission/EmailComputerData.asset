@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc9ed6583e54e7540853bc0d0460ab4c, type: 3}
+  m_Name: EmailComputerData
+  m_EditorClassIdentifier: Assembly-CSharp::ComputerData
+  computerName: GALACTIC MAIL
+  computerType: 0
+  emails:
+  - sender: Enes Hoca
+    subject: "Erenler Esc Say\u0131s\u0131"
+    time: 13:00
+    body: "Abi ben niye k\u0131za kolye al\u0131yorum? Al\u0131r\u0131m bir tane
+      \xD6nc\xFC Zurna beraber yeriz."
+  - sender: "Bu\u011Fra Hoca"
+    subject: "Erenler Esc Say\u0131s\u0131"
+    time: 13:15
+    body: "Abi \xD6nc\xFC Zurna'ya da gerek yok bir tane \"Men\xFC1\" yap\u0131\u015Ft\u0131r\u0131yorsun
+      mis gibi kolye molye u\u011Fra\u015Fm\u0131yorsun."
+  correctPassword: 
+  successMessage: 
