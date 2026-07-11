@@ -9,6 +9,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.UIElements;
+using Image = UnityEngine.UI.Image;
+using Cursor = UnityEngine.Cursor;
 using Unity.Netcode;
 using Unity.Collections;
 #if USE_STEAM
@@ -427,6 +430,8 @@ public class FirstPersonController : NetworkBehaviour
 
     private void Update()
     {
+        UpdateInteractionUI();
+
         if (animator != null)
         {
             float currentSpeed = 0f;
@@ -662,6 +667,89 @@ public class FirstPersonController : NetworkBehaviour
         {
             CycleSpectator(-1);
         }
+    }
+
+    private string interactionText = "";
+    private float interactionTextTimer = 0f;
+    private UnityEngine.UIElements.VisualElement promptContainer;
+    private UnityEngine.UIElements.VisualElement promptBox;
+    private UnityEngine.UIElements.Label promptKeyLabel;
+    private UnityEngine.UIElements.Label promptTextLabel;
+
+    public void SetInteractionText(string text)
+    {
+        interactionText = text;
+        interactionTextTimer = Time.time + 0.1f;
+    }
+
+    private void UpdateInteractionUI()
+    {
+        if (promptContainer == null || promptContainer.panel == null)
+        {
+            promptContainer = null;
+            promptBox = null;
+            promptKeyLabel = null;
+            promptTextLabel = null;
+            
+            var go = GameObject.Find("GameUI");
+            if (go != null)
+            {
+                var doc = go.GetComponent<UnityEngine.UIElements.UIDocument>();
+                if (doc != null && doc.rootVisualElement != null)
+                {
+                    promptContainer = doc.rootVisualElement.Q<UnityEngine.UIElements.VisualElement>("game-prompt-container");
+                    if (promptContainer != null)
+                    {
+                        promptBox = promptContainer.Q<UnityEngine.UIElements.VisualElement>(className: "prompt-box");
+                        promptKeyLabel = promptContainer.Q<UnityEngine.UIElements.Label>(className: "prompt-key");
+                        promptTextLabel = promptContainer.Q<UnityEngine.UIElements.Label>("game-prompt-text");
+                    }
+                }
+            }
+        }
+
+        if (promptContainer != null && promptTextLabel != null && promptKeyLabel != null && promptBox != null)
+        {
+            if (Time.time < interactionTextTimer && !string.IsNullOrEmpty(interactionText) && IsLocalPlayerControlled() && !isDead.Value)
+            {
+                bool isInfoOnly = !interactionText.Contains("[F]");
+                string cleanText = interactionText.Replace("[F] ", "").Replace("[Batarya Gerekiyor]", "Batarya Gerekiyor");
+
+                promptTextLabel.text = cleanText;
+
+                if (isInfoOnly)
+                {
+                    promptKeyLabel.style.display = UnityEngine.UIElements.DisplayStyle.None;
+                    promptBox.style.backgroundColor = new UnityEngine.UIElements.StyleColor(new Color(6f/255f, 12f/255f, 22f/255f, 0.8f));
+                    var redBorder = new UnityEngine.UIElements.StyleColor(new Color(1f, 0.3f, 0.3f, 0.6f));
+                    promptBox.style.borderTopColor = redBorder;
+                    promptBox.style.borderBottomColor = redBorder;
+                    promptBox.style.borderLeftColor = redBorder;
+                    promptBox.style.borderRightColor = redBorder;
+                }
+                else
+                {
+                    promptKeyLabel.style.display = UnityEngine.UIElements.DisplayStyle.Flex;
+                    promptBox.style.backgroundColor = new UnityEngine.UIElements.StyleColor(new Color(6f/255f, 12f/255f, 22f/255f, 0.8f));
+                    var blueBorder = new UnityEngine.UIElements.StyleColor(new Color(0f, 240f/255f, 255f/255f, 0.4f));
+                    promptBox.style.borderTopColor = blueBorder;
+                    promptBox.style.borderBottomColor = blueBorder;
+                    promptBox.style.borderLeftColor = blueBorder;
+                    promptBox.style.borderRightColor = blueBorder;
+                }
+
+                promptContainer.RemoveFromClassList("hidden");
+            }
+            else
+            {
+                promptContainer.AddToClassList("hidden");
+            }
+        }
+    }
+
+    private void OnGUI()
+    {
+        // OnGUI interaction text logic removed, replaced by UI Toolkit (UpdateInteractionUI)
     }
 
     private void LateUpdate()

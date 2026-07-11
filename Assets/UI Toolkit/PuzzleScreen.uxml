@@ -1,0 +1,15 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI Toolkit/PuzzleScreen.uss" />
+    <ui:VisualElement name="puzzle-overlay" class="puzzle-overlay" style="display: none;">
+        <ui:VisualElement name="puzzle-container" class="puzzle-container">
+            <ui:Label text="SECURITY OVERRIDE" name="header-title" class="header-title" />
+            <ui:Label text="Sayıları sırasıyla birleştir ve tüm alanı doldur." class="header-subtitle" />
+            
+            <ui:VisualElement name="puzzle-grid" class="puzzle-grid">
+                <!-- Cells will be generated dynamically by C# script -->
+            </ui:VisualElement>
+
+            <ui:Button text="KAPAT" name="close-btn" class="close-btn" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

@@ -14,6 +14,7 @@
                 <ui:Button name="btn-public-game" text="PUBLIC GAME" class="menu-btn"/>
                 <ui:Button name="btn-settings" text="SETTINGS" class="menu-btn"/>
                 <ui:Button name="btn-quit-game" text="QUIT GAME" class="menu-btn"/>
+                <ui:Button name="btn-quick-test" text="⚡ QUICK TEST" class="menu-btn menu-btn-test"/>
             </ui:VisualElement>
             <ui:VisualElement class="menu-footer">
                 <ui:Label text="SYSTEM STATUS: ONLINE" class="footer-version"/>

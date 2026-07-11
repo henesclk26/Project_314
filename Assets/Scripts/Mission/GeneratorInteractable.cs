@@ -1,0 +1,71 @@
+using UnityEngine;
+
+public class GeneratorInteractable : MonoBehaviour
+{
+    [Header("Settings")]
+    public float interactionRange = 3f;
+    public Transform rotorObject; // Battery1
+    public float rotationSpeed = 360f; // degrees per second
+
+    private void Start()
+    {
+        if (rotorObject != null)
+        {
+            rotorObject.gameObject.SetActive(false); // Hide initially
+        }
+    }
+
+    private void Update()
+    {
+        if (MissionManager.Instance == null) return;
+
+        bool isActive = MissionManager.Instance.IsGeneratorActive.Value;
+        
+        if (isActive)
+        {
+            if (rotorObject != null)
+            {
+                if (!rotorObject.gameObject.activeSelf) rotorObject.gameObject.SetActive(true);
+                rotorObject.Rotate(Vector3.forward, rotationSpeed * Time.deltaTime, Space.Self);
+            }
+            return; // No interaction needed anymore
+        }
+
+        FirstPersonController fpc = GetOwnerFpc();
+        if (fpc == null || fpc.isDead.Value || (GameManager.Instance && GameManager.Instance.isGameOver)) return;
+
+        Ray ray = new Ray(fpc.playerCamera.transform.position, fpc.playerCamera.transform.forward);
+        if (Physics.Raycast(ray, out RaycastHit hit, interactionRange))
+        {
+            if (hit.collider.gameObject == gameObject || hit.collider.transform.IsChildOf(transform))
+            {
+                // Prevent interaction if we actually hit the Battery2 pickup object (which might be a child by mistake)
+                if (hit.collider.GetComponent<BatteryPickupInteractable>() != null) return;
+                bool hasBattery = MissionManager.Instance.IsBatteryCollected.Value;
+                if (hasBattery)
+                {
+                    fpc.SetInteractionText("[F] Bataryayı Tak");
+                    if (Input.GetKeyDown(KeyCode.F))
+                    {
+                        MissionManager.Instance.ActivateGeneratorServerRpc();
+                    }
+                }
+                else
+                {
+                    fpc.SetInteractionText("[Batarya Gerekiyor]");
+                }
+            }
+        }
+    }
+
+    private FirstPersonController GetOwnerFpc()
+    {
+        var allFpcs = FindObjectsByType<FirstPersonController>(FindObjectsSortMode.None);
+        if (Unity.Netcode.NetworkManager.Singleton != null && Unity.Netcode.NetworkManager.Singleton.IsListening)
+        {
+            foreach (var f in allFpcs) if (f.IsOwner) return f;
+        }
+        if (allFpcs.Length > 0) return allFpcs[0];
+        return null;
+    }
+}

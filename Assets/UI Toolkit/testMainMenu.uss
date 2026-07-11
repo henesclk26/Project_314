@@ -191,3 +191,19 @@
     font-size: 13px;
     align-self: center;
 }
+
+/* Quick Test button - amber/orange accent to stand out */
+.menu-btn-test {
+    margin-top: 12px;
+    border-left-color: rgba(255, 140, 0, 0.7);
+    border-color: rgba(255, 140, 0, 0.3);
+    color: rgb(255, 180, 80);
+    font-size: 15px;
+}
+
+.menu-btn-test:hover {
+    background-color: rgba(255, 140, 0, 0.12);
+    border-color: rgb(255, 140, 0);
+    border-left-color: rgb(255, 140, 0);
+    color: rgb(255, 160, 40);
+}

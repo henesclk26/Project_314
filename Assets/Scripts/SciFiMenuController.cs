@@ -1,3 +1,4 @@
+using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -129,6 +130,7 @@ public class SciFiMenuController : MonoBehaviour
         root.Q<Button>("btn-private-game")?.RegisterCallback<ClickEvent>(_ => OnPrivateGameClicked());
         root.Q<Button>("btn-public-game")?.RegisterCallback<ClickEvent>(_ => OnPublicGameClicked());
         root.Q<Button>("btn-quit-game")?.RegisterCallback<ClickEvent>(_ => OnQuitGame());
+        root.Q<Button>("btn-quick-test")?.RegisterCallback<ClickEvent>(_ => OnQuickTestClicked());
     }
 
     private void OnPrivateGameClicked()
@@ -266,11 +268,111 @@ public class SciFiMenuController : MonoBehaviour
 #endif
     }
 
+    /// <summary>
+    /// Quick Test: NetworkManager'ı Host olarak başlatır ve doğrudan oyuna girer.
+    /// Multiplayer bağlantısına gerek kalmadan tek başına test yapabilmek için.
+    /// </summary>
+    private void OnQuickTestClicked()
+    {
+        if (NetworkManager.Singleton == null)
+        {
+            Debug.LogError("[QuickTest] NetworkManager bulunamadı!");
+            return;
+        }
+
+        if (MultiplayerManager.Instance != null)
+        {
+            MultiplayerManager.Instance.IsGameInProgress = true;
+        }
+
+        NetworkManager.Singleton.StartHost();
+        EnterGameplayMode(hideMenusOnly: false);
+        StartCoroutine(TeleportPlayerToSpawn());
+        Debug.Log("[QuickTest] Host başlatıldı, oyuna girildi.");
+    }
+
+    private IEnumerator TeleportPlayerToSpawn()
+    {
+        // Wait up to 2 seconds for the network player to spawn
+        float timeout = 2f;
+        FirstPersonController spawnedFpc = null;
+
+        while (timeout > 0)
+        {
+            var allFpcs = FindObjectsByType<FirstPersonController>(FindObjectsSortMode.None);
+            foreach (var pFpc in allFpcs)
+            {
+                if (pFpc.IsOwner && pFpc != fpc) // Not the menu FPC
+                {
+                    spawnedFpc = pFpc;
+                    break;
+                }
+            }
+
+            if (spawnedFpc != null) break;
+            
+            timeout -= Time.deltaTime;
+            yield return null;
+        }
+
+        if (spawnedFpc != null)
+        {
+            // Find spawn point
+            Vector3 spawnPos = new Vector3(-48.5f, 2.49f, 1.82f); // Default fallback
+            var spawnObj = GameObject.Find("Spawn_1");
+            if (spawnObj != null) spawnPos = spawnObj.transform.position;
+
+            var cc = spawnedFpc.GetComponent<CharacterController>();
+            if (cc != null) cc.enabled = false;
+            
+            spawnedFpc.transform.position = spawnPos;
+            
+            if (cc != null) cc.enabled = true;
+            
+            spawnedFpc.enabled = true;
+            spawnedFpc.playerCanMove = true;
+            spawnedFpc.cameraCanMove = true;
+
+            // Make sure the camera is enabled
+            if (spawnedFpc.playerCamera != null)
+            {
+                spawnedFpc.playerCamera.gameObject.SetActive(true);
+            }
+
+            Debug.Log($"[QuickTest] Oyuncu {spawnPos} konumuna ışınlandı ve aktif edildi.");
+        }
+        else
+        {
+            Debug.LogWarning("[QuickTest] Spawn edilmiş oyuncu bulunamadı (zaman aşımı)!");
+        }
+    }
+
     public async void ShowMainMenu()
     {
         _gameplayModeEntered = false;
-        if (MultiplayerManager.Instance != null && MultiplayerManager.Instance.HasActiveLobby)
-            await MultiplayerManager.Instance.LeaveLobby();
+        
+        if (MultiplayerManager.Instance != null)
+        {
+            MultiplayerManager.Instance.IsGameInProgress = false;
+            if (MultiplayerManager.Instance.HasActiveLobby)
+            {
+                await MultiplayerManager.Instance.LeaveLobby();
+            }
+        }
+
+        bool needsSceneReload = false;
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+        {
+            NetworkManager.Singleton.Shutdown();
+            needsSceneReload = true;
+        }
+
+        if (needsSceneReload)
+        {
+            // Wait for shutdown to complete then reload the scene to reset the level
+            StartCoroutine(ReloadSceneAfterShutdown());
+            return;
+        }
 
         _lobbyBridge.Unbind();
         DisableMenuFpc();
@@ -283,5 +385,11 @@ public class SciFiMenuController : MonoBehaviour
         if (menuObject != null) menuObject.SetActive(true);
 
         SetupMainMenuButtons();
+    }
+
+    private IEnumerator ReloadSceneAfterShutdown()
+    {
+        yield return null; // wait a frame
+        UnityEngine.SceneManagement.SceneManager.LoadScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene().name);
     }
 }

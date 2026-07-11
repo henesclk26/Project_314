@@ -1,0 +1,90 @@
+.puzzle-overlay {
+    flex-grow: 1;
+    background-color: rgba(0, 0, 0, 0.95);
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+.puzzle-container {
+    background-color: rgb(20, 25, 35);
+    border-color: rgb(60, 200, 255);
+    border-width: 2px;
+    border-radius: 10px;
+    padding: 30px;
+    align-items: center;
+}
+
+.header-title {
+    font-size: 32px;
+    color: rgb(60, 200, 255);
+    -unity-font-style: bold;
+    margin-bottom: 10px;
+}
+
+.header-subtitle {
+    font-size: 16px;
+    color: rgb(200, 200, 200);
+    margin-bottom: 30px;
+}
+
+.puzzle-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    width: 400px;
+    height: 400px;
+    background-color: rgb(10, 10, 10);
+    border-color: rgb(50, 50, 50);
+    border-width: 2px;
+}
+
+.puzzle-cell {
+    width: 25%;
+    height: 25%;
+    border-color: rgb(50, 50, 50);
+    border-width: 1px;
+    align-items: center;
+    justify-content: center;
+}
+
+.puzzle-node {
+    width: 60%;
+    height: 60%;
+    border-radius: 50%;
+    background-color: rgb(30, 30, 30);
+    color: white;
+    -unity-font-style: bold;
+    font-size: 24px;
+    -unity-text-align: middle-center;
+}
+
+.puzzle-cell.path {
+    background-color: rgba(60, 200, 255, 0.4);
+}
+
+.puzzle-cell.head {
+    background-color: rgba(60, 200, 255, 0.8);
+}
+
+.puzzle-node.reached {
+    background-color: rgb(60, 200, 255);
+    color: black;
+}
+
+.close-btn {
+    margin-top: 30px;
+    width: 200px;
+    height: 40px;
+    background-color: rgb(40, 40, 40);
+    color: white;
+    border-radius: 5px;
+    font-size: 18px;
+    -unity-font-style: bold;
+    border-width: 0;
+}
+
+.close-btn:hover {
+    background-color: rgb(60, 60, 60);
+}

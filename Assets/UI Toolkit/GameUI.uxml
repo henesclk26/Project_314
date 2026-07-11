@@ -1,5 +1,12 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
-    <ui:VisualElement style="flex-grow: 1; position: absolute; height: 119px; width: 342px; top: 1020px; left: 3px; color: rgb(255, 255, 255);">
-        <ui:Label text="v0.0.12" style="height: 109px; width: 328px; font-size: 36px; color: rgb(156, 156, 156);"/>
+    <Style src="project://database/Assets/UI%20Toolkit/ComputerScreen.uss?fileID=7433441132597879392&amp;guid=3b5808da99ad6324cbb7383a2a94a40d&amp;type=3#ComputerScreen"/>
+    <ui:VisualElement style="flex-grow: 1; position: absolute; height: 119px; width: 342px; bottom: 3px; left: 3px; color: rgb(255, 255, 255);">
+        <ui:Label text="v0.0.13" style="height: 109px; width: 328px; font-size: 36px; color: rgb(156, 156, 156); -unity-text-align: lower-left;"/>
+    </ui:VisualElement>
+    <ui:VisualElement name="game-prompt-container" class="prompt-container hidden">
+        <ui:VisualElement class="prompt-box">
+            <ui:Label text="F" class="prompt-key"/>
+            <ui:Label name="game-prompt-text" text="Etkileşim" class="prompt-text"/>
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>
