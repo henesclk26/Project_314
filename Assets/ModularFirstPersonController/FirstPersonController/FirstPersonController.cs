@@ -432,6 +432,11 @@ public class FirstPersonController : NetworkBehaviour
     {
         UpdateInteractionUI();
 
+        if (IsLocalPlayerControlled() && Input.GetKeyDown(KeyCode.F1) && MissionManager.Instance != null)
+        {
+            MissionManager.Instance.ActivateValveMissionServerRpc();
+        }
+
         if (animator != null)
         {
             float currentSpeed = 0f;
@@ -675,6 +680,7 @@ public class FirstPersonController : NetworkBehaviour
     private UnityEngine.UIElements.VisualElement promptBox;
     private UnityEngine.UIElements.Label promptKeyLabel;
     private UnityEngine.UIElements.Label promptTextLabel;
+    private UnityEngine.UIElements.VisualElement warningImg;
 
     public void SetInteractionText(string text)
     {
@@ -704,8 +710,25 @@ public class FirstPersonController : NetworkBehaviour
                         promptKeyLabel = promptContainer.Q<UnityEngine.UIElements.Label>(className: "prompt-key");
                         promptTextLabel = promptContainer.Q<UnityEngine.UIElements.Label>("game-prompt-text");
                     }
+                    
+                    warningImg = doc.rootVisualElement.Q<UnityEngine.UIElements.VisualElement>("valve-warning-image");
                 }
             }
+        }
+
+        if (MissionManager.Instance != null && MissionManager.Instance.IsValveMissionActive.Value)
+        {
+            float pulse = Mathf.PingPong(Time.time * 2f, 1f); // Oscillates between 0 and 1
+            
+            if (warningImg != null)
+            {
+                warningImg.style.display = UnityEngine.UIElements.DisplayStyle.Flex;
+                warningImg.style.opacity = Mathf.Lerp(0.7f, 1f, pulse);
+            }
+        }
+        else
+        {
+            if (warningImg != null) warningImg.style.display = UnityEngine.UIElements.DisplayStyle.None;
         }
 
         if (promptContainer != null && promptTextLabel != null && promptKeyLabel != null && promptBox != null)

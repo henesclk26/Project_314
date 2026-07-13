@@ -15,18 +15,37 @@ public class GeneratorInteractable : MonoBehaviour
         }
     }
 
+    private float activationTime = -1f;
+    private bool wasActive = false;
+
     private void Update()
     {
         if (MissionManager.Instance == null) return;
 
         bool isActive = MissionManager.Instance.IsGeneratorActive.Value;
         
+        if (isActive && !wasActive)
+        {
+            wasActive = true;
+            activationTime = Time.time;
+        }
+
         if (isActive)
         {
             if (rotorObject != null)
             {
                 if (!rotorObject.gameObject.activeSelf) rotorObject.gameObject.SetActive(true);
-                rotorObject.Rotate(Vector3.forward, rotationSpeed * Time.deltaTime, Space.Self);
+                
+                float timeSinceActivation = Time.time - activationTime;
+                
+                if (timeSinceActivation > 1f)
+                {
+                    // 1 saniye bekledikten sonra, 2 saniye boyunca hızlanma (spin-up)
+                    float spinUpProgress = Mathf.Clamp01((timeSinceActivation - 1f) / 2f);
+                    float currentSpeed = rotationSpeed * Mathf.SmoothStep(0f, 1f, spinUpProgress);
+                    
+                    rotorObject.Rotate(Vector3.forward, currentSpeed * Time.deltaTime, Space.Self);
+                }
             }
             return; // No interaction needed anymore
         }

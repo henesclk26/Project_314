@@ -6,6 +6,7 @@ public class LockedAutoDoor : MonoBehaviour
     public float interactionRange = 4f;
     
     private Animator animator;
+    private Animator linkedAnimator;
     private bool isOpen = false;
 
     private void Awake()
@@ -14,6 +15,20 @@ public class LockedAutoDoor : MonoBehaviour
         if (animator == null)
         {
             animator = GetComponentInChildren<Animator>();
+        }
+
+        // Check for a linked -2 door
+        GameObject linkedObj = GameObject.Find(gameObject.name + "-2");
+        if (linkedObj != null)
+        {
+            linkedAnimator = linkedObj.GetComponent<Animator>();
+            if (linkedAnimator == null) linkedAnimator = linkedObj.GetComponentInChildren<Animator>();
+            
+            // Disable independent scripts on the linked door so it only listens to this one
+            var lockedDoor = linkedObj.GetComponent<LockedAutoDoor>();
+            if (lockedDoor != null) lockedDoor.enabled = false;
+            var autoDoor = linkedObj.GetComponent<AutoDoor>();
+            if (autoDoor != null) autoDoor.enabled = false;
         }
     }
 
@@ -40,7 +55,8 @@ public class LockedAutoDoor : MonoBehaviour
         if (isOpen != state)
         {
             isOpen = state;
-            animator.SetBool("IsOpen", isOpen);
+            if (animator != null) animator.SetBool("IsOpen", isOpen);
+            if (linkedAnimator != null) linkedAnimator.SetBool("IsOpen", isOpen);
         }
     }
 

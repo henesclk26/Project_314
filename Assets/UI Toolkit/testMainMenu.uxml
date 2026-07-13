@@ -18,10 +18,10 @@
             </ui:VisualElement>
             <ui:VisualElement class="menu-footer">
                 <ui:Label text="SYSTEM STATUS: ONLINE" class="footer-version"/>
-                <ui:Label text="v0.0.11" class="footer-credits" style="width: 72px; height: 44px; -unity-text-align: upper-center; font-size: 24px;"/>
+                <ui:Label text="v0.0.14" class="footer-credits" style="width: 72px; height: 44px; -unity-text-align: upper-center; font-size: 24px;"/>
             </ui:VisualElement>
         </ui:VisualElement>
-        <ui:VisualElement class="menu-right-panel">
+        <ui:VisualElement enabled="false" class="menu-right-panel">
             <ui:Label text="MISSION OBJECTIVE" class="info-title"/>
             <ui:VisualElement class="info-content">
                 <ui:Label text="A severe energy anomaly has been detected in Sector 7. Coordinate with your team to locate and power up the backup generators." class="info-text"/>
