@@ -41629,6 +41629,22 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4459864851310106426, guid: 6bacecc4f3df9584198879c73a6b6c36, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4459864851310106426, guid: 6bacecc4f3df9584198879c73a6b6c36, type: 3}
+      propertyPath: field of view
+      value: 60.000004
+      objectReference: {fileID: 0}
+    - target: {fileID: 4459864851310106426, guid: 6bacecc4f3df9584198879c73a6b6c36, type: 3}
+      propertyPath: m_FocalLength
+      value: 20.78461
+      objectReference: {fileID: 0}
+    - target: {fileID: 4459864851310106426, guid: 6bacecc4f3df9584198879c73a6b6c36, type: 3}
+      propertyPath: m_projectionMatrixMode
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5756482913775645634, guid: 6bacecc4f3df9584198879c73a6b6c36, type: 3}
       propertyPath: GlobalObjectIdHash
       value: 3443505607
@@ -236353,8 +236369,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36424f9fe44939b4db139b1bf7a5757c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ComputerInteractable
-  data: {fileID: 0}
-  interactionRange: 3
 --- !u!114 &1266155361
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -365027,8 +365041,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36424f9fe44939b4db139b1bf7a5757c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ComputerInteractable
-  data: {fileID: 0}
-  interactionRange: 3
 --- !u!114 &1973373164
 MonoBehaviour:
   m_ObjectHideFlags: 0
