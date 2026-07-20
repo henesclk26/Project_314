@@ -10,6 +10,7 @@ public class MissionManager : NetworkBehaviour
     public NetworkVariable<bool> IsBatteryRoomUnlocked = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     public NetworkVariable<bool> IsBatteryCollected = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     public NetworkVariable<bool> IsGeneratorActive = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    public NetworkVariable<bool> IsWaveFrequencyMissionCompleted = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     
     // Valve Mission states
     public NetworkVariable<bool> IsValveMissionActive = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
@@ -18,6 +19,7 @@ public class MissionManager : NetworkBehaviour
     public event Action OnBatteryRoomUnlocked;
     public event Action OnBatteryCollected;
     public event Action OnGeneratorActivated;
+    public event Action OnWaveFrequencyMissionCompleted;
     public event Action OnValveMissionStarted;
     public event Action OnValveMissionCompleted;
 
@@ -38,6 +40,7 @@ public class MissionManager : NetworkBehaviour
         IsBatteryRoomUnlocked.OnValueChanged += (oldVal, newVal) => { if (newVal) OnBatteryRoomUnlocked?.Invoke(); };
         IsBatteryCollected.OnValueChanged += (oldVal, newVal) => { if (newVal) OnBatteryCollected?.Invoke(); };
         IsGeneratorActive.OnValueChanged += (oldVal, newVal) => { if (newVal) OnGeneratorActivated?.Invoke(); };
+        IsWaveFrequencyMissionCompleted.OnValueChanged += (oldVal, newVal) => { if (newVal) OnWaveFrequencyMissionCompleted?.Invoke(); };
         IsValveMissionActive.OnValueChanged += (oldVal, newVal) => { 
             if (newVal) OnValveMissionStarted?.Invoke();
             else if (!newVal && oldVal) OnValveMissionCompleted?.Invoke();
@@ -80,6 +83,16 @@ public class MissionManager : NetworkBehaviour
             IsValveMissionActive.Value = true;
             Debug.Log("[MissionManager] Valve mission activated!");
         }
+    }
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void CompleteWaveFrequencyMissionRpc()
+    {
+        if (IsWaveFrequencyMissionCompleted.Value)
+            return;
+
+        IsWaveFrequencyMissionCompleted.Value = true;
+        Debug.Log("[MissionManager] Wave frequency mission completed!");
     }
 
     [ServerRpc(RequireOwnership = false)]

@@ -1,12 +1,9 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <Style src="project://database/Assets/UI%20Toolkit/ComputerScreen.uss?fileID=7433441132597879392&amp;guid=3b5808da99ad6324cbb7383a2a94a40d&amp;type=3#ComputerScreen"/>
     <ui:VisualElement style="flex-grow: 1; position: absolute; height: 119px; width: 342px; bottom: 3px; left: 3px; color: rgb(255, 255, 255);">
-        <ui:Label text="v0.0.14" style="height: 109px; width: 328px; font-size: 36px; color: rgb(156, 156, 156); -unity-text-align: lower-left;"/>
+        <ui:Label text="v0.0.15" style="height: 109px; width: 328px; font-size: 36px; color: rgb(156, 156, 156); -unity-text-align: lower-left;"/>
     </ui:VisualElement>
-
-    <!-- Warning Image for Valve Mission -->
     <ui:VisualElement name="valve-warning-image" style="position: absolute; right: 40px; top: 40px; width: 320px; height: 180px; display: none; border-radius: 15px; overflow: hidden; border-width: 2px; border-color: rgba(255, 0, 0, 0.5); background-image: url(&quot;project://database/Assets/%C4%B0mages/pressure%20warning.png?fileID=2800000&amp;guid=3ca4c1093171f24409d66950b788c279&amp;type=3#pressure warning&quot;);"/>
-    
     <ui:VisualElement name="game-prompt-container" class="prompt-container hidden">
         <ui:VisualElement class="prompt-box">
             <ui:Label text="F" class="prompt-key"/>

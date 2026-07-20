@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ui="UnityEngine.UIElements"
+    xmlns:uie="UnityEditor.UIElements"
+    xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd"
+    editor-extension-mode="False"
+>
+    <ui:Style src="project://database/Assets/UI%20Toolkit/WaveFrequencyScreen.uss" />
+
+    <ui:VisualElement name="wave-frequency-overlay" class="wave-frequency-overlay hidden">
+        <ui:VisualElement name="wave-frequency-panel" class="wave-frequency-panel">
+            <ui:VisualElement class="screen-header">
+                <ui:VisualElement class="header-title-group">
+                    <ui:VisualElement class="header-icon" />
+                    <ui:VisualElement>
+                        <ui:Label text="SIGNAL CALIBRATION" class="header-title" />
+                        <ui:Label text="WAVE FREQUENCY TERMINAL // CHANNEL 04" class="header-kicker" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement class="header-actions">
+                    <ui:VisualElement class="connection-indicator" />
+                    <ui:Label text="LINK ACTIVE" class="connection-label" />
+                    <ui:Button name="close-btn" text="X" class="close-btn" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement class="screen-body">
+                <ui:VisualElement class="wave-section">
+                    <ui:VisualElement class="section-heading-row">
+                        <ui:VisualElement>
+                            <ui:Label text="SIGNAL ALIGNMENT" class="section-title" />
+                            <ui:Label text="Match the live signal to the target waveform." class="section-subtitle" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="legend">
+                            <ui:VisualElement class="legend-item">
+                                <ui:VisualElement class="legend-line target-line" />
+                                <ui:Label text="TARGET" class="legend-label" />
+                            </ui:VisualElement>
+                            <ui:VisualElement class="legend-item">
+                                <ui:VisualElement class="legend-line live-line" />
+                                <ui:Label text="LIVE" class="legend-label" />
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                    <ui:VisualElement name="waveform-canvas" class="waveform-canvas">
+                        <ui:Label text="OSC // 7.4 kHz" class="scope-readout scope-readout-left" />
+                        <ui:Label text="SYNC SEARCH" class="scope-readout scope-readout-right" />
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="match-row">
+                        <ui:Label text="SIGNAL MATCH" class="match-label" />
+                        <ui:VisualElement class="match-track">
+                            <ui:VisualElement name="match-progress-fill" class="match-progress-fill" />
+                        </ui:VisualElement>
+                        <ui:Label name="match-percent" text="0%" class="match-percent" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <ui:VisualElement class="control-section">
+                    <ui:Label text="FREQUENCY CONTROLS" class="section-title" />
+
+                    <ui:VisualElement class="control-block">
+                        <ui:VisualElement class="control-heading-row">
+                            <ui:VisualElement>
+                                <ui:Label text="WAVELENGTH" class="control-title" />
+                                <ui:Label text="Horizontal signal period" class="control-subtitle" />
+                            </ui:VisualElement>
+                            <ui:Label name="wavelength-value" text="03 / 05" class="control-value" />
+                        </ui:VisualElement>
+                        <ui:VisualElement name="wavelength-meter" class="step-meter" />
+                        <ui:VisualElement class="key-row">
+                            <ui:VisualElement class="key-command">
+                                <ui:Label text="Q" class="keycap" />
+                                <ui:Label text="DECREASE" class="key-command-label" />
+                            </ui:VisualElement>
+                            <ui:VisualElement class="key-command key-command-right">
+                                <ui:Label text="E" class="keycap" />
+                                <ui:Label text="INCREASE" class="key-command-label" />
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="control-block">
+                        <ui:VisualElement class="control-heading-row">
+                            <ui:VisualElement>
+                                <ui:Label text="WAVE WIDTH" class="control-title" />
+                                <ui:Label text="Vertical signal amplitude" class="control-subtitle" />
+                            </ui:VisualElement>
+                            <ui:Label name="wavewidth-value" text="03 / 05" class="control-value" />
+                        </ui:VisualElement>
+                        <ui:VisualElement name="wavewidth-meter" class="step-meter" />
+                        <ui:VisualElement class="key-row">
+                            <ui:VisualElement class="key-command">
+                                <ui:Label text="S" class="keycap" />
+                                <ui:Label text="DECREASE" class="key-command-label" />
+                            </ui:VisualElement>
+                            <ui:VisualElement class="key-command key-command-right">
+                                <ui:Label text="W" class="keycap" />
+                                <ui:Label text="INCREASE" class="key-command-label" />
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="system-note">
+                        <ui:Label text="SYS" class="system-note-tag" />
+                        <ui:Label text="Adjust both parameters until the signals lock." class="system-note-text" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="mission-complete" class="mission-complete hidden">
+                <ui:VisualElement class="complete-mark">
+                    <ui:Label text="OK" class="complete-mark-text" />
+                </ui:VisualElement>
+                <ui:Label text="MISSION ACCOMPLISHED" class="complete-title" />
+                <ui:Label text="SIGNAL LOCK CONFIRMED" class="complete-subtitle" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
