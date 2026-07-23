@@ -137,6 +137,7 @@ public class FirstPersonController : NetworkBehaviour
     // Internal Variables
     private bool isCrouched = false;
     private Vector3 originalScale;
+    private CapsuleCollider capsuleCollider;
 
     #endregion
     #endregion
@@ -173,6 +174,8 @@ public class FirstPersonController : NetworkBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        capsuleCollider = GetComponent<CapsuleCollider>();
+        ConfigurePlayerCollider();
         if (animator == null) animator = GetComponentInChildren<Animator>();
 
         crosshairObject = GetComponentInChildren<Image>();
@@ -194,6 +197,23 @@ public class FirstPersonController : NetworkBehaviour
         if (NetworkManager.Singleton == null) return true;
         if (!NetworkManager.Singleton.IsListening) return true;
         return IsOwner;
+    }
+
+    private void ConfigurePlayerCollider()
+    {
+        if (capsuleCollider == null)
+            return;
+
+        PhysicsMaterial noFrictionMaterial = new PhysicsMaterial("Player No Friction")
+        {
+            dynamicFriction = 0f,
+            staticFriction = 0f,
+            bounciness = 0f,
+            frictionCombine = PhysicsMaterialCombine.Minimum,
+            bounceCombine = PhysicsMaterialCombine.Minimum
+        };
+
+        capsuleCollider.material = noFrictionMaterial;
     }
 
     public override void OnNetworkSpawn()
@@ -617,7 +637,7 @@ public class FirstPersonController : NetworkBehaviour
         #region Jump
 
         // Gets input and calls jump method
-        if(enableJump && Input.GetKeyDown(jumpKey) && isGrounded)
+        if(enableJump && Input.GetKeyDown(jumpKey) && isGrounded && !isCrouched && !Input.GetKey(crouchKey))
         {
             Jump();
         }
@@ -854,7 +874,7 @@ public class FirstPersonController : NetworkBehaviour
 
             // Checks if player is walking and isGrounded
             // Will allow head bob
-            if (targetVelocity.x != 0 || targetVelocity.z != 0 && isGrounded)
+            if ((targetVelocity.x != 0 || targetVelocity.z != 0) && isGrounded)
             {
                 isWalking = true;
             }
@@ -916,6 +936,13 @@ public class FirstPersonController : NetworkBehaviour
                 rb.AddForce(velocityChange, ForceMode.VelocityChange);
             }
         }
+        else
+        {
+            // Mission UIs disable movement, but any velocity from the previous frame must not carry the player away.
+            rb.linearVelocity = new Vector3(0f, rb.linearVelocity.y, 0f);
+            isWalking = false;
+            isSprinting = false;
+        }
 
         #endregion
     }
@@ -923,9 +950,10 @@ public class FirstPersonController : NetworkBehaviour
     // Sets isGrounded based on a raycast sent straigth down from the player object
     private void CheckGround()
     {
-        Vector3 origin = new Vector3(transform.position.x, transform.position.y - (transform.localScale.y * .5f), transform.position.z);
+        Bounds playerBounds = capsuleCollider != null ? capsuleCollider.bounds : new Bounds(transform.position, transform.lossyScale);
+        Vector3 origin = new Vector3(playerBounds.center.x, playerBounds.min.y + 0.08f, playerBounds.center.z);
         Vector3 direction = transform.TransformDirection(Vector3.down);
-        float distance = .75f;
+        float distance = .16f;
 
         if (Physics.Raycast(origin, direction, out RaycastHit hit, distance))
         {
@@ -969,7 +997,7 @@ public class FirstPersonController : NetworkBehaviour
         // Reduces walkSpeed
         else
         {
-            transform.localScale = new Vector3(originalScale.x, crouchHeight, originalScale.z);
+            transform.localScale = new Vector3(originalScale.x, originalScale.y * crouchHeight, originalScale.z);
             walkSpeed *= speedReduction;
 
             isCrouched = true;

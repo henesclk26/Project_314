@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class AutoDoor : MonoBehaviour
 {
@@ -8,6 +10,56 @@ public class AutoDoor : MonoBehaviour
     private Animator animator;
     private Animator linkedAnimator;
     private bool isOpen = false;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    private static void RegisterAutomaticDoorSetup()
+    {
+        SceneManager.sceneLoaded -= SetupDoorPairs;
+        SceneManager.sceneLoaded += SetupDoorPairs;
+    }
+
+    private static void SetupDoorPairs(Scene scene, LoadSceneMode mode)
+    {
+        Dictionary<string, GameObject> doorsByName = new Dictionary<string, GameObject>();
+
+        foreach (GameObject root in scene.GetRootGameObjects())
+        {
+            foreach (Transform child in root.GetComponentsInChildren<Transform>(true))
+            {
+                if (!doorsByName.ContainsKey(child.name))
+                    doorsByName.Add(child.name, child.gameObject);
+            }
+        }
+
+        foreach (KeyValuePair<string, GameObject> entry in doorsByName)
+        {
+            if (!IsPrimaryDoorName(entry.Key)
+                || !doorsByName.TryGetValue(entry.Key + "-2", out GameObject linkedDoor)
+                || entry.Value.GetComponent<LockedAutoDoor>() != null
+                || entry.Value.GetComponent<AutoDoor>() != null
+                || entry.Value.GetComponentInChildren<Animator>(true) == null
+                || linkedDoor.GetComponentInChildren<Animator>(true) == null)
+            {
+                continue;
+            }
+
+            entry.Value.AddComponent<AutoDoor>();
+        }
+    }
+
+    private static bool IsPrimaryDoorName(string name)
+    {
+        if (!name.StartsWith("Door") || name.Length == "Door".Length)
+            return false;
+
+        for (int i = "Door".Length; i < name.Length; i++)
+        {
+            if (!char.IsDigit(name[i]))
+                return false;
+        }
+
+        return true;
+    }
 
     private void Awake()
     {

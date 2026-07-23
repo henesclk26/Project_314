@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ui="UnityEngine.UIElements"
+    xmlns:uie="UnityEditor.UIElements"
+    xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd"
+    editor-extension-mode="False"
+>
+    <ui:Style src="project://database/Assets/UI%20Toolkit/CircuitMissionScreen.uss" />
+
+    <ui:VisualElement name="circuit-overlay" class="circuit-overlay hidden">
+        <ui:VisualElement class="circuit-panel">
+            <ui:VisualElement class="screen-header">
+                <ui:VisualElement class="header-title-group">
+                    <ui:VisualElement class="header-icon">
+                        <ui:VisualElement class="header-icon-core" />
+                    </ui:VisualElement>
+                    <ui:VisualElement>
+                        <ui:Label text="POWER ROUTING" class="header-title" />
+                        <ui:Label text="CIRCUIT ARRAY // DIRECTIONAL NODE MATRIX" class="header-kicker" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement class="header-actions">
+                    <ui:VisualElement class="connection-indicator" />
+                    <ui:Label text="SOURCE ONLINE" class="connection-label" />
+                    <ui:Button name="close-btn" text="X" class="close-btn" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement class="voltage-strip">
+                <ui:VisualElement class="voltage-box">
+                    <ui:Label text="ACTUAL VOLTAGE" class="voltage-caption" />
+                    <ui:Label name="actual-voltage" text="0" class="voltage-value" />
+                </ui:VisualElement>
+
+                <ui:VisualElement class="power-track-wrap">
+                    <ui:VisualElement class="power-track">
+                        <ui:VisualElement name="power-progress-fill" class="power-progress-fill" />
+                    </ui:VisualElement>
+                    <ui:Label text="POWER TRANSFER" class="track-caption" />
+                </ui:VisualElement>
+
+                <ui:VisualElement class="voltage-box target-voltage-box">
+                    <ui:Label text="TARGET VOLTAGE" class="voltage-caption" />
+                    <ui:Label text="1" class="voltage-value target-voltage" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement class="screen-body">
+                <ui:VisualElement class="board-section">
+                    <ui:VisualElement class="board-heading">
+                        <ui:VisualElement>
+                            <ui:Label text="ROUTING MATRIX" class="section-title" />
+                            <ui:Label name="template-label" text="ROUTE PATTERN // 01" class="section-subtitle" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="legend">
+                            <ui:VisualElement class="legend-item">
+                                <ui:VisualElement class="legend-line idle-line" />
+                                <ui:Label text="CIRCUIT" class="legend-label" />
+                            </ui:VisualElement>
+                            <ui:VisualElement class="legend-item">
+                                <ui:VisualElement class="legend-line live-line" />
+                                <ui:Label text="POWERED" class="legend-label" />
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="board-frame">
+                        <ui:VisualElement class="scanline scanline-top" />
+                        <ui:VisualElement name="circuit-grid" class="circuit-grid" />
+                        <ui:VisualElement class="scanline scanline-bottom" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <ui:VisualElement class="control-section">
+                    <ui:Label text="CIRCUIT TELEMETRY" class="section-title" />
+
+                    <ui:VisualElement class="telemetry-block primary-telemetry">
+                        <ui:Label text="SYSTEM STATE" class="telemetry-caption" />
+                        <ui:Label name="system-status" text="ROUTING POWER" class="system-status" />
+                        <ui:VisualElement class="status-divider" />
+                        <ui:VisualElement class="telemetry-row">
+                            <ui:Label text="ENERGIZED NODES" class="row-label" />
+                            <ui:Label name="route-progress" text="01 / 17" class="row-value" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="telemetry-row">
+                            <ui:Label text="SELECTED" class="row-label" />
+                            <ui:Label name="selected-node" text="NODE 02" class="row-value selected-node" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="telemetry-block">
+                        <ui:Label text="CONTROL BUS" class="telemetry-caption" />
+                        <ui:VisualElement class="control-command">
+                            <ui:Label text="WASD" class="keycap keycap-wide" />
+                            <ui:Label text="SELECT NODE" class="command-label" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="control-command">
+                            <ui:Label text="Q / E" class="keycap keycap-wide" />
+                            <ui:Label text="ROTATE NODE" class="command-label" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="control-command">
+                            <ui:Label text="LMB" class="keycap keycap-wide" />
+                            <ui:Label text="SELECT + ROTATE" class="command-label" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                    <ui:Button name="reset-btn" class="reset-btn">
+                        <ui:VisualElement class="reset-icon" />
+                        <ui:Label text="RESET CIRCUIT" class="reset-label" />
+                        <ui:Label text="R" class="reset-key" />
+                    </ui:Button>
+
+                    <ui:VisualElement class="system-note">
+                        <ui:Label text="SYS" class="system-note-tag" />
+                        <ui:Label text="ROTATE ACTIVE NODES UNTIL OUTPUT VOLTAGE STABILIZES." class="system-note-text" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="mission-complete" class="mission-complete hidden">
+                <ui:VisualElement class="complete-mark">
+                    <ui:Label text="OK" class="complete-mark-text" />
+                </ui:VisualElement>
+                <ui:Label text="MISSION ACCOMPLISHED" class="complete-title" />
+                <ui:Label text="POWER ROUTE ESTABLISHED" class="complete-subtitle" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
