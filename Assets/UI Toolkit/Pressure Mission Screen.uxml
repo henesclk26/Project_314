@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ui="UnityEngine.UIElements"
+    xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd"
+    editor-extension-mode="False"
+>
+    <ui:Style src="project://database/Assets/UI%20Toolkit/PressureMissionScreen.uss" />
+
+    <ui:VisualElement name="terminal-prompt" class="terminal-prompt hidden">
+        <ui:VisualElement class="terminal-prompt-box">
+            <ui:Label text="F" class="terminal-prompt-key" />
+            <ui:Label text="Bilgisayara Bak" class="terminal-prompt-text" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+
+    <ui:VisualElement name="pressure-overlay" class="pressure-overlay hidden">
+        <ui:VisualElement class="pressure-panel">
+            <ui:VisualElement class="panel-corner corner-top-left" />
+            <ui:VisualElement class="panel-corner corner-top-right" />
+            <ui:VisualElement class="panel-corner corner-bottom-left" />
+            <ui:VisualElement class="panel-corner corner-bottom-right" />
+
+            <ui:VisualElement class="pressure-header">
+                <ui:VisualElement class="title-group">
+                    <ui:VisualElement class="header-emblem">
+                        <ui:VisualElement class="header-emblem-core" />
+                    </ui:VisualElement>
+                    <ui:VisualElement>
+                        <ui:Label text="PRESSURE CONTROL" class="screen-title" />
+                        <ui:Label text="CHAMBER STABILIZATION // REMOTE VALVE ARRAY" class="screen-subtitle" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement class="header-right">
+                    <ui:VisualElement class="live-indicator" />
+                    <ui:Label text="LIVE TELEMETRY" class="live-label" />
+                    <ui:Button name="close-btn" text="X" class="close-btn" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement class="pressure-content">
+                <ui:VisualElement class="gauge-section">
+                    <ui:VisualElement class="section-heading">
+                        <ui:VisualElement>
+                            <ui:Label text="CHAMBER PRESSURE" class="section-caption" />
+                            <ui:Label text="PRIMARY MANIFOLD // SENSOR P-04" class="section-microcopy" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="sensor-badge">
+                            <ui:VisualElement class="sensor-badge-dot" />
+                            <ui:Label text="SENSOR ONLINE" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="gauge-shell">
+                        <ui:VisualElement class="gauge-screw screw-top-left"><ui:VisualElement class="screw-slot" /></ui:VisualElement>
+                        <ui:VisualElement class="gauge-screw screw-top-right"><ui:VisualElement class="screw-slot" /></ui:VisualElement>
+                        <ui:VisualElement class="gauge-screw screw-bottom-left"><ui:VisualElement class="screw-slot" /></ui:VisualElement>
+                        <ui:VisualElement class="gauge-screw screw-bottom-right"><ui:VisualElement class="screw-slot" /></ui:VisualElement>
+
+                        <ui:VisualElement class="gauge-bezel">
+                            <ui:VisualElement class="gauge-face">
+                                <ui:VisualElement name="pressure-gauge" class="pressure-gauge">
+                                    <ui:VisualElement class="gauge-brand">
+                                        <ui:Label text="PNEUMATIC ARRAY" class="gauge-brand-title" />
+                                        <ui:Label text="CALIBRATED SENSOR // P-04" class="gauge-brand-subtitle" />
+                                    </ui:VisualElement>
+
+                                    <ui:Label text="0" class="dial-number dial-number-0" />
+                                    <ui:Label text="2.5" class="dial-number dial-number-25" />
+                                    <ui:Label text="5" class="dial-number dial-number-50" />
+                                    <ui:Label text="7.5" class="dial-number dial-number-75" />
+                                    <ui:Label text="10" class="dial-number dial-number-100" />
+
+                                    <ui:VisualElement class="needle-shadow" />
+                                    <ui:VisualElement name="pressure-needle" class="pressure-needle" />
+                                    <ui:VisualElement class="needle-hub-outer">
+                                        <ui:VisualElement class="needle-hub-inner" />
+                                    </ui:VisualElement>
+
+                                    <ui:VisualElement class="digital-readout">
+                                        <ui:Label name="pressure-readout" text="00.0" class="readout-value" />
+                                        <ui:Label text="BAR" class="readout-unit" />
+                                    </ui:VisualElement>
+                                </ui:VisualElement>
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="gauge-legend">
+                        <ui:VisualElement class="legend-item"><ui:VisualElement class="legend-swatch swatch-nominal" /><ui:Label text="OPERATING" /></ui:VisualElement>
+                        <ui:VisualElement class="legend-item"><ui:VisualElement class="legend-swatch swatch-optimal" /><ui:Label text="OPTIMUM BAND" /></ui:VisualElement>
+                        <ui:VisualElement class="legend-item"><ui:VisualElement class="legend-swatch swatch-critical" /><ui:Label text="OVERPRESSURE" /></ui:VisualElement>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <ui:VisualElement class="status-section">
+                    <ui:Label text="CALIBRATION CONTROL" class="section-caption" />
+                    <ui:Label text="COOPERATIVE MANIFOLD TELEMETRY" class="section-microcopy" />
+
+                    <ui:VisualElement class="status-block">
+                        <ui:VisualElement class="status-topline">
+                            <ui:Label text="SYSTEM STATE" class="status-label" />
+                            <ui:Label text="P-04" class="status-id" />
+                        </ui:VisualElement>
+                        <ui:Label name="pressure-state" text="AWAITING CALIBRATION" class="pressure-state" />
+                        <ui:VisualElement class="status-rule" />
+                        <ui:Label name="pressure-detail" text="INITIALIZE TERMINAL TO ENABLE VALVES" class="pressure-detail" />
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="channel-strip">
+                        <ui:VisualElement class="channel-row">
+                            <ui:Label text="REMOTE VALVE A" class="channel-name" />
+                            <ui:VisualElement class="channel-light" />
+                            <ui:Label text="LINKED" class="channel-value" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="channel-row channel-row-second">
+                            <ui:Label text="REMOTE VALVE B" class="channel-name" />
+                            <ui:VisualElement class="channel-light" />
+                            <ui:Label text="LINKED" class="channel-value" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="stabilize-header">
+                        <ui:Label text="STABILIZATION HOLD" class="status-label" />
+                        <ui:Label text="1.5 SEC" class="hold-time" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="hold-meter">
+                        <ui:VisualElement name="stabilize-progress" class="stabilize-progress" />
+                        <ui:VisualElement class="meter-tick meter-tick-1" />
+                        <ui:VisualElement class="meter-tick meter-tick-2" />
+                        <ui:VisualElement class="meter-tick meter-tick-3" />
+                    </ui:VisualElement>
+                    <ui:Button name="stabilize-btn" text="HOLD TO STABILIZE" class="stabilize-btn" />
+
+                    <ui:VisualElement class="remote-note">
+                        <ui:Label text="LIVE INPUT" class="note-tag" />
+                        <ui:Label text="REMOTE VALVE MOVEMENT REMAINS ACTIVE DURING THE STABILIZATION WINDOW." class="note-copy" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="mission-complete" class="mission-complete hidden">
+                <ui:VisualElement class="complete-ring"><ui:Label text="OK" class="complete-mark" /></ui:VisualElement>
+                <ui:Label text="MISSION ACCOMPLISHED" class="complete-title" />
+                <ui:Label text="CHAMBER PRESSURE STABILIZED" class="complete-subtitle" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+
+    <ui:VisualElement name="valve-instructions" class="valve-instructions hidden">
+        <ui:VisualElement class="valve-hint-title"><ui:Label text="VALVE CONTROL" /></ui:VisualElement>
+        <ui:VisualElement class="valve-hint-row">
+            <ui:Label text="Q" class="hint-key" />
+            <ui:Label text="TURN LEFT" class="hint-text" />
+        </ui:VisualElement>
+        <ui:VisualElement class="valve-hint-row valve-hint-row-second">
+            <ui:Label text="E" class="hint-key" />
+            <ui:Label text="TURN RIGHT" class="hint-text" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

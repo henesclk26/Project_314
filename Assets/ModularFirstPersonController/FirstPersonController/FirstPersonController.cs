@@ -716,23 +716,34 @@ public class FirstPersonController : NetworkBehaviour
             promptBox = null;
             promptKeyLabel = null;
             promptTextLabel = null;
-            
-            var go = GameObject.Find("GameUI");
-            if (go != null)
+
+            var documents = FindObjectsByType<UnityEngine.UIElements.UIDocument>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            foreach (var doc in documents)
             {
-                var doc = go.GetComponent<UnityEngine.UIElements.UIDocument>();
-                if (doc != null && doc.rootVisualElement != null)
+                if (doc == null || doc.rootVisualElement == null)
+                    continue;
+
+                var candidate = doc.rootVisualElement.Q<UnityEngine.UIElements.VisualElement>("game-prompt-container");
+                if (candidate == null || candidate.panel == null)
+                    continue;
+
+                promptContainer = candidate;
+                promptBox = promptContainer.Q<UnityEngine.UIElements.VisualElement>(className: "prompt-box");
+                promptKeyLabel = promptContainer.Q<UnityEngine.UIElements.Label>(className: "prompt-key");
+                promptTextLabel = promptContainer.Q<UnityEngine.UIElements.Label>("game-prompt-text");
+                warningImg = doc.rootVisualElement.Q<UnityEngine.UIElements.VisualElement>("valve-warning-image");
+
+                if (promptBox != null && promptKeyLabel != null && promptTextLabel != null)
                 {
-                    promptContainer = doc.rootVisualElement.Q<UnityEngine.UIElements.VisualElement>("game-prompt-container");
-                    if (promptContainer != null)
-                    {
-                        promptBox = promptContainer.Q<UnityEngine.UIElements.VisualElement>(className: "prompt-box");
-                        promptKeyLabel = promptContainer.Q<UnityEngine.UIElements.Label>(className: "prompt-key");
-                        promptTextLabel = promptContainer.Q<UnityEngine.UIElements.Label>("game-prompt-text");
-                    }
-                    
-                    warningImg = doc.rootVisualElement.Q<UnityEngine.UIElements.VisualElement>("valve-warning-image");
+                    break;
                 }
+
+                promptContainer = null;
+                promptBox = null;
+                promptKeyLabel = null;
+                promptTextLabel = null;
             }
         }
 
