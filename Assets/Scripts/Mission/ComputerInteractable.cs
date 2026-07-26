@@ -21,7 +21,9 @@ public class ComputerInteractable : MonoBehaviour
         float distance = Vector3.Distance(transform.position, ownerFpc.transform.position);
         if (distance <= interactionRange)
         {
-            SetInRange(true);
+            isInRange = true;
+            if (ComputerUIManager.Instance != null)
+                ComputerUIManager.Instance.SetPromptVisible(true);
             
             // Interaction logic
             if (Input.GetKeyDown(KeyCode.F))
@@ -64,6 +66,8 @@ public class ComputerInteractable : MonoBehaviour
             {
                 if (f.IsOwner) return f;
             }
+
+            return null;
         }
         if (allFpcs.Length > 0) return allFpcs[0];
         return null;

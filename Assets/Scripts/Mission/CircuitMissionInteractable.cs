@@ -60,6 +60,8 @@ public class CircuitMissionInteractable : MonoBehaviour
                 if (fpc.IsOwner)
                     return fpc;
             }
+
+            return null;
         }
 
         return allFpcs.Length > 0 ? allFpcs[0] : null;

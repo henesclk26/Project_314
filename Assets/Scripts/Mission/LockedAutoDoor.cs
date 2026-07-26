@@ -38,16 +38,29 @@ public class LockedAutoDoor : MonoBehaviour
 
         // Is it unlocked globally?
         bool isUnlocked = MissionManager.Instance != null && MissionManager.Instance.IsBatteryRoomUnlocked.Value;
-
-        FirstPersonController ownerFpc = GetOwnerFpc();
-        if (ownerFpc == null || ownerFpc.isDead.Value || !isUnlocked) 
+        if (!isUnlocked)
         {
             SetDoorState(false);
             return;
         }
 
-        float distance = Vector3.Distance(transform.position, ownerFpc.transform.position);
-        SetDoorState(distance <= interactionRange);
+        SetDoorState(IsAnyPlayerNear());
+    }
+
+    private bool IsAnyPlayerNear()
+    {
+        var allFpcs = FindObjectsByType<FirstPersonController>(FindObjectsSortMode.None);
+        foreach (var fpc in allFpcs)
+        {
+            if (fpc != null && !fpc.isDead.Value)
+            {
+                if (Vector3.Distance(transform.position, fpc.transform.position) <= interactionRange)
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private void SetDoorState(bool state)
@@ -58,19 +71,5 @@ public class LockedAutoDoor : MonoBehaviour
             if (animator != null) animator.SetBool("IsOpen", isOpen);
             if (linkedAnimator != null) linkedAnimator.SetBool("IsOpen", isOpen);
         }
-    }
-
-    private FirstPersonController GetOwnerFpc()
-    {
-        var allFpcs = FindObjectsByType<FirstPersonController>(FindObjectsSortMode.None);
-        if (Unity.Netcode.NetworkManager.Singleton != null && Unity.Netcode.NetworkManager.Singleton.IsListening)
-        {
-            foreach (var f in allFpcs)
-            {
-                if (f.IsOwner) return f;
-            }
-        }
-        if (allFpcs.Length > 0) return allFpcs[0]; // Fallback if networking is not active
-        return null;
     }
 }

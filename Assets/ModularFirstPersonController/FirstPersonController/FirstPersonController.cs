@@ -450,7 +450,8 @@ public class FirstPersonController : NetworkBehaviour
 
     private void Update()
     {
-        UpdateInteractionUI();
+        if (IsLocalPlayerControlled())
+            UpdateInteractionUI();
 
         if (IsLocalPlayerControlled() && Input.GetKeyDown(KeyCode.F1) && MissionManager.Instance != null)
         {
@@ -704,6 +705,9 @@ public class FirstPersonController : NetworkBehaviour
 
     public void SetInteractionText(string text)
     {
+        if (!IsLocalPlayerControlled())
+            return;
+
         interactionText = text;
         interactionTextTimer = Time.time + 0.1f;
     }

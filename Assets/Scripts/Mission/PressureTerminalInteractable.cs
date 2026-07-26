@@ -60,6 +60,8 @@ public class PressureTerminalInteractable : MonoBehaviour
                 if (player.IsOwner)
                     return player;
             }
+
+            return null;
         }
 
         return players.Length > 0 ? players[0] : null;

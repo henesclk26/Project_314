@@ -40,6 +40,7 @@ public class PuzzleTerminalInteractable : MonoBehaviour
         if (Unity.Netcode.NetworkManager.Singleton != null && Unity.Netcode.NetworkManager.Singleton.IsListening)
         {
             foreach (var f in allFpcs) if (f.IsOwner) return f;
+            return null;
         }
         if (allFpcs.Length > 0) return allFpcs[0];
         return null;
