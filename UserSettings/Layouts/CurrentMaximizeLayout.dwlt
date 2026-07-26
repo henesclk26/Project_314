@@ -247,12 +247,16 @@ MonoBehaviour:
     m_DynamicPanelBehavior: 0
   m_SceneHierarchy:
     m_TreeViewState:
-      scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: []
+      scrollPos: {x: 0, y: 52}
+      m_SelectedIDs:
+      - m_Data: -45178
       m_LastClickedID:
-        m_Data: 0
+        m_Data: -45178
       m_ExpandedIDs:
+      - m_Data: -17148
       - m_Data: -1376
+      - m_Data: 68816
+      - m_Data: 79952
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -270,7 +274,7 @@ MonoBehaviour:
         m_OriginalEventType: 11
         m_IsRenamingFilename: 0
         m_TrimLeadingAndTrailingWhitespace: 0
-        m_ClientGUIView: {fileID: 0}
+        m_ClientGUIView: {fileID: 5}
       m_SearchString: 
     m_ExpandedScenes: []
     m_CurrenRootInstanceID: 0
@@ -904,9 +908,9 @@ MonoBehaviour:
   m_AudioPlay: 0
   m_DebugDrawModesUseInteractiveLightBakingData: 0
   m_Position:
-    m_Target: {x: -38.002647, y: 3.8376822, z: 4.3555565}
+    m_Target: {x: -86.91021, y: 2.7637508, z: 25.586754}
     speed: 2
-    m_Value: {x: -38.002647, y: 3.8376822, z: 4.3555565}
+    m_Value: {x: -86.91021, y: 2.7637508, z: 25.586754}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -952,13 +956,13 @@ MonoBehaviour:
     m_GridAxis: 1
     m_gridOpacity: 0.506
   m_Rotation:
-    m_Target: {x: 0.121028945, y: -0.7028419, z: 0.117734596, w: 0.6918096}
+    m_Target: {x: -0.00908049, y: -0.9665443, z: 0.048835963, w: -0.25411454}
     speed: 2
-    m_Value: {x: 0.12078599, y: -0.7034931, z: 0.1178514, w: 0.69037604}
+    m_Value: {x: -0.009074822, y: -0.965941, z: 0.048805483, w: -0.25395593}
   m_Size:
-    m_Target: 1.4447508
+    m_Target: 1.3176489
     speed: 2
-    m_Value: 1.4447508
+    m_Value: 1.3176489
   m_Ortho:
     m_Target: 0
     speed: 2
@@ -1193,7 +1197,7 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets
+    - Assets/ithappy/Sci-Fi_Props/Meshes/Gas_can
     m_Globs: []
     m_ProductIds: 
     m_AnyWithAssetOrigin: 0
@@ -1203,18 +1207,18 @@ MonoBehaviour:
   m_ViewMode: 1
   m_StartGridSize: 59
   m_LastFolders:
-  - Assets
+  - Assets/ithappy/Sci-Fi_Props/Meshes/Gas_can
   m_LastFoldersGridSize: 59
   m_LastProjectPath: C:\unityProjects\Random Event
   m_LockTracker:
     m_IsLocked: 0
   m_LastLocalAssetsSearchArea: 1
   m_FolderTreeState:
-    scrollPos: {x: 0, y: 0}
+    scrollPos: {x: 0, y: 372}
     m_SelectedIDs:
-    - m_Data: 85524
+    - m_Data: 85664
     m_LastClickedID:
-      m_Data: 85524
+      m_Data: 85664
     m_ExpandedIDs:
     - m_Data: 0
     - m_Data: 63832
@@ -1252,6 +1256,7 @@ MonoBehaviour:
     - m_Data: 85138
     - m_Data: 85140
     - m_Data: 85142
+    - m_Data: 85522
     - m_Data: 1000000000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
@@ -1320,7 +1325,6 @@ MonoBehaviour:
     - m_Data: 85138
     - m_Data: 85140
     - m_Data: 85142
-    - m_Data: 1000000000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -1347,9 +1351,10 @@ MonoBehaviour:
       m_Icon: {fileID: 0}
       m_ResourceFile: 
   m_ListAreaState:
-    m_SelectedInstanceIDs: []
-    m_LastClickedInstanceID: 0
-    m_HadKeyboardFocusLastEvent: 0
+    m_SelectedInstanceIDs:
+    - m_Data: -45178
+    m_LastClickedInstanceID: -45178
+    m_HadKeyboardFocusLastEvent: 1
     m_ExpandedInstanceIDs:
     - m_Data: 66290
     - m_Data: 66334
@@ -1441,8 +1446,8 @@ MonoBehaviour:
     y: 0
     width: 345
     height: 933
-  m_MinSize: {x: 276, y: 76}
-  m_MaxSize: {x: 4001, y: 4026}
+  m_MinSize: {x: 275, y: 50}
+  m_MaxSize: {x: 4000, y: 4000}
   m_ActualView: {fileID: 14}
   m_Panes:
   - {fileID: 14}

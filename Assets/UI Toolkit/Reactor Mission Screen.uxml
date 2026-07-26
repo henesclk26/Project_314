@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ui="UnityEngine.UIElements"
+    xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd"
+    editor-extension-mode="False"
+>
+    <ui:Style src="project://database/Assets/UI%20Toolkit/ReactorMissionScreen.uss" />
+
+    <ui:VisualElement name="reactor-terminal-prompt" class="terminal-prompt hidden">
+        <ui:VisualElement class="terminal-prompt-box">
+            <ui:Label text="F" class="terminal-prompt-key" />
+            <ui:Label text="Bilgisayara Bak" class="terminal-prompt-text" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+
+    <ui:VisualElement name="reactor-overlay" class="reactor-overlay hidden">
+        <ui:VisualElement class="reactor-panel">
+            <ui:VisualElement class="panel-corner corner-top-left" />
+            <ui:VisualElement class="panel-corner corner-top-right" />
+            <ui:VisualElement class="panel-corner corner-bottom-left" />
+            <ui:VisualElement class="panel-corner corner-bottom-right" />
+
+            <ui:VisualElement class="reactor-header">
+                <ui:VisualElement class="title-group">
+                    <ui:VisualElement class="reactor-emblem"><ui:VisualElement class="emblem-core" /></ui:VisualElement>
+                    <ui:VisualElement>
+                        <ui:Label text="REACTOR CONTROL" class="screen-title" />
+                        <ui:Label text="CORE FUEL MANAGEMENT // THREE-POINT IGNITION ARRAY" class="screen-subtitle" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement class="header-right">
+                    <ui:VisualElement class="live-dot" />
+                    <ui:Label text="LIVE CORE TELEMETRY" class="live-label" />
+                    <ui:Button name="reactor-close-btn" text="X" class="close-btn" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement class="reactor-content">
+                <ui:VisualElement class="fuel-section">
+                    <ui:VisualElement class="section-heading">
+                        <ui:VisualElement>
+                            <ui:Label text="CORE FUEL RESERVE" class="section-caption" />
+                            <ui:Label text="CRYOGENIC REACTANT VESSEL // R-06" class="section-microcopy" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="fuel-cell-counter">
+                            <ui:Label text="AVAILABLE CELLS" class="counter-label" />
+                            <ui:Label name="available-cans" text="06" class="counter-value" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="fuel-display">
+                        <ui:VisualElement class="tank-shell">
+                            <ui:VisualElement class="tank-cap" />
+                            <ui:VisualElement class="tank-window">
+                                <ui:VisualElement name="fuel-fill" class="fuel-fill" />
+                                <ui:VisualElement class="tank-grid grid-line-1" />
+                                <ui:VisualElement class="tank-grid grid-line-2" />
+                                <ui:VisualElement class="tank-grid grid-line-3" />
+                                <ui:VisualElement class="tank-grid grid-line-4" />
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                        <ui:VisualElement class="fuel-readout">
+                            <ui:Label name="fuel-value" text="000" class="fuel-value" />
+                            <ui:Label text="%" class="fuel-percent" />
+                            <ui:Label name="fuel-units" text="0/5 FUEL CELLS" class="fuel-units" />
+                            <ui:VisualElement class="readout-rule" />
+                            <ui:Label text="NOMINAL IGNITION THRESHOLD" class="readout-caption" />
+                            <ui:Label text="100%" class="threshold-value" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="fuel-scale">
+                        <ui:Label text="EMPTY" />
+                        <ui:VisualElement class="scale-rule" />
+                        <ui:Label text="IGNITION READY" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <ui:VisualElement class="status-section">
+                    <ui:Label text="IGNITION CONTROL" class="section-caption" />
+                    <ui:Label text="COOPERATIVE SAFETY INTERLOCK" class="section-microcopy" />
+
+                    <ui:VisualElement class="status-block">
+                        <ui:VisualElement class="status-topline">
+                            <ui:Label text="SYSTEM STATE" class="status-label" />
+                            <ui:Label text="R-06" class="status-id" />
+                        </ui:VisualElement>
+                        <ui:Label name="reactor-state" text="SYSTEM OFFLINE" class="reactor-state" />
+                        <ui:VisualElement class="status-rule" />
+                        <ui:Label name="reactor-detail" text="INITIALIZE REACTOR CONTROL" class="reactor-detail" />
+                    </ui:VisualElement>
+
+                    <ui:Label text="REMOTE LEVER ARRAY" class="status-label lever-title" />
+                    <ui:VisualElement class="lever-array">
+                        <ui:VisualElement class="lever-channel">
+                            <ui:VisualElement name="lever-indicator-1" class="lever-indicator"><ui:Label text="01" /></ui:VisualElement>
+                            <ui:Label name="lever-state-1" text="STANDBY" class="lever-state" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="lever-channel">
+                            <ui:VisualElement name="lever-indicator-2" class="lever-indicator"><ui:Label text="02" /></ui:VisualElement>
+                            <ui:Label name="lever-state-2" text="STANDBY" class="lever-state" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="lever-channel">
+                            <ui:VisualElement name="lever-indicator-3" class="lever-indicator"><ui:Label text="03" /></ui:VisualElement>
+                            <ui:Label name="lever-state-3" text="STANDBY" class="lever-state" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="sync-header">
+                        <ui:Label text="SYNCHRONIZATION WINDOW" class="status-label" />
+                        <ui:Label name="sync-value" text="STANDBY" class="sync-value" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="sync-meter">
+                        <ui:VisualElement name="sync-fill" class="sync-fill" />
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="operator-note">
+                        <ui:Label text="OPERATOR NOTICE" class="note-tag" />
+                        <ui:Label text="THREE UNIQUE OPERATORS MUST ENGAGE THE REMOTE LEVERS WITHIN THE SYNCHRONIZATION WINDOW." class="note-copy" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="reactor-mission-complete" class="mission-complete hidden">
+                <ui:VisualElement class="complete-ring"><ui:Label text="ON" class="complete-mark" /></ui:VisualElement>
+                <ui:Label text="MISSION ACCOMPLISHED" class="complete-title" />
+                <ui:Label text="REACTOR IGNITION SEQUENCE COMPLETE" class="complete-subtitle" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
