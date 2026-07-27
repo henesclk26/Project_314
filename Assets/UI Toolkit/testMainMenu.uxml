@@ -18,7 +18,7 @@
             </ui:VisualElement>
             <ui:VisualElement class="menu-footer">
                 <ui:Label text="SYSTEM STATUS: ONLINE" class="footer-version"/>
-                <ui:Label text="v0.0.17" class="footer-credits" style="width: 72px; height: 44px; -unity-text-align: upper-center; font-size: 24px;"/>
+                <ui:Label text="v0.0.18" class="footer-credits" style="width: 72px; height: 44px; -unity-text-align: upper-center; font-size: 24px;"/>
             </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement enabled="false" class="menu-right-panel">

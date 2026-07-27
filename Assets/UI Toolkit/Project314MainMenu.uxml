@@ -1,0 +1,93 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI%20Toolkit/Project314MainMenu.uss?fileID=7433441132597879392&amp;guid=025b634857d58174881bca0082c984b7&amp;type=3#Project314MainMenu"/>
+    <ui:VisualElement name="project314-main-menu" class="os-root">
+        <ui:VisualElement class="terminal-grid">
+            <ui:VisualElement class="grid-line grid-line-top"/>
+            <ui:VisualElement class="grid-line grid-line-middle"/>
+            <ui:VisualElement class="grid-line grid-line-bottom"/>
+            <ui:VisualElement class="grid-rail grid-rail-left"/>
+            <ui:VisualElement class="grid-rail grid-rail-right"/>
+        </ui:VisualElement>
+        <ui:VisualElement class="os-topbar">
+            <ui:VisualElement class="topbar-cluster">
+                <ui:VisualElement class="system-mark">
+                    <ui:VisualElement class="system-mark-core"/>
+                </ui:VisualElement>
+                <ui:Label text="P314.OS" class="topbar-name"/>
+                <ui:Label text="SHIPBOARD COMMAND INTERFACE" class="topbar-meta"/>
+            </ui:VisualElement>
+            <ui:VisualElement class="topbar-cluster topbar-cluster-right">
+                <ui:Label text="CREW LINK" class="topbar-meta"/>
+                <ui:VisualElement class="status-indicator">
+                    <ui:VisualElement class="status-light"/>
+                    <ui:Label text="NOMINAL" class="status-text"/>
+                </ui:VisualElement>
+                <ui:Label text="BUILD 0.0.18" class="topbar-meta topbar-build"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement class="os-main">
+            <ui:VisualElement class="title-block">
+                <ui:Label text="PROJECT 314" class="os-title"/>
+                <ui:VisualElement class="title-rule">
+                    <ui:VisualElement class="title-rule-core"/>
+                </ui:VisualElement>
+                <ui:Label text="OPERATIONAL ACCESS TERMINAL" class="os-subtitle"/>
+            </ui:VisualElement>
+            <ui:VisualElement class="diagnostic-row">
+                <ui:VisualElement class="diagnostic-cell">
+                    <ui:Label text="NAVIGATION" class="diagnostic-label"/>
+                    <ui:Label text="LOCKED" class="diagnostic-value"/>
+                </ui:VisualElement>
+                <ui:VisualElement class="diagnostic-cell">
+                    <ui:Label text="ANOMALY GRID" class="diagnostic-label"/>
+                    <ui:Label text="ACTIVE" class="diagnostic-value diagnostic-warning"/>
+                </ui:VisualElement>
+                <ui:VisualElement class="diagnostic-cell">
+                    <ui:Label text="BACKUP POWER" class="diagnostic-label"/>
+                    <ui:Label text="OFFLINE" class="diagnostic-value diagnostic-muted"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="session-section">
+                <ui:VisualElement class="session-heading">
+                    <ui:Label text="SELECT CREW SESSION" class="session-title"/>
+                    <ui:Label text="AUTHORIZATION REQUIRED" class="session-meta"/>
+                </ui:VisualElement>
+                <ui:VisualElement class="mode-grid">
+                    <ui:VisualElement class="mode-column">
+                        <ui:VisualElement class="mode-header">
+                            <ui:Label text="01" class="mode-index"/>
+                            <ui:Label text="CLOSED CHANNEL" class="mode-kicker"/>
+                        </ui:VisualElement>
+                        <ui:Button name="btn-private-game" text="PRIVATE GAME" class="mode-button"/>
+                        <ui:Label text="HOST A CONTROLLED CREW SESSION" class="mode-detail"/>
+                    </ui:VisualElement>
+                    <ui:VisualElement class="mode-separator">
+                        <ui:VisualElement class="mode-separator-mark"/>
+                    </ui:VisualElement>
+                    <ui:VisualElement class="mode-column">
+                        <ui:VisualElement class="mode-header">
+                            <ui:Label text="02" class="mode-index"/>
+                            <ui:Label text="OPEN UPLINK" class="mode-kicker"/>
+                        </ui:VisualElement>
+                        <ui:Button name="btn-public-game" text="PUBLIC GAME" class="mode-button"/>
+                        <ui:Label text="JOIN THE ACTIVE CREW NETWORK" class="mode-detail"/>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement class="os-bottom">
+            <ui:VisualElement class="mission-ticker">
+                <ui:VisualElement class="ticker-signal"/>
+                <ui:Label text="PRIORITY NOTICE" class="ticker-label"/>
+                <ui:Label text="SECTOR 07 ENERGY ANOMALY REMAINS UNRESOLVED" class="ticker-message"/>
+            </ui:VisualElement>
+            <ui:VisualElement class="utility-strip">
+                <ui:Button name="btn-settings" text="SETTINGS" class="utility-button"/>
+                <ui:VisualElement class="utility-divider"/>
+                <ui:Button name="btn-quick-test" text="QUICK TEST" class="utility-button utility-button-test"/>
+                <ui:VisualElement class="utility-divider"/>
+                <ui:Button name="btn-quit-game" text="QUIT GAME" class="utility-button utility-button-quit"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

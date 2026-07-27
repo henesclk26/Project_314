@@ -14,7 +14,12 @@ public class SciFiMenuController : MonoBehaviour
     public GameObject publicLobbyObject;
     public FirstPersonController fpc;
 
+    [Header("Main Menu Themes")]
+    public VisualTreeAsset classicMainMenuAsset;
+    public VisualTreeAsset alternateMainMenuAsset;
+
     private UIToolkitLobbyBridge _lobbyBridge;
+    private bool _showingAlternateMainMenu;
 
     private void Awake()
     {
@@ -76,8 +81,11 @@ public class SciFiMenuController : MonoBehaviour
             }
         }
 
-        if (menuObject != null) menuObject.SetActive(true);
-        SetupMainMenuButtons();
+        if (menuObject != null)
+        {
+            menuObject.SetActive(true);
+            SetMainMenuVisualTree(showAlternate: false);
+        }
     }
 
     private void OpenActivePrivateLobby()
@@ -114,7 +122,34 @@ public class SciFiMenuController : MonoBehaviour
         {
             _gameplayModeEntered = true;
             EnterGameplayMode(hideMenusOnly: false);
+            return;
         }
+
+        if (menuObject != null && menuObject.activeInHierarchy && Input.GetKeyDown(KeyCode.F1))
+            SetMainMenuVisualTree(!_showingAlternateMainMenu);
+    }
+
+    private void SetMainMenuVisualTree(bool showAlternate)
+    {
+        var uiDoc = menuObject != null ? menuObject.GetComponent<UIDocument>() : null;
+        if (uiDoc == null)
+        {
+            Debug.LogError("[SciFiMenuController] menuObject'te UIDocument bulunamadı!");
+            return;
+        }
+
+        var targetTree = showAlternate ? alternateMainMenuAsset : classicMainMenuAsset;
+        if (targetTree == null)
+        {
+            Debug.LogError($"[SciFiMenuController] {(showAlternate ? "Alternate" : "Classic")} main menu UXML atanmamış!");
+            return;
+        }
+
+        if (uiDoc.visualTreeAsset != targetTree)
+            uiDoc.visualTreeAsset = targetTree;
+
+        _showingAlternateMainMenu = showAlternate;
+        SetupMainMenuButtons();
     }
 
     private void SetupMainMenuButtons()
@@ -127,11 +162,24 @@ public class SciFiMenuController : MonoBehaviour
         }
 
         var root = uiDoc.rootVisualElement;
-        root.Q<Button>("btn-private-game")?.RegisterCallback<ClickEvent>(_ => OnPrivateGameClicked());
-        root.Q<Button>("btn-public-game")?.RegisterCallback<ClickEvent>(_ => OnPublicGameClicked());
-        root.Q<Button>("btn-quit-game")?.RegisterCallback<ClickEvent>(_ => OnQuitGame());
-        root.Q<Button>("btn-quick-test")?.RegisterCallback<ClickEvent>(_ => OnQuickTestClicked());
+        BindMenuButton(root.Q<Button>("btn-private-game"), OnPrivateGameButtonClicked);
+        BindMenuButton(root.Q<Button>("btn-public-game"), OnPublicGameButtonClicked);
+        BindMenuButton(root.Q<Button>("btn-quit-game"), OnQuitGameButtonClicked);
+        BindMenuButton(root.Q<Button>("btn-quick-test"), OnQuickTestButtonClicked);
     }
+
+    private static void BindMenuButton(Button button, EventCallback<ClickEvent> callback)
+    {
+        if (button == null) return;
+
+        button.UnregisterCallback(callback);
+        button.RegisterCallback(callback);
+    }
+
+    private void OnPrivateGameButtonClicked(ClickEvent _) => OnPrivateGameClicked();
+    private void OnPublicGameButtonClicked(ClickEvent _) => OnPublicGameClicked();
+    private void OnQuitGameButtonClicked(ClickEvent _) => OnQuitGame();
+    private void OnQuickTestButtonClicked(ClickEvent _) => OnQuickTestClicked();
 
     private void OnPrivateGameClicked()
     {
