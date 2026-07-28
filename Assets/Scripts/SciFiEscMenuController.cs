@@ -86,20 +86,15 @@ public class SciFiEscMenuController : MonoBehaviour
         SetMenuVisible(false);
     }
 
-    private void Update()
+private void Update()
     {
-        // =========================================================
-        // AÇIKLAMA: Input.GetKeyDown
-        // ---------------------------------------------------------
-        // GetKeyDown → tuşa BASILDIĞI AN (1 frame) true döner
-        // GetKey     → tuş BASILI KALDIKÇA her frame true döner
-        // GetKeyUp   → tuş BIRAKILDIĞI AN true döner
-        //
-        // ESC için GetKeyDown kullanıyoruz çünkü sadece basıldığında
-        // bir kez toggle yapmak istiyoruz, sürekli değil.
-        // =========================================================
+        // A mission UI that owns ESC must consume it before the pause menu.
+        if (ComputerUIManager.Instance != null &&
+            (ComputerUIManager.Instance.IsComputerOpen || ComputerUIManager.Instance.WasClosedThisFrame))
+            return;
 
-        if (ComputerUIManager.Instance != null && (ComputerUIManager.Instance.IsComputerOpen || ComputerUIManager.Instance.WasClosedThisFrame))
+        if (SecurityCameraUIManager.Instance != null &&
+            (SecurityCameraUIManager.Instance.IsOpen || SecurityCameraUIManager.Instance.WasClosedThisFrame))
             return;
 
         if (Input.GetKeyDown(KeyCode.Escape))

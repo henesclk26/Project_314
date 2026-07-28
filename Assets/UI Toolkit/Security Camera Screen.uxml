@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ui="UnityEngine.UIElements"
+    xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd"
+    editor-extension-mode="False"
+>
+    <ui:Style src="project://database/Assets/UI%20Toolkit/SecurityCameraScreen.uss" />
+
+    <ui:VisualElement name="security-terminal-prompt" class="terminal-prompt hidden">
+        <ui:VisualElement class="terminal-prompt-box">
+            <ui:Label text="F" class="terminal-prompt-key" />
+            <ui:Label text="Kamera Sistemini Aç" class="terminal-prompt-text" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+
+    <ui:VisualElement name="security-camera-overlay" class="security-overlay hidden">
+        <ui:VisualElement class="security-panel">
+            <ui:VisualElement class="panel-corner corner-top-left" />
+            <ui:VisualElement class="panel-corner corner-top-right" />
+            <ui:VisualElement class="panel-corner corner-bottom-left" />
+            <ui:VisualElement class="panel-corner corner-bottom-right" />
+
+            <ui:VisualElement class="security-header">
+                <ui:VisualElement class="title-group">
+                    <ui:VisualElement class="security-emblem">
+                        <ui:VisualElement class="emblem-lens" />
+                    </ui:VisualElement>
+                    <ui:VisualElement>
+                        <ui:Label text="SECURITY SURVEILLANCE" class="screen-title" />
+                        <ui:Label text="LIVE MONITORING ARRAY // SIX CHANNEL CONTROL" class="screen-subtitle" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement class="header-right">
+                    <ui:VisualElement class="network-indicator">
+                        <ui:VisualElement class="live-dot" />
+                        <ui:Label text="ALL SYSTEMS ONLINE" class="network-label" />
+                    </ui:VisualElement>
+                    <ui:Button name="security-close-btn" text="X" class="close-btn" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="camera-grid-view" class="grid-view">
+                <ui:VisualElement class="grid-heading">
+                    <ui:VisualElement>
+                        <ui:Label text="CAMERA MATRIX" class="section-caption" />
+                        <ui:Label text="SELECT A LIVE CHANNEL FOR FULL-SCREEN INSPECTION" class="section-microcopy" />
+                    </ui:VisualElement>
+                    <ui:Label text="06 ACTIVE FEEDS" class="feed-count" />
+                </ui:VisualElement>
+                <ui:VisualElement class="camera-grid">
+                    <ui:Button name="feed-card-0" class="feed-card">
+                        <ui:VisualElement class="feed-header">
+                            <ui:Label text="CAM 01" class="feed-id" />
+                            <ui:VisualElement class="live-cluster">
+                                <ui:VisualElement class="live-dot" />
+                                <ui:Label name="feed-status-0" text="LIVE" class="live-text" />
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                        <ui:Image name="feed-image-0" class="feed-image" />
+                        <ui:VisualElement class="feed-footer">
+                            <ui:Label name="feed-name-0" text="CAMERA 01" class="feed-name" />
+                            <ui:Label text="SELECT FEED" class="feed-action" />
+                        </ui:VisualElement>
+                    </ui:Button>
+                    <ui:Button name="feed-card-1" class="feed-card">
+                        <ui:VisualElement class="feed-header">
+                            <ui:Label text="CAM 02" class="feed-id" />
+                            <ui:VisualElement class="live-cluster">
+                                <ui:VisualElement class="live-dot" />
+                                <ui:Label name="feed-status-1" text="LIVE" class="live-text" />
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                        <ui:Image name="feed-image-1" class="feed-image" />
+                        <ui:VisualElement class="feed-footer">
+                            <ui:Label name="feed-name-1" text="CAMERA 02" class="feed-name" />
+                            <ui:Label text="SELECT FEED" class="feed-action" />
+                        </ui:VisualElement>
+                    </ui:Button>
+                    <ui:Button name="feed-card-2" class="feed-card">
+                        <ui:VisualElement class="feed-header">
+                            <ui:Label text="CAM 03" class="feed-id" />
+                            <ui:VisualElement class="live-cluster">
+                                <ui:VisualElement class="live-dot" />
+                                <ui:Label name="feed-status-2" text="LIVE" class="live-text" />
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                        <ui:Image name="feed-image-2" class="feed-image" />
+                        <ui:VisualElement class="feed-footer">
+                            <ui:Label name="feed-name-2" text="CAMERA 03" class="feed-name" />
+                            <ui:Label text="SELECT FEED" class="feed-action" />
+                        </ui:VisualElement>
+                    </ui:Button>
+                    <ui:Button name="feed-card-3" class="feed-card">
+                        <ui:VisualElement class="feed-header">
+                            <ui:Label text="CAM 04" class="feed-id" />
+                            <ui:VisualElement class="live-cluster">
+                                <ui:VisualElement class="live-dot" />
+                                <ui:Label name="feed-status-3" text="LIVE" class="live-text" />
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                        <ui:Image name="feed-image-3" class="feed-image" />
+                        <ui:VisualElement class="feed-footer">
+                            <ui:Label name="feed-name-3" text="CAMERA 04" class="feed-name" />
+                            <ui:Label text="SELECT FEED" class="feed-action" />
+                        </ui:VisualElement>
+                    </ui:Button>
+                    <ui:Button name="feed-card-4" class="feed-card">
+                        <ui:VisualElement class="feed-header">
+                            <ui:Label text="CAM 05" class="feed-id" />
+                            <ui:VisualElement class="live-cluster">
+                                <ui:VisualElement class="live-dot" />
+                                <ui:Label name="feed-status-4" text="LIVE" class="live-text" />
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                        <ui:Image name="feed-image-4" class="feed-image" />
+                        <ui:VisualElement class="feed-footer">
+                            <ui:Label name="feed-name-4" text="CAMERA 05" class="feed-name" />
+                            <ui:Label text="SELECT FEED" class="feed-action" />
+                        </ui:VisualElement>
+                    </ui:Button>
+                    <ui:Button name="feed-card-5" class="feed-card">
+                        <ui:VisualElement class="feed-header">
+                            <ui:Label text="CAM 06" class="feed-id" />
+                            <ui:VisualElement class="live-cluster">
+                                <ui:VisualElement class="live-dot" />
+                                <ui:Label name="feed-status-5" text="LIVE" class="live-text" />
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                        <ui:Image name="feed-image-5" class="feed-image" />
+                        <ui:VisualElement class="feed-footer">
+                            <ui:Label name="feed-name-5" text="CAMERA 06" class="feed-name" />
+                            <ui:Label text="SELECT FEED" class="feed-action" />
+                        </ui:VisualElement>
+                    </ui:Button>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="camera-detail-view" class="detail-view hidden">
+                <ui:VisualElement class="detail-toolbar">
+                    <ui:Button name="camera-back-btn" text="‹  ALL CAMERAS" class="nav-button back-button" />
+                    <ui:VisualElement class="detail-title-group">
+                        <ui:Label name="detail-camera-name" text="CAMERA 01" class="detail-camera-name" />
+                        <ui:Label name="detail-camera-index" text="01 / 06" class="detail-camera-index" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="detail-status">
+                        <ui:VisualElement class="live-dot" />
+                        <ui:Label text="LIVE TRANSMISSION" class="live-text" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <ui:VisualElement class="detail-monitor">
+                    <ui:VisualElement class="monitor-scanlines" />
+                    <ui:Image name="detail-image" class="detail-image" />
+                    <ui:VisualElement class="monitor-frame">
+                        <ui:Label text="REC" class="record-label" />
+                        <ui:Label text="SECURE INTERNAL NETWORK" class="network-stamp" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <ui:VisualElement class="detail-controls">
+                    <ui:Button name="camera-prev-btn" text="‹  PREVIOUS CAMERA" class="nav-button camera-nav" />
+                    <ui:Label text="USE NAVIGATION TO CYCLE LIVE FEEDS" class="navigation-hint" />
+                    <ui:Button name="camera-next-btn" text="NEXT CAMERA  ›" class="nav-button camera-nav" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement class="security-footer">
+                <ui:Label text="STATION: TERMINAL_013" />
+                <ui:Label text="ENCRYPTED VIDEO BUS // REAL-TIME" />
+                <ui:Label text="ESC TO CLOSE" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
