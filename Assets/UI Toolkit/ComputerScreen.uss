@@ -308,3 +308,350 @@
 .status-granted {
     color: var(--color-accent-green);
 }
+
+/* MissionComputer File Sabotage */
+.computer-screen.sabotage-mode {
+    background-color: rgb(24, 5, 8);
+}
+
+.computer-screen.sabotage-mode .screen-header {
+    border-bottom-color: rgba(255, 68, 78, 0.32);
+}
+
+.computer-screen.sabotage-mode .header-icon {
+    background-color: rgb(255, 68, 78);
+}
+
+.computer-screen.sabotage-mode .header-title {
+    color: rgb(255, 93, 101);
+    letter-spacing: 0;
+}
+
+.sabotage-desktop {
+    position: relative;
+    flex-grow: 1;
+    min-height: 0;
+    overflow: hidden;
+    background-color: rgb(31, 7, 11);
+    border-width: 1px;
+    border-color: rgba(255, 88, 96, 0.18);
+}
+
+.sabotage-command-bar {
+    height: 44px;
+    padding: 0 16px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    background-color: rgba(9, 2, 4, 0.56);
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 88, 96, 0.14);
+}
+
+.sabotage-command-left {
+    flex-direction: row;
+    align-items: center;
+}
+
+.sabotage-status-light {
+    width: 7px;
+    height: 7px;
+    margin-right: 9px;
+    background-color: rgb(255, 68, 78);
+    border-radius: 4px;
+}
+
+.sabotage-command-title,
+.sabotage-status,
+.desktop-item-label,
+.executable-mark,
+.context-menu-button,
+.dialog-title,
+.sabotage-progress-percent,
+.access-denied-code,
+.access-denied-message,
+.sabotage-success-title,
+.sabotage-success-meta {
+    letter-spacing: 0;
+}
+
+.sabotage-command-title {
+    color: rgb(240, 218, 217);
+    font-size: 11px;
+    -unity-font-style: bold;
+}
+
+.sabotage-status {
+    color: rgba(255, 156, 159, 0.66);
+    font-size: 10px;
+    -unity-font-style: bold;
+}
+
+.sabotage-icon-grid {
+    flex-grow: 1;
+    min-height: 0;
+    padding: 36px 42px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: flex-start;
+}
+
+.desktop-item {
+    width: 150px;
+    height: 132px;
+    margin: 0 24px 28px 0;
+    padding: 12px 8px;
+    align-items: center;
+    justify-content: center;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0);
+    transition-property: background-color, border-color, scale, opacity;
+    transition-duration: 0.12s;
+    transition-timing-function: ease-out;
+}
+
+.desktop-item:hover {
+    background-color: rgba(255, 83, 91, 0.07);
+    border-color: rgba(255, 102, 109, 0.18);
+}
+
+.desktop-item.selected {
+    background-color: rgba(255, 83, 91, 0.12);
+    border-color: rgba(255, 102, 109, 0.46);
+}
+
+.desktop-item:active {
+    scale: 0.98 0.98;
+}
+
+.desktop-item.folder-locked {
+    opacity: 0.46;
+}
+
+.folder-icon {
+    position: relative;
+    width: 68px;
+    height: 52px;
+    margin-bottom: 13px;
+}
+
+.folder-tab {
+    position: absolute;
+    left: 5px;
+    top: 0;
+    width: 29px;
+    height: 12px;
+    background-color: rgb(167, 55, 62);
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+}
+
+.folder-body {
+    position: absolute;
+    left: 0;
+    top: 9px;
+    right: 0;
+    bottom: 0;
+    background-color: rgb(195, 65, 72);
+    border-width: 1px;
+    border-color: rgba(255, 188, 190, 0.22);
+    border-radius: 3px;
+}
+
+.folder-item:hover .folder-body,
+.folder-item.selected .folder-body {
+    background-color: rgb(225, 73, 80);
+}
+
+.desktop-item-label {
+    max-width: 132px;
+    color: rgb(235, 220, 218);
+    font-size: 12px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
+
+.executable-icon {
+    width: 58px;
+    height: 68px;
+    margin-bottom: 9px;
+    align-items: center;
+    justify-content: center;
+    background-color: rgb(14, 3, 5);
+    border-width: 1px;
+    border-color: rgba(255, 82, 91, 0.62);
+}
+
+.executable-mark {
+    color: rgb(255, 83, 91);
+    font-size: 14px;
+    -unity-font-style: bold;
+}
+
+.executable-label {
+    color: rgb(255, 129, 134);
+    font-size: 11px;
+}
+
+.executable-item.executed {
+    opacity: 0.42;
+}
+
+.folder-context-menu {
+    position: absolute;
+    width: 210px;
+    padding: 6px;
+    background-color: rgb(18, 4, 7);
+    border-width: 1px;
+    border-color: rgba(255, 92, 100, 0.46);
+}
+
+.context-menu-button {
+    width: 100%;
+    height: 42px;
+    padding: 0 12px;
+    color: rgb(225, 208, 207);
+    background-color: rgba(255, 255, 255, 0);
+    border-width: 0;
+    border-radius: 0;
+    font-size: 11px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-left;
+    transition-property: background-color, color;
+    transition-duration: 0.1s;
+}
+
+.context-menu-button:hover,
+.context-menu-button:focus {
+    color: rgb(255, 240, 238);
+    background-color: rgba(255, 82, 91, 0.14);
+}
+
+.context-menu-button:active {
+    background-color: rgba(255, 82, 91, 0.24);
+}
+
+.context-menu-delete {
+    color: rgb(255, 104, 111);
+}
+
+.sabotage-modal-layer,
+.sabotage-success-overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(7, 1, 3, 0.72);
+}
+
+.sabotage-progress-dialog,
+.access-denied-dialog {
+    width: 500px;
+    padding: 28px;
+    background-color: rgb(24, 5, 8);
+    border-width: 1px;
+    border-color: rgba(255, 85, 94, 0.5);
+}
+
+.dialog-header {
+    flex-direction: row;
+    align-items: center;
+}
+
+.dialog-pulse {
+    width: 8px;
+    height: 8px;
+    margin-right: 11px;
+    background-color: rgb(255, 69, 78);
+}
+
+.dialog-title {
+    color: rgb(245, 224, 222);
+    font-size: 17px;
+    -unity-font-style: bold;
+}
+
+.sabotage-progress-track {
+    width: 100%;
+    height: 14px;
+    margin-top: 24px;
+    padding: 2px;
+    background-color: rgb(10, 2, 4);
+    border-width: 1px;
+    border-color: rgba(255, 94, 102, 0.28);
+}
+
+.sabotage-progress-fill {
+    width: 0%;
+    height: 100%;
+    background-color: rgb(230, 57, 66);
+}
+
+.sabotage-progress-percent {
+    margin-top: 9px;
+    color: rgba(239, 210, 209, 0.62);
+    font-size: 11px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-right;
+}
+
+.access-denied-layer {
+    background-color: rgba(7, 1, 3, 0.62);
+}
+
+.access-denied-dialog {
+    width: 540px;
+    align-items: center;
+    border-left-width: 4px;
+    border-left-color: rgb(255, 69, 78);
+}
+
+.access-denied-code {
+    color: rgb(255, 85, 94);
+    font-size: 11px;
+    -unity-font-style: bold;
+}
+
+.access-denied-message {
+    margin-top: 13px;
+    color: rgb(245, 229, 226);
+    font-size: 17px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
+
+.sabotage-success-overlay {
+    background-color: rgb(78, 7, 13);
+}
+
+.success-rule {
+    width: 440px;
+    height: 1px;
+    margin-bottom: 24px;
+    background-color: rgba(255, 190, 191, 0.42);
+}
+
+.success-rule-bottom {
+    margin-top: 24px;
+    margin-bottom: 0;
+}
+
+.sabotage-success-title {
+    color: rgb(255, 238, 234);
+    font-size: 34px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+.sabotage-success-meta {
+    margin-top: 10px;
+    color: rgba(255, 210, 208, 0.62);
+    font-size: 10px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}

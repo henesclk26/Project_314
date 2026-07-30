@@ -14,18 +14,18 @@
                 <ui:VisualElement class="header-title-group">
                     <ui:VisualElement class="header-icon" />
                     <ui:VisualElement>
-                        <ui:Label text="SIGNAL CALIBRATION" class="header-title" />
-                        <ui:Label text="WAVE FREQUENCY TERMINAL // CHANNEL 04" class="header-kicker" />
+                        <ui:Label name="header-title" text="SIGNAL CALIBRATION" class="header-title" />
+                        <ui:Label name="header-kicker" text="WAVE FREQUENCY TERMINAL // CHANNEL 04" class="header-kicker" />
                     </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement class="header-actions">
                     <ui:VisualElement class="connection-indicator" />
-                    <ui:Label text="LINK ACTIVE" class="connection-label" />
+                    <ui:Label name="connection-label" text="LINK ACTIVE" class="connection-label" />
                     <ui:Button name="close-btn" text="X" class="close-btn" />
                 </ui:VisualElement>
             </ui:VisualElement>
 
-            <ui:VisualElement class="screen-body">
+            <ui:VisualElement name="normal-wave-body" class="screen-body">
                 <ui:VisualElement class="wave-section">
                     <ui:VisualElement class="section-heading-row">
                         <ui:VisualElement>
@@ -110,12 +110,61 @@
                 </ui:VisualElement>
             </ui:VisualElement>
 
+            <ui:VisualElement name="satellite-sabotage-body" class="satellite-sabotage-body hidden">
+                <ui:VisualElement class="satellite-routing-section">
+                    <ui:VisualElement class="satellite-heading-row">
+                        <ui:VisualElement>
+                            <ui:Label text="SATELLITE UPLINK ARRAY" class="section-title" />
+                            <ui:Label text="ROUTE SIX IDENTIFIERS TO THE TERMINAL BUS" class="section-subtitle" />
+                        </ui:VisualElement>
+                        <ui:Label name="satellite-link-count" text="00 / 06 LINKED" class="satellite-link-count" />
+                    </ui:VisualElement>
+
+                    <ui:VisualElement name="satellite-routing-canvas" class="satellite-routing-canvas">
+                        <ui:VisualElement name="satellite-orbit-stage" class="satellite-orbit-stage" />
+
+                        <ui:VisualElement name="computer-hub" class="computer-hub">
+                            <ui:VisualElement class="computer-port-shell">
+                                <ui:Label text="INPUT BUS" class="computer-port-caption" />
+                                <ui:VisualElement name="computer-port-row" class="computer-port-row" />
+                            </ui:VisualElement>
+                            <ui:Button name="computer-connect-btn" class="computer-connect-btn">
+                                <ui:VisualElement name="computer-icon-host" class="computer-icon-host" />
+                                <ui:Label text="TERMINAL CORE" class="computer-core-title" />
+                                <ui:Label text="COMMIT SELECTED UPLINK" class="computer-core-action" />
+                            </ui:Button>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <ui:VisualElement class="satellite-order-panel">
+                    <ui:Label text="REQUIRED LINK SEQUENCE" class="section-title" />
+                    <ui:Label text="AUTHORIZED ROUTING TABLE" class="section-subtitle" />
+
+                    <ui:VisualElement name="target-sequence-list" class="target-sequence-list" />
+
+                    <ui:VisualElement class="satellite-status-block">
+                        <ui:Label text="SYSTEM STATE" class="satellite-status-caption" />
+                        <ui:Label name="satellite-status" text="AWAITING UPLINK" class="satellite-status" />
+                        <ui:VisualElement class="satellite-status-divider" />
+                        <ui:Label name="satellite-selection-status" text="NO UPLINK SELECTED" class="satellite-selection-status" />
+                    </ui:VisualElement>
+
+                    <ui:Button name="unlink-btn" text="UNLINK SELECTED CABLE" class="unlink-btn" />
+
+                    <ui:VisualElement class="satellite-system-note">
+                        <ui:Label text="SYS" class="satellite-system-note-tag" />
+                        <ui:Label text="FULL ARRAY VALIDATION OCCURS AFTER ALL SIX PORTS ARE OCCUPIED." class="satellite-system-note-text" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
             <ui:VisualElement name="mission-complete" class="mission-complete hidden">
                 <ui:VisualElement class="complete-mark">
                     <ui:Label text="OK" class="complete-mark-text" />
                 </ui:VisualElement>
                 <ui:Label text="MISSION ACCOMPLISHED" class="complete-title" />
-                <ui:Label text="SIGNAL LOCK CONFIRMED" class="complete-subtitle" />
+                <ui:Label name="complete-subtitle" text="SIGNAL LOCK CONFIRMED" class="complete-subtitle" />
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>

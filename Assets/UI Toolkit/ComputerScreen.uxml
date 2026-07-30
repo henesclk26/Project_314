@@ -1,5 +1,5 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
-    <Style src="project://database/Assets/UI%20Toolkit/ComputerScreen.uss"/>
+    <ui:Style src="project://database/Assets/UI%20Toolkit/ComputerScreen.uss"/>
     
     <!-- Interaction Prompt -->
     <ui:VisualElement name="prompt-container" class="prompt-container hidden">
@@ -46,7 +46,95 @@
                     <ui:Label name="status-label" text="" class="status-label hidden"/>
                 </ui:VisualElement>
             </ui:VisualElement>
-            
+
+            <!-- MissionComputer File Sabotage Desktop -->
+            <ui:VisualElement name="sabotage-desktop" class="sabotage-desktop hidden">
+                <ui:VisualElement class="sabotage-command-bar">
+                    <ui:VisualElement class="sabotage-command-left">
+                        <ui:VisualElement class="sabotage-status-light"/>
+                        <ui:Label text="SECURE STORAGE // ROOT" class="sabotage-command-title"/>
+                    </ui:VisualElement>
+                    <ui:Label name="sabotage-status" text="EXECUTABLE REQUIRED" class="sabotage-status"/>
+                </ui:VisualElement>
+
+                <ui:VisualElement name="sabotage-icon-grid" class="sabotage-icon-grid">
+                    <ui:VisualElement name="folder-0" class="desktop-item folder-item">
+                        <ui:VisualElement class="folder-icon">
+                            <ui:VisualElement class="folder-tab"/>
+                            <ui:VisualElement class="folder-body"/>
+                        </ui:VisualElement>
+                        <ui:Label text="PERSONNEL" class="desktop-item-label"/>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="folder-1" class="desktop-item folder-item">
+                        <ui:VisualElement class="folder-icon">
+                            <ui:VisualElement class="folder-tab"/>
+                            <ui:VisualElement class="folder-body"/>
+                        </ui:VisualElement>
+                        <ui:Label text="NAVIGATION" class="desktop-item-label"/>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="folder-2" class="desktop-item folder-item">
+                        <ui:VisualElement class="folder-icon">
+                            <ui:VisualElement class="folder-tab"/>
+                            <ui:VisualElement class="folder-body"/>
+                        </ui:VisualElement>
+                        <ui:Label text="REACTOR" class="desktop-item-label"/>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="folder-3" class="desktop-item folder-item">
+                        <ui:VisualElement class="folder-icon">
+                            <ui:VisualElement class="folder-tab"/>
+                            <ui:VisualElement class="folder-body"/>
+                        </ui:VisualElement>
+                        <ui:Label text="SECURITY" class="desktop-item-label"/>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="folder-4" class="desktop-item folder-item">
+                        <ui:VisualElement class="folder-icon">
+                            <ui:VisualElement class="folder-tab"/>
+                            <ui:VisualElement class="folder-body"/>
+                        </ui:VisualElement>
+                        <ui:Label text="ARCHIVE" class="desktop-item-label"/>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="sabotage-executable" class="desktop-item executable-item">
+                        <ui:VisualElement class="executable-icon">
+                            <ui:Label text="EXE" class="executable-mark"/>
+                        </ui:VisualElement>
+                        <ui:Label text="jk?BVd65aS.exe" class="desktop-item-label executable-label"/>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <ui:VisualElement name="folder-context-menu" class="folder-context-menu hidden">
+                    <ui:Button name="context-open" text="KLASÖRÜ AÇ" class="context-menu-button"/>
+                    <ui:Button name="context-delete" text="KLASÖRÜ SİL" class="context-menu-button context-menu-delete"/>
+                    <ui:Button name="context-details" text="AYRINTILAR" class="context-menu-button"/>
+                </ui:VisualElement>
+
+                <ui:VisualElement name="sabotage-progress-overlay" class="sabotage-modal-layer hidden">
+                    <ui:VisualElement class="sabotage-progress-dialog">
+                        <ui:VisualElement class="dialog-header">
+                            <ui:VisualElement class="dialog-pulse"/>
+                            <ui:Label name="sabotage-progress-title" text="DOSYALAR KOPYALANIYOR" class="dialog-title"/>
+                        </ui:VisualElement>
+                        <ui:VisualElement class="sabotage-progress-track">
+                            <ui:VisualElement name="sabotage-progress-fill" class="sabotage-progress-fill"/>
+                        </ui:VisualElement>
+                        <ui:Label name="sabotage-progress-percent" text="0%" class="sabotage-progress-percent"/>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <ui:VisualElement name="access-denied-overlay" class="sabotage-modal-layer access-denied-layer hidden">
+                    <ui:VisualElement class="access-denied-dialog">
+                        <ui:Label text="ACCESS RESTRICTED" class="access-denied-code"/>
+                        <ui:Label text="BU DOSYAYA ERİŞMEK İÇİN YETKİNİZ YOK" class="access-denied-message"/>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <ui:VisualElement name="sabotage-success-overlay" class="sabotage-success-overlay hidden">
+                    <ui:VisualElement class="success-rule"/>
+                    <ui:Label text="MISSION ACCOMPLISHED" class="sabotage-success-title"/>
+                    <ui:Label text="FILE EXTRACTION COMPLETE // LOCAL ARCHIVE PURGED" class="sabotage-success-meta"/>
+                    <ui:VisualElement class="success-rule success-rule-bottom"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

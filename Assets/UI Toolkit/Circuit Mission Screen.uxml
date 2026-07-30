@@ -9,27 +9,27 @@
     <ui:Style src="project://database/Assets/UI%20Toolkit/CircuitMissionScreen.uss" />
 
     <ui:VisualElement name="circuit-overlay" class="circuit-overlay hidden">
-        <ui:VisualElement class="circuit-panel">
+        <ui:VisualElement name="circuit-panel" class="circuit-panel">
             <ui:VisualElement class="screen-header">
                 <ui:VisualElement class="header-title-group">
                     <ui:VisualElement class="header-icon">
                         <ui:VisualElement class="header-icon-core" />
                     </ui:VisualElement>
                     <ui:VisualElement>
-                        <ui:Label text="POWER ROUTING" class="header-title" />
-                        <ui:Label text="CIRCUIT ARRAY // DIRECTIONAL NODE MATRIX" class="header-kicker" />
+                        <ui:Label name="header-title" text="POWER ROUTING" class="header-title" />
+                        <ui:Label name="header-kicker" text="CIRCUIT ARRAY // DIRECTIONAL NODE MATRIX" class="header-kicker" />
                     </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement class="header-actions">
                     <ui:VisualElement class="connection-indicator" />
-                    <ui:Label text="SOURCE ONLINE" class="connection-label" />
+                    <ui:Label name="connection-label" text="SOURCE ONLINE" class="connection-label" />
                     <ui:Button name="close-btn" text="X" class="close-btn" />
                 </ui:VisualElement>
             </ui:VisualElement>
 
             <ui:VisualElement class="voltage-strip">
                 <ui:VisualElement class="voltage-box">
-                    <ui:Label text="ACTUAL VOLTAGE" class="voltage-caption" />
+                    <ui:Label name="actual-caption" text="ACTUAL VOLTAGE" class="voltage-caption" />
                     <ui:Label name="actual-voltage" text="0" class="voltage-value" />
                 </ui:VisualElement>
 
@@ -41,8 +41,8 @@
                 </ui:VisualElement>
 
                 <ui:VisualElement class="voltage-box target-voltage-box">
-                    <ui:Label text="TARGET VOLTAGE" class="voltage-caption" />
-                    <ui:Label text="1" class="voltage-value target-voltage" />
+                    <ui:Label name="target-caption" text="TARGET VOLTAGE" class="voltage-caption" />
+                    <ui:Label name="target-voltage" text="1" class="voltage-value target-voltage" />
                 </ui:VisualElement>
             </ui:VisualElement>
 
@@ -113,7 +113,7 @@
 
                     <ui:VisualElement class="system-note">
                         <ui:Label text="SYS" class="system-note-tag" />
-                        <ui:Label text="ROTATE ACTIVE NODES UNTIL OUTPUT VOLTAGE STABILIZES." class="system-note-text" />
+                        <ui:Label name="system-note-text" text="ROTATE ACTIVE NODES UNTIL OUTPUT VOLTAGE STABILIZES." class="system-note-text" />
                     </ui:VisualElement>
                 </ui:VisualElement>
             </ui:VisualElement>
@@ -123,7 +123,7 @@
                     <ui:Label text="OK" class="complete-mark-text" />
                 </ui:VisualElement>
                 <ui:Label text="MISSION ACCOMPLISHED" class="complete-title" />
-                <ui:Label text="POWER ROUTE ESTABLISHED" class="complete-subtitle" />
+                <ui:Label name="complete-subtitle" text="POWER ROUTE ESTABLISHED" class="complete-subtitle" />
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>

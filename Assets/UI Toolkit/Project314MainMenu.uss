@@ -237,7 +237,7 @@
     border-right-color: var(--hull-line-soft);
 }
 
-.diagnostic-cell:last-child {
+.diagnostic-cell-last {
     border-right-width: 0;
 }
 

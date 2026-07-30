@@ -42,7 +42,7 @@
                     <ui:Label text="ANOMALY GRID" class="diagnostic-label"/>
                     <ui:Label text="ACTIVE" class="diagnostic-value diagnostic-warning"/>
                 </ui:VisualElement>
-                <ui:VisualElement class="diagnostic-cell">
+                <ui:VisualElement class="diagnostic-cell diagnostic-cell-last">
                     <ui:Label text="BACKUP POWER" class="diagnostic-label"/>
                     <ui:Label text="OFFLINE" class="diagnostic-value diagnostic-muted"/>
                 </ui:VisualElement>

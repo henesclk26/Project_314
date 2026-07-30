@@ -3,6 +3,15 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 
+public enum FileSabotagePhase : byte
+{
+    AwaitingExecutable,
+    Copying,
+    ReadyToDelete,
+    Deleting,
+    Completed
+}
+
 public class MissionManager : NetworkBehaviour
 {
     public static MissionManager Instance { get; private set; }
@@ -25,6 +34,68 @@ public class MissionManager : NetworkBehaviour
     public NetworkVariable<int> Valve004TurnSequence = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     public NetworkVariable<int> Valve003TurnDirection = new NetworkVariable<int>(1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     public NetworkVariable<int> Valve004TurnDirection = new NetworkVariable<int>(1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+    // MissionComputer file sabotage state
+    public NetworkVariable<FileSabotagePhase> FileSabotageState = new NetworkVariable<FileSabotagePhase>(
+        FileSabotagePhase.AwaitingExecutable,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
+    public NetworkVariable<int> FileSabotageDeletedFolderMask = new NetworkVariable<int>(
+        0,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
+    public NetworkVariable<int> FileSabotageActiveFolderIndex = new NetworkVariable<int>(
+        -1,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
+    public NetworkVariable<double> FileSabotageOperationEndTime = new NetworkVariable<double>(
+        0d,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
+
+    // CircuitMission power diversion sabotage state
+    public NetworkVariable<bool> IsCircuitSabotageInitialized = new NetworkVariable<bool>(
+        false,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
+    public NetworkVariable<int> CircuitSabotageTemplateIndex = new NetworkVariable<int>(
+        -1,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
+    public NetworkVariable<ulong> CircuitSabotagePackedState = new NetworkVariable<ulong>(
+        0UL,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
+    public NetworkVariable<int> CircuitSabotageRevision = new NetworkVariable<int>(
+        0,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
+    public NetworkVariable<bool> IsCircuitSabotageCompleted = new NetworkVariable<bool>(
+        false,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
+
+    // WaveFrequencyTerminal satellite routing sabotage state
+    public NetworkVariable<bool> IsWaveSatelliteSabotageInitialized = new NetworkVariable<bool>(
+        false,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
+    public NetworkVariable<int> WaveSatelliteSabotageSeed = new NetworkVariable<int>(
+        0,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
+    public NetworkVariable<ulong> WaveSatelliteSabotagePackedConnections = new NetworkVariable<ulong>(
+        WaveSatelliteSabotageLayout.EmptyConnections,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
+    public NetworkVariable<int> WaveSatelliteSabotageRevision = new NetworkVariable<int>(
+        0,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
+    public NetworkVariable<bool> IsWaveSatelliteSabotageCompleted = new NetworkVariable<bool>(
+        false,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
     
     // Valve Mission states
     public NetworkVariable<bool> IsValveMissionActive = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
@@ -45,6 +116,10 @@ public class MissionManager : NetworkBehaviour
     private const float ValveInputCooldown = 1f;
     private const float PressureStabilizeDuration = 1.5f;
     private const int PressureGenerationAttempts = 512;
+    public const float FileSabotageCopyDuration = 3f;
+    public const float FileSabotageDeleteDuration = 1.5f;
+    public const int FileSabotageFolderCount = 5;
+    private const int FileSabotageAllFoldersMask = (1 << FileSabotageFolderCount) - 1;
 
     private readonly List<PendingPressureAdjustment> pendingPressureAdjustments = new List<PendingPressureAdjustment>();
     private float pressureTarget;
@@ -79,7 +154,12 @@ public class MissionManager : NetworkBehaviour
 
     private void Update()
     {
-        if (!IsServer || !IsPressureMissionActive.Value || IsPressureMissionCompleted.Value)
+        if (!CanSimulateServerState())
+            return;
+
+        UpdateFileSabotage();
+
+        if (!IsPressureMissionActive.Value || IsPressureMissionCompleted.Value)
             return;
 
         for (int i = pendingPressureAdjustments.Count - 1; i >= 0; i--)
@@ -98,6 +178,373 @@ public class MissionManager : NetworkBehaviour
             PressureResponseSpeed * Time.deltaTime);
 
         UpdatePressureStabilization();
+    }
+
+    public void RequestStartFileCopy()
+    {
+        if (IsSpawned)
+            RequestStartFileCopyRpc();
+        else
+            StartFileCopy();
+    }
+
+    public void RequestDeleteFolder(int folderIndex)
+    {
+        if (IsSpawned)
+            RequestDeleteFolderRpc(folderIndex);
+        else
+            StartFolderDeletion(folderIndex);
+    }
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void RequestStartFileCopyRpc()
+    {
+        StartFileCopy();
+    }
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void RequestDeleteFolderRpc(int folderIndex)
+    {
+        StartFolderDeletion(folderIndex);
+    }
+
+    public float GetFileSabotageOperationProgress()
+    {
+        float duration;
+        if (FileSabotageState.Value == FileSabotagePhase.Copying)
+            duration = FileSabotageCopyDuration;
+        else if (FileSabotageState.Value == FileSabotagePhase.Deleting)
+            duration = FileSabotageDeleteDuration;
+        else
+            return FileSabotageState.Value == FileSabotagePhase.Completed ? 1f : 0f;
+
+        double remaining = FileSabotageOperationEndTime.Value - GetSynchronizedTime();
+        return Mathf.Clamp01(1f - (float)(remaining / duration));
+    }
+
+    public bool IsFileSabotageFolderDeleted(int folderIndex)
+    {
+        if (folderIndex < 0 || folderIndex >= FileSabotageFolderCount)
+            return false;
+
+        return (FileSabotageDeletedFolderMask.Value & (1 << folderIndex)) != 0;
+    }
+
+    public void RequestInitializeCircuitSabotage()
+    {
+        if (IsSpawned)
+            InitializeCircuitSabotageRpc();
+        else
+            InitializeCircuitSabotage();
+    }
+
+    public void RequestRotateCircuitSabotageNode(int slot, int direction)
+    {
+        if (IsSpawned)
+            RotateCircuitSabotageNodeRpc(slot, direction);
+        else
+            RotateCircuitSabotageNode(slot, direction);
+    }
+
+    public void RequestResetCircuitSabotage()
+    {
+        if (IsSpawned)
+            ResetCircuitSabotageRpc();
+        else
+            ResetCircuitSabotage();
+    }
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void InitializeCircuitSabotageRpc()
+    {
+        InitializeCircuitSabotage();
+    }
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void RotateCircuitSabotageNodeRpc(int slot, int direction)
+    {
+        RotateCircuitSabotageNode(slot, direction);
+    }
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void ResetCircuitSabotageRpc()
+    {
+        ResetCircuitSabotage();
+    }
+
+    private void InitializeCircuitSabotage()
+    {
+        if (!CanSimulateServerState() || IsCircuitSabotageInitialized.Value)
+            return;
+
+        int templateIndex = UnityEngine.Random.Range(0, CircuitSabotageTemplates.All.Length);
+        CircuitSabotageTemplates.Template template = CircuitSabotageTemplates.All[templateIndex];
+        CircuitSabotageTemplateIndex.Value = templateIndex;
+        CircuitSabotagePackedState.Value = template.InitialPackedState;
+        CircuitSabotageRevision.Value++;
+        IsCircuitSabotageInitialized.Value = true;
+        Debug.Log($"[MissionManager] Circuit sabotage initialized with template {templateIndex + 1}.");
+    }
+
+    private void RotateCircuitSabotageNode(int slot, int direction)
+    {
+        if (!CanSimulateServerState() ||
+            !IsCircuitSabotageInitialized.Value ||
+            IsCircuitSabotageCompleted.Value ||
+            (direction != -1 && direction != 1))
+        {
+            return;
+        }
+
+        int templateIndex = CircuitSabotageTemplateIndex.Value;
+        if (templateIndex < 0 || templateIndex >= CircuitSabotageTemplates.All.Length)
+            return;
+
+        CircuitSabotageTemplates.Template template = CircuitSabotageTemplates.All[templateIndex];
+        if (slot < 0 || slot >= template.RotatableCount)
+            return;
+
+        ulong rotated = CircuitSabotageTemplates.Rotate(
+            template,
+            CircuitSabotagePackedState.Value,
+            slot,
+            direction);
+        CircuitSabotagePackedState.Value = rotated;
+        CircuitSabotageRevision.Value++;
+
+        if (CircuitSabotageTemplates.Evaluate(
+                template,
+                rotated,
+                out _,
+                out _))
+        {
+            IsCircuitSabotageCompleted.Value = true;
+            Debug.Log("[MissionManager] Circuit power diversion sabotage completed.");
+        }
+    }
+
+    private void ResetCircuitSabotage()
+    {
+        if (!CanSimulateServerState() ||
+            !IsCircuitSabotageInitialized.Value ||
+            IsCircuitSabotageCompleted.Value)
+        {
+            return;
+        }
+
+        int templateIndex = CircuitSabotageTemplateIndex.Value;
+        if (templateIndex < 0 || templateIndex >= CircuitSabotageTemplates.All.Length)
+            return;
+
+        CircuitSabotagePackedState.Value =
+            CircuitSabotageTemplates.All[templateIndex].InitialPackedState;
+        CircuitSabotageRevision.Value++;
+        Debug.Log("[MissionManager] Circuit power diversion reset.");
+    }
+
+    public void RequestInitializeWaveSatelliteSabotage()
+    {
+        if (IsSpawned)
+            InitializeWaveSatelliteSabotageRpc();
+        else
+            InitializeWaveSatelliteSabotage();
+    }
+
+    public void RequestConnectWaveSatellite(int satelliteIndex)
+    {
+        if (IsSpawned)
+            ConnectWaveSatelliteRpc(satelliteIndex);
+        else
+            ConnectWaveSatellite(satelliteIndex);
+    }
+
+    public void RequestDisconnectWaveSatellite(int satelliteIndex)
+    {
+        if (IsSpawned)
+            DisconnectWaveSatelliteRpc(satelliteIndex);
+        else
+            DisconnectWaveSatellite(satelliteIndex);
+    }
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void InitializeWaveSatelliteSabotageRpc()
+    {
+        InitializeWaveSatelliteSabotage();
+    }
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void ConnectWaveSatelliteRpc(int satelliteIndex)
+    {
+        ConnectWaveSatellite(satelliteIndex);
+    }
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void DisconnectWaveSatelliteRpc(int satelliteIndex)
+    {
+        DisconnectWaveSatellite(satelliteIndex);
+    }
+
+    private void InitializeWaveSatelliteSabotage()
+    {
+        if (!CanSimulateServerState() ||
+            IsWaveSatelliteSabotageInitialized.Value)
+        {
+            return;
+        }
+
+        WaveSatelliteSabotageSeed.Value =
+            UnityEngine.Random.Range(1, int.MaxValue);
+        WaveSatelliteSabotagePackedConnections.Value =
+            WaveSatelliteSabotageLayout.EmptyConnections;
+        WaveSatelliteSabotageRevision.Value++;
+        IsWaveSatelliteSabotageInitialized.Value = true;
+        Debug.Log("[MissionManager] Wave satellite sabotage initialized.");
+    }
+
+    private void ConnectWaveSatellite(int satelliteIndex)
+    {
+        if (!CanSimulateServerState() ||
+            !IsWaveSatelliteSabotageInitialized.Value ||
+            IsWaveSatelliteSabotageCompleted.Value ||
+            satelliteIndex < 0 ||
+            satelliteIndex >= WaveSatelliteSabotageLayout.SatelliteCount)
+        {
+            return;
+        }
+
+        ulong current = WaveSatelliteSabotagePackedConnections.Value;
+        ulong updated = WaveSatelliteSabotageLayout.ConnectToFirstEmptyPort(
+            current,
+            satelliteIndex,
+            out int assignedPort);
+        if (assignedPort < 0 || updated == current)
+            return;
+
+        WaveSatelliteSabotagePackedConnections.Value = updated;
+        WaveSatelliteSabotageRevision.Value++;
+        EvaluateWaveSatelliteSabotage(updated);
+    }
+
+    private void DisconnectWaveSatellite(int satelliteIndex)
+    {
+        if (!CanSimulateServerState() ||
+            !IsWaveSatelliteSabotageInitialized.Value ||
+            IsWaveSatelliteSabotageCompleted.Value ||
+            satelliteIndex < 0 ||
+            satelliteIndex >= WaveSatelliteSabotageLayout.SatelliteCount)
+        {
+            return;
+        }
+
+        ulong current = WaveSatelliteSabotagePackedConnections.Value;
+        ulong updated = WaveSatelliteSabotageLayout.DisconnectSatellite(
+            current,
+            satelliteIndex,
+            out int disconnectedPort);
+        if (disconnectedPort < 0 || updated == current)
+            return;
+
+        WaveSatelliteSabotagePackedConnections.Value = updated;
+        WaveSatelliteSabotageRevision.Value++;
+    }
+
+    private void EvaluateWaveSatelliteSabotage(ulong packedConnections)
+    {
+        WaveSatelliteSabotageLayout.Layout layout =
+            WaveSatelliteSabotageLayout.Create(
+                WaveSatelliteSabotageSeed.Value);
+        if (!WaveSatelliteSabotageLayout.IsComplete(
+                layout,
+                packedConnections))
+        {
+            return;
+        }
+
+        IsWaveSatelliteSabotageCompleted.Value = true;
+        Debug.Log("[MissionManager] Wave satellite sabotage completed.");
+    }
+
+    private void StartFileCopy()
+    {
+        if (!CanSimulateServerState() ||
+            FileSabotageState.Value != FileSabotagePhase.AwaitingExecutable)
+        {
+            return;
+        }
+
+        FileSabotageActiveFolderIndex.Value = -1;
+        FileSabotageOperationEndTime.Value =
+            GetSynchronizedTime() + FileSabotageCopyDuration;
+        FileSabotageState.Value = FileSabotagePhase.Copying;
+        Debug.Log("[MissionManager] MissionComputer file copy started.");
+    }
+
+    private void StartFolderDeletion(int folderIndex)
+    {
+        if (!CanSimulateServerState() ||
+            FileSabotageState.Value != FileSabotagePhase.ReadyToDelete ||
+            folderIndex < 0 ||
+            folderIndex >= FileSabotageFolderCount ||
+            IsFileSabotageFolderDeleted(folderIndex))
+        {
+            return;
+        }
+
+        FileSabotageActiveFolderIndex.Value = folderIndex;
+        FileSabotageOperationEndTime.Value =
+            GetSynchronizedTime() + FileSabotageDeleteDuration;
+        FileSabotageState.Value = FileSabotagePhase.Deleting;
+        Debug.Log($"[MissionManager] MissionComputer folder deletion started: {folderIndex}.");
+    }
+
+    private void UpdateFileSabotage()
+    {
+        FileSabotagePhase phase = FileSabotageState.Value;
+        if ((phase != FileSabotagePhase.Copying &&
+             phase != FileSabotagePhase.Deleting) ||
+            GetSynchronizedTime() < FileSabotageOperationEndTime.Value)
+        {
+            return;
+        }
+
+        FileSabotageOperationEndTime.Value = 0d;
+
+        if (phase == FileSabotagePhase.Copying)
+        {
+            FileSabotageState.Value = FileSabotagePhase.ReadyToDelete;
+            Debug.Log("[MissionManager] MissionComputer file copy completed.");
+            return;
+        }
+
+        int folderIndex = FileSabotageActiveFolderIndex.Value;
+        if (folderIndex >= 0 && folderIndex < FileSabotageFolderCount)
+            FileSabotageDeletedFolderMask.Value |= 1 << folderIndex;
+
+        FileSabotageActiveFolderIndex.Value = -1;
+        if (FileSabotageDeletedFolderMask.Value == FileSabotageAllFoldersMask)
+        {
+            FileSabotageState.Value = FileSabotagePhase.Completed;
+            Debug.Log("[MissionManager] MissionComputer file sabotage completed.");
+        }
+        else
+        {
+            FileSabotageState.Value = FileSabotagePhase.ReadyToDelete;
+        }
+    }
+
+    private bool CanSimulateServerState()
+    {
+        return IsServer ||
+            NetworkManager.Singleton == null ||
+            !NetworkManager.Singleton.IsListening;
+    }
+
+    private static double GetSynchronizedTime()
+    {
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+            return NetworkManager.Singleton.ServerTime.Time;
+
+        return Time.timeAsDouble;
     }
 
     [ServerRpc(RequireOwnership = false)]

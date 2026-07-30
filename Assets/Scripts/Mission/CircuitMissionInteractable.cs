@@ -10,7 +10,7 @@ public class CircuitMissionInteractable : MonoBehaviour
 
     private void Update()
     {
-        if (completedLocally || IsMissionCompleted())
+        if (AreBothMissionsCompleted())
             return;
 
         CircuitMissionUIManager ui = CircuitMissionUIManager.Instance;
@@ -42,10 +42,15 @@ public class CircuitMissionInteractable : MonoBehaviour
         completedLocally = true;
     }
 
-    private static bool IsMissionCompleted()
+    private bool AreBothMissionsCompleted()
     {
-        return MissionManager.Instance != null &&
-               MissionManager.Instance.IsCircuitMissionCompleted.Value;
+        if (MissionManager.Instance == null)
+            return false;
+
+        bool normalCompleted =
+            completedLocally || MissionManager.Instance.IsCircuitMissionCompleted.Value;
+        return normalCompleted &&
+               MissionManager.Instance.IsCircuitSabotageCompleted.Value;
     }
 
     private static FirstPersonController GetOwnerFpc()

@@ -10,7 +10,7 @@ public class WaveFrequencyTerminalInteractable : MonoBehaviour
 
     private void Update()
     {
-        if (completedLocally || IsMissionCompleted())
+        if (AreBothMissionsCompleted())
             return;
 
         WaveFrequencyUIManager ui = WaveFrequencyUIManager.Instance;
@@ -40,10 +40,16 @@ public class WaveFrequencyTerminalInteractable : MonoBehaviour
         completedLocally = true;
     }
 
-    private static bool IsMissionCompleted()
+    private bool AreBothMissionsCompleted()
     {
-        return MissionManager.Instance != null &&
-               MissionManager.Instance.IsWaveFrequencyMissionCompleted.Value;
+        if (MissionManager.Instance == null)
+            return false;
+
+        bool normalCompleted =
+            completedLocally ||
+            MissionManager.Instance.IsWaveFrequencyMissionCompleted.Value;
+        return normalCompleted &&
+               MissionManager.Instance.IsWaveSatelliteSabotageCompleted.Value;
     }
 
     private static FirstPersonController GetOwnerFpc()

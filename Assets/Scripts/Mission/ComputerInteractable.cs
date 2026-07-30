@@ -30,7 +30,7 @@ public class ComputerInteractable : MonoBehaviour
             {
                 if (ComputerUIManager.Instance != null && !ComputerUIManager.Instance.IsComputerOpen)
                 {
-                    ComputerUIManager.Instance.OpenComputer(data, ownerFpc);
+                    ComputerUIManager.Instance.OpenComputer(data, ownerFpc, this);
                 }
             }
         }

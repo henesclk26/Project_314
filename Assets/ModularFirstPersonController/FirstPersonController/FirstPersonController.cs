@@ -453,7 +453,15 @@ public class FirstPersonController : NetworkBehaviour
         if (IsLocalPlayerControlled())
             UpdateInteractionUI();
 
-        if (IsLocalPlayerControlled() && Input.GetKeyDown(KeyCode.F1) && MissionManager.Instance != null)
+        if (IsLocalPlayerControlled() &&
+            Input.GetKeyDown(KeyCode.F1) &&
+            MissionManager.Instance != null &&
+            (ComputerUIManager.Instance == null ||
+             !ComputerUIManager.Instance.IsComputerOpen) &&
+            (CircuitMissionUIManager.Instance == null ||
+             !CircuitMissionUIManager.Instance.IsOpen) &&
+            (WaveFrequencyUIManager.Instance == null ||
+             !WaveFrequencyUIManager.Instance.IsOpen))
         {
             MissionManager.Instance.ActivateValveMissionServerRpc();
         }

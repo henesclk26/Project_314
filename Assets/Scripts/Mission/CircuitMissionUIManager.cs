@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 using Cursor = UnityEngine.Cursor;
@@ -47,29 +46,51 @@ public class CircuitMissionUIManager : MonoBehaviour
 
     public static CircuitMissionUIManager Instance { get; private set; }
     public bool IsOpen { get; private set; }
+    public bool IsSabotageMode => isSabotageMode;
 
     private VisualElement overlay;
+    private VisualElement panel;
     private VisualElement circuitGrid;
     private VisualElement powerProgressFill;
     private VisualElement missionComplete;
+    private Label headerTitle;
+    private Label headerKicker;
+    private Label connectionLabel;
+    private Label actualCaption;
+    private Label targetCaption;
     private Label actualVoltage;
+    private Label targetVoltage;
     private Label routeProgress;
     private Label systemStatus;
     private Label templateLabel;
     private Label selectedNodeLabel;
+    private Label systemNoteText;
+    private Label completeSubtitle;
     private Button closeButton;
     private Button resetButton;
 
-    private readonly CircuitTileState[] tiles = new CircuitTileState[GridSize * GridSize];
+    private readonly CircuitTileState[] normalTiles = new CircuitTileState[GridSize * GridSize];
+    private readonly CircuitTileState[] sabotageTiles = new CircuitTileState[GridSize * GridSize];
     private readonly CircuitTileElement[] tileElements = new CircuitTileElement[GridSize * GridSize];
+    private readonly bool[] sabotageEnergized = new bool[GridSize * GridSize];
 
     private FirstPersonController currentFpc;
     private CircuitMissionInteractable currentTerminal;
     private Coroutine closeRoutine;
     private int[] activeRouteIndices;
     private int selectedIndex = -1;
+    private int normalSelectedIndex = -1;
+    private int sabotageSelectedIndex = -1;
+    private int normalTemplateIndex;
+    private int lastSabotageTemplate = -1;
+    private int lastSabotageRevision = -1;
     private bool completionStarted;
-    private bool puzzleReady;
+    private bool normalPuzzleReady;
+    private bool isSabotageMode;
+    private bool normalCompletedWhenOpened;
+    private bool sabotageCompletedWhenOpened;
+
+    private CircuitTileState[] ActiveTiles => isSabotageMode ? sabotageTiles : normalTiles;
 
     private void Awake()
     {
@@ -94,14 +115,23 @@ public class CircuitMissionUIManager : MonoBehaviour
     private void InitializeUI(VisualElement root)
     {
         overlay = root.Q<VisualElement>("circuit-overlay");
+        panel = root.Q<VisualElement>("circuit-panel");
         circuitGrid = root.Q<VisualElement>("circuit-grid");
         powerProgressFill = root.Q<VisualElement>("power-progress-fill");
         missionComplete = root.Q<VisualElement>("mission-complete");
+        headerTitle = root.Q<Label>("header-title");
+        headerKicker = root.Q<Label>("header-kicker");
+        connectionLabel = root.Q<Label>("connection-label");
+        actualCaption = root.Q<Label>("actual-caption");
+        targetCaption = root.Q<Label>("target-caption");
         actualVoltage = root.Q<Label>("actual-voltage");
+        targetVoltage = root.Q<Label>("target-voltage");
         routeProgress = root.Q<Label>("route-progress");
         systemStatus = root.Q<Label>("system-status");
         templateLabel = root.Q<Label>("template-label");
         selectedNodeLabel = root.Q<Label>("selected-node");
+        systemNoteText = root.Q<Label>("system-note-text");
+        completeSubtitle = root.Q<Label>("complete-subtitle");
         closeButton = root.Q<Button>("close-btn");
         resetButton = root.Q<Button>("reset-btn");
 
@@ -111,7 +141,7 @@ public class CircuitMissionUIManager : MonoBehaviour
 
     public void Open(CircuitMissionInteractable terminal, FirstPersonController fpc)
     {
-        if (IsOpen || IsMissionCompleted())
+        if (IsOpen || AreBothMissionsCompleted())
             return;
 
         if (closeRoutine != null)
@@ -123,11 +153,15 @@ public class CircuitMissionUIManager : MonoBehaviour
         currentTerminal = terminal;
         currentFpc = fpc;
         completionStarted = false;
+        isSabotageMode = false;
+        normalCompletedWhenOpened = IsNormalMissionCompleted();
+        sabotageCompletedWhenOpened = IsSabotageMissionCompleted();
         IsOpen = true;
 
-        if (!puzzleReady)
-            BuildPuzzle();
-        missionComplete.AddToClassList("hidden");
+        if (!normalPuzzleReady)
+            BuildNormalPuzzle();
+        ApplyModePresentation();
+
         overlay.RemoveFromClassList("hidden");
         overlay.RemoveFromClassList("open");
         StartCoroutine(ShowAfterLayout());
@@ -149,13 +183,12 @@ public class CircuitMissionUIManager : MonoBehaviour
         RepaintTiles();
     }
 
-    private void BuildPuzzle()
+    private void BuildNormalPuzzle()
     {
-        puzzleReady = false;
-        circuitGrid.Clear();
-        int templateIndex = new System.Random(System.Environment.TickCount ^ GetInstanceID())
+        normalPuzzleReady = false;
+        normalTemplateIndex = new System.Random(Environment.TickCount ^ GetInstanceID())
             .Next(CircuitRoutes.Length);
-        Vector2Int[] route = CircuitRoutes[templateIndex];
+        Vector2Int[] route = CircuitRoutes[normalTemplateIndex];
         activeRouteIndices = new int[route.Length];
 
         for (int y = 0; y < GridSize; y++)
@@ -163,10 +196,10 @@ public class CircuitMissionUIManager : MonoBehaviour
             for (int x = 0; x < GridSize; x++)
             {
                 int index = ToIndex(x, y);
-                tiles[index] = new CircuitTileState
+                normalTiles[index] = new CircuitTileState
                 {
                     Coordinate = new Vector2Int(x, y),
-                    IsLocked = ((x * 3 + y * 5 + templateIndex * 2) % 9) == 0
+                    IsLocked = ((x * 3 + y * 5 + normalTemplateIndex * 2) % 9) == 0
                 };
             }
         }
@@ -180,7 +213,7 @@ public class CircuitMissionUIManager : MonoBehaviour
             if (i < route.Length - 1)
                 requiredMask |= DirectionBetween(route[i], route[i + 1]);
 
-            CircuitTileState tile = tiles[index];
+            CircuitTileState tile = normalTiles[index];
             tile.IsPath = true;
             tile.IsLocked = false;
             tile.IsSource = i == 0;
@@ -189,29 +222,17 @@ public class CircuitMissionUIManager : MonoBehaviour
             tile.RequiredMask = requiredMask;
             tile.IsRotatable = !tile.IsSource && !tile.IsSink;
 
-            int turns = 0;
-            if (tile.IsRotatable)
-                turns = IsStraight(requiredMask) ? 1 : UnityEngine.Random.Range(1, 4);
-
+            int turns = tile.IsRotatable
+                ? (IsStraight(requiredMask) ? 1 : UnityEngine.Random.Range(1, 4))
+                : 0;
             tile.CurrentMask = RotateMask(requiredMask, turns);
             tile.InitialMask = tile.CurrentMask;
             activeRouteIndices[i] = index;
         }
 
-        for (int i = 0; i < tiles.Length; i++)
-        {
-            CircuitTileElement element = new CircuitTileElement(i, tiles[i], HandleTilePointer);
-            element.style.width = Length.Percent(100f / GridSize);
-            element.style.height = Length.Percent(100f / GridSize);
-            circuitGrid.Add(element);
-            tileElements[i] = element;
-        }
-
-        templateLabel.text = $"ROUTE PATTERN // {templateIndex + 1:00}";
-        selectedIndex = activeRouteIndices.Length > 1 ? activeRouteIndices[1] : -1;
-        puzzleReady = true;
-        UpdatePowerFlow(false);
-        RefreshSelection();
+        normalSelectedIndex = activeRouteIndices.Length > 1 ? activeRouteIndices[1] : -1;
+        normalPuzzleReady = true;
+        UpdateNormalPowerFlow(false);
     }
 
     private void Update()
@@ -219,20 +240,45 @@ public class CircuitMissionUIManager : MonoBehaviour
         if (!IsOpen)
             return;
 
-        if (!completionStarted && IsMissionCompleted())
+        if (isSabotageMode)
         {
-            CompleteMission(false);
+            SyncSabotageBoard();
+            if (!completionStarted &&
+                !sabotageCompletedWhenOpened &&
+                IsSabotageMissionCompleted())
+            {
+                CompleteSabotage();
+                return;
+            }
+        }
+        else if (!completionStarted &&
+                 !normalCompletedWhenOpened &&
+                 IsNormalMissionCompleted())
+        {
+            CompleteNormalMission(false);
             return;
         }
 
         if (completionStarted)
             return;
 
+        if (Input.GetKeyDown(KeyCode.F1))
+        {
+            ToggleSabotageMode();
+            return;
+        }
+
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             Close();
             return;
         }
+
+        bool activeMissionCompleted = isSabotageMode
+            ? IsSabotageMissionCompleted()
+            : IsNormalMissionCompleted();
+        if (activeMissionCompleted)
+            return;
 
         if (Input.GetKeyDown(KeyCode.R))
             ResetCircuit();
@@ -252,22 +298,220 @@ public class CircuitMissionUIManager : MonoBehaviour
             MoveSelection(1, 0);
     }
 
-    private void HandleTilePointer(int index, int button)
+    private void ToggleSabotageMode()
     {
-        if (!IsOpen || completionStarted || !tiles[index].IsRotatable)
+        if (completionStarted)
             return;
 
+        if (isSabotageMode)
+        {
+            sabotageSelectedIndex = selectedIndex;
+            isSabotageMode = false;
+            selectedIndex = normalSelectedIndex;
+        }
+        else
+        {
+            normalSelectedIndex = selectedIndex;
+            isSabotageMode = true;
+            MissionManager.Instance?.RequestInitializeCircuitSabotage();
+            SyncSabotageBoard(true);
+            selectedIndex = sabotageSelectedIndex;
+        }
+
+        ApplyModePresentation();
+    }
+
+    private void ApplyModePresentation()
+    {
+        panel.EnableInClassList("sabotage-mode", isSabotageMode);
+        missionComplete.EnableInClassList("sabotage-success", isSabotageMode);
+        missionComplete.AddToClassList("hidden");
+        missionComplete.RemoveFromClassList("success-pulse");
+        closeButton.SetEnabled(true);
+        resetButton.SetEnabled(true);
+
+        if (isSabotageMode)
+        {
+            headerTitle.text = "POWER DIVERSION";
+            headerKicker.text = "UNAUTHORIZED ROUTING // SECONDARY BUS";
+            connectionLabel.text = "DIVERSION LINK ACTIVE";
+            actualCaption.text = "PRIMARY OUTPUT";
+            targetCaption.text = "SECONDARY OUTPUT";
+            targetVoltage.text = "0";
+            systemNoteText.text = "CUT PRIMARY OUTPUT AND ROUTE POWER TO THE SECONDARY BUS.";
+            completeSubtitle.text = "SECONDARY POWER ROUTE ESTABLISHED";
+            SyncSabotageBoard(true);
+            if (IsSabotageMissionCompleted())
+                ShowCompletedState(true);
+        }
+        else
+        {
+            headerTitle.text = "POWER ROUTING";
+            headerKicker.text = "ENERGY TRANSFER // AUXILIARY GRID";
+            connectionLabel.text = "SOURCE ONLINE";
+            actualCaption.text = "ACTUAL VOLTAGE";
+            targetCaption.text = "TARGET VOLTAGE";
+            targetVoltage.text = "1";
+            systemNoteText.text = "ALIGN ALL ACTIVE CONDUITS TO ESTABLISH A STABLE POWER ROUTE.";
+            completeSubtitle.text = "POWER ROUTE ESTABLISHED";
+            templateLabel.text = $"ROUTE PATTERN // {normalTemplateIndex + 1:00}";
+            selectedIndex = normalSelectedIndex;
+            RenderBoard(normalTiles);
+            UpdateNormalPowerFlow(false);
+            if (IsNormalMissionCompleted())
+                ShowCompletedState(false);
+        }
+    }
+
+    private void SyncSabotageBoard(bool force = false)
+    {
+        if (!isSabotageMode || MissionManager.Instance == null)
+            return;
+
+        MissionManager mission = MissionManager.Instance;
+        if (!mission.IsCircuitSabotageInitialized.Value)
+        {
+            circuitGrid.Clear();
+            Array.Clear(tileElements, 0, tileElements.Length);
+            actualVoltage.text = "1";
+            targetVoltage.text = "0";
+            routeProgress.text = "SYNCING";
+            systemStatus.text = "INITIALIZING DIVERSION BUS";
+            powerProgressFill.style.width = Length.Percent(0f);
+            return;
+        }
+
+        int templateIndex = mission.CircuitSabotageTemplateIndex.Value;
+        int revision = mission.CircuitSabotageRevision.Value;
+        if (!force &&
+            templateIndex == lastSabotageTemplate &&
+            revision == lastSabotageRevision)
+        {
+            return;
+        }
+        if (templateIndex < 0 || templateIndex >= CircuitSabotageTemplates.All.Length)
+            return;
+
+        lastSabotageTemplate = templateIndex;
+        lastSabotageRevision = revision;
+        CircuitSabotageTemplates.Template template =
+            CircuitSabotageTemplates.All[templateIndex];
+        ulong packedState = mission.CircuitSabotagePackedState.Value;
+
+        for (int y = 0; y < GridSize; y++)
+        {
+            for (int x = 0; x < GridSize; x++)
+            {
+                int index = ToIndex(x, y);
+                sabotageTiles[index] = new CircuitTileState
+                {
+                    Coordinate = new Vector2Int(x, y),
+                    IsLocked = ((x * 5 + y * 3 + templateIndex) % 8) == 0,
+                    IsSabotage = true
+                };
+            }
+        }
+
+        for (int i = 0; i < template.Nodes.Length; i++)
+        {
+            CircuitSabotageTemplates.Node node = template.Nodes[i];
+            int index = ToIndex(node.Coordinate.x, node.Coordinate.y);
+            CircuitTileState tile = sabotageTiles[index];
+            tile.IsPath = true;
+            tile.IsLocked = false;
+            tile.IsSource = node.IsSource;
+            tile.IsSink = node.IsPrimarySink || node.IsSecondarySink;
+            tile.IsPrimarySink = node.IsPrimarySink;
+            tile.IsSecondarySink = node.IsSecondarySink;
+            tile.IsRotatable = node.Slot >= 0;
+            tile.SabotageSlot = node.Slot;
+            tile.PathOrder = i;
+            tile.CurrentMask = CircuitSabotageTemplates.GetMask(template, node, packedState);
+            tile.InitialMask = node.InitialMask;
+            tile.RequiredMask = node.TargetMask;
+        }
+
+        bool success = CircuitSabotageTemplates.Evaluate(
+            template,
+            packedState,
+            out bool primaryPowered,
+            out bool secondaryPowered,
+            sabotageEnergized);
+        int energizedCount = 0;
+        for (int i = 0; i < sabotageTiles.Length; i++)
+        {
+            sabotageTiles[i].IsEnergized = sabotageEnergized[i];
+            if (sabotageEnergized[i])
+                energizedCount++;
+        }
+
+        if (sabotageSelectedIndex < 0 ||
+            sabotageSelectedIndex >= sabotageTiles.Length ||
+            !sabotageTiles[sabotageSelectedIndex].IsRotatable)
+        {
+            sabotageSelectedIndex = FindFirstRotatable(sabotageTiles);
+        }
+        selectedIndex = sabotageSelectedIndex;
+        templateLabel.text = $"DIVERSION PATTERN // {templateIndex + 1:00}";
+        actualVoltage.text = primaryPowered ? "1" : "0";
+        targetVoltage.text = secondaryPowered ? "1" : "0";
+        routeProgress.text = $"{energizedCount:00} / {template.Nodes.Length:00}";
+        powerProgressFill.style.width = Length.Percent(
+            template.Nodes.Length == 0 ? 0f : energizedCount * 100f / template.Nodes.Length);
+        systemStatus.text = success
+            ? "SECONDARY BUS ACTIVE"
+            : secondaryPowered
+                ? "PRIMARY BUS STILL CONNECTED"
+                : primaryPowered
+                    ? "PRIMARY BUS ACTIVE"
+                    : "DIVERTING POWER";
+        systemStatus.EnableInClassList("powered", success);
+        RenderBoard(sabotageTiles);
+        RefreshSelection();
+    }
+
+    private void RenderBoard(CircuitTileState[] states)
+    {
+        circuitGrid.Clear();
+        for (int i = 0; i < states.Length; i++)
+        {
+            CircuitTileElement element = new CircuitTileElement(i, states[i], HandleTilePointer);
+            element.style.width = Length.Percent(100f / GridSize);
+            element.style.height = Length.Percent(100f / GridSize);
+            circuitGrid.Add(element);
+            tileElements[i] = element;
+        }
+        RefreshSelection();
+    }
+
+    private void HandleTilePointer(int index, int button)
+    {
+        CircuitTileState[] states = ActiveTiles;
+        if (!IsOpen ||
+            completionStarted ||
+            index < 0 ||
+            index >= states.Length ||
+            !states[index].IsRotatable)
+        {
+            return;
+        }
+
         selectedIndex = index;
+        if (isSabotageMode)
+            sabotageSelectedIndex = index;
+        else
+            normalSelectedIndex = index;
         RefreshSelection();
         RotateSelected(button == 1 ? -1 : 1);
     }
 
     private void MoveSelection(int deltaX, int deltaY)
     {
-        if (selectedIndex < 0)
+        CircuitTileState[] states = ActiveTiles;
+        if (selectedIndex < 0 || selectedIndex >= states.Length)
             return;
 
-        Vector2Int coordinate = tiles[selectedIndex].Coordinate;
+        Vector2Int coordinate = states[selectedIndex].Coordinate;
         for (int step = 1; step < GridSize; step++)
         {
             int x = coordinate.x + deltaX * step;
@@ -276,57 +520,88 @@ public class CircuitMissionUIManager : MonoBehaviour
                 break;
 
             int candidate = ToIndex(x, y);
-            if (tiles[candidate].IsRotatable)
-            {
-                selectedIndex = candidate;
-                RefreshSelection();
-                return;
-            }
+            if (!states[candidate].IsRotatable)
+                continue;
+
+            selectedIndex = candidate;
+            if (isSabotageMode)
+                sabotageSelectedIndex = candidate;
+            else
+                normalSelectedIndex = candidate;
+            RefreshSelection();
+            return;
         }
     }
 
     private void RotateSelected(int direction)
     {
-        if (selectedIndex < 0 || !tiles[selectedIndex].IsRotatable)
+        CircuitTileState[] states = ActiveTiles;
+        if (selectedIndex < 0 ||
+            selectedIndex >= states.Length ||
+            !states[selectedIndex].IsRotatable)
+        {
             return;
+        }
 
-        tiles[selectedIndex].CurrentMask = RotateMask(tiles[selectedIndex].CurrentMask, direction);
-        UpdatePowerFlow(true);
-        RefreshSelection();
+        if (isSabotageMode)
+        {
+            MissionManager.Instance?.RequestRotateCircuitSabotageNode(
+                states[selectedIndex].SabotageSlot,
+                direction);
+            SyncSabotageBoard(true);
+        }
+        else
+        {
+            states[selectedIndex].CurrentMask =
+                RotateMask(states[selectedIndex].CurrentMask, direction);
+            UpdateNormalPowerFlow(true);
+            RefreshSelection();
+        }
     }
 
     private void ResetCircuit()
     {
-        if (!IsOpen || completionStarted || !puzzleReady)
+        if (!IsOpen || completionStarted)
+            return;
+
+        if (isSabotageMode)
+        {
+            MissionManager.Instance?.RequestResetCircuitSabotage();
+            SyncSabotageBoard(true);
+            return;
+        }
+
+        if (!normalPuzzleReady || IsNormalMissionCompleted())
             return;
 
         foreach (int index in activeRouteIndices)
         {
-            if (tiles[index].IsRotatable)
-                tiles[index].CurrentMask = tiles[index].InitialMask;
+            if (normalTiles[index].IsRotatable)
+                normalTiles[index].CurrentMask = normalTiles[index].InitialMask;
         }
 
-        selectedIndex = activeRouteIndices.Length > 1 ? activeRouteIndices[1] : -1;
-        UpdatePowerFlow(false);
+        normalSelectedIndex = activeRouteIndices.Length > 1 ? activeRouteIndices[1] : -1;
+        selectedIndex = normalSelectedIndex;
+        UpdateNormalPowerFlow(false);
         RefreshSelection();
     }
 
-    private void UpdatePowerFlow(bool allowCompletion)
+    private void UpdateNormalPowerFlow(bool allowCompletion)
     {
-        foreach (CircuitTileState tile in tiles)
+        foreach (CircuitTileState tile in normalTiles)
             tile.IsEnergized = false;
 
         int energizedCount = 0;
         if (activeRouteIndices.Length > 0)
         {
-            tiles[activeRouteIndices[0]].IsEnergized = true;
+            normalTiles[activeRouteIndices[0]].IsEnergized = true;
             energizedCount = 1;
         }
 
         for (int i = 0; i < activeRouteIndices.Length - 1; i++)
         {
-            CircuitTileState current = tiles[activeRouteIndices[i]];
-            CircuitTileState next = tiles[activeRouteIndices[i + 1]];
+            CircuitTileState current = normalTiles[activeRouteIndices[i]];
+            CircuitTileState next = normalTiles[activeRouteIndices[i + 1]];
             if (!current.IsEnergized)
                 break;
 
@@ -342,7 +617,7 @@ public class CircuitMissionUIManager : MonoBehaviour
         }
 
         bool outputPowered = activeRouteIndices.Length > 0 &&
-                             tiles[activeRouteIndices[^1]].IsEnergized;
+                             normalTiles[activeRouteIndices[^1]].IsEnergized;
         float progress = activeRouteIndices.Length == 0
             ? 0f
             : energizedCount / (float)activeRouteIndices.Length;
@@ -355,26 +630,27 @@ public class CircuitMissionUIManager : MonoBehaviour
         RepaintTiles();
 
         if (allowCompletion && outputPowered)
-            CompleteMission(true);
+            CompleteNormalMission(true);
     }
 
     private void RefreshSelection()
     {
         for (int i = 0; i < tileElements.Length; i++)
-        {
-            if (tileElements[i] != null)
-                tileElements[i].Refresh(i == selectedIndex);
-        }
+            tileElements[i]?.Refresh(i == selectedIndex);
 
-        if (selectedIndex >= 0)
+        CircuitTileState[] states = ActiveTiles;
+        if (selectedIndex >= 0 &&
+            selectedIndex < states.Length &&
+            states[selectedIndex] != null)
         {
-            CircuitTileState selected = tiles[selectedIndex];
+            CircuitTileState selected = states[selectedIndex];
+            string prefix = isSabotageMode ? "JUNCTION" : "NODE";
             selectedNodeLabel.text =
-                $"NODE {selected.PathOrder + 1:00} // X{selected.Coordinate.x + 1} Y{selected.Coordinate.y + 1}";
+                $"{prefix} {selected.PathOrder + 1:00} // X{selected.Coordinate.x + 1} Y{selected.Coordinate.y + 1}";
         }
         else
         {
-            selectedNodeLabel.text = "NODE --";
+            selectedNodeLabel.text = isSabotageMode ? "JUNCTION --" : "NODE --";
         }
     }
 
@@ -384,24 +660,43 @@ public class CircuitMissionUIManager : MonoBehaviour
             element?.Refresh(element.Index == selectedIndex);
     }
 
-    private void CompleteMission(bool reportToServer)
+    private void CompleteNormalMission(bool reportToServer)
     {
         if (completionStarted)
             return;
 
         completionStarted = true;
         currentTerminal?.MarkCompleted();
-
         if (reportToServer && MissionManager.Instance != null && MissionManager.Instance.IsSpawned)
             MissionManager.Instance.CompleteCircuitMissionRpc();
 
-        actualVoltage.text = "1";
-        systemStatus.text = "OUTPUT STABLE";
-        missionComplete.RemoveFromClassList("hidden");
-        missionComplete.AddToClassList("success-pulse");
+        ShowCompletedState(false);
         closeButton.SetEnabled(false);
         resetButton.SetEnabled(false);
         closeRoutine = StartCoroutine(CloseAfterSuccess());
+    }
+
+    private void CompleteSabotage()
+    {
+        if (completionStarted)
+            return;
+
+        completionStarted = true;
+        ShowCompletedState(true);
+        closeButton.SetEnabled(false);
+        resetButton.SetEnabled(false);
+        closeRoutine = StartCoroutine(CloseAfterSuccess());
+    }
+
+    private void ShowCompletedState(bool sabotage)
+    {
+        actualVoltage.text = sabotage ? "0" : "1";
+        if (sabotage)
+            targetVoltage.text = "1";
+        systemStatus.text = sabotage ? "SECONDARY BUS ACTIVE" : "OUTPUT STABLE";
+        missionComplete.EnableInClassList("sabotage-success", sabotage);
+        missionComplete.RemoveFromClassList("hidden");
+        missionComplete.AddToClassList("success-pulse");
     }
 
     private IEnumerator CloseAfterSuccess()
@@ -414,7 +709,6 @@ public class CircuitMissionUIManager : MonoBehaviour
     {
         if (!IsOpen || completionStarted)
             return;
-
         BeginClose();
     }
 
@@ -453,6 +747,16 @@ public class CircuitMissionUIManager : MonoBehaviour
 
         currentFpc = null;
         currentTerminal = null;
+    }
+
+    private static int FindFirstRotatable(CircuitTileState[] states)
+    {
+        for (int i = 0; i < states.Length; i++)
+        {
+            if (states[i] != null && states[i].IsRotatable)
+                return i;
+        }
+        return -1;
     }
 
     private static int ToIndex(int x, int y)
@@ -501,10 +805,21 @@ public class CircuitMissionUIManager : MonoBehaviour
         return mask;
     }
 
-    private static bool IsMissionCompleted()
+    private static bool IsNormalMissionCompleted()
     {
         return MissionManager.Instance != null &&
                MissionManager.Instance.IsCircuitMissionCompleted.Value;
+    }
+
+    private static bool IsSabotageMissionCompleted()
+    {
+        return MissionManager.Instance != null &&
+               MissionManager.Instance.IsCircuitSabotageCompleted.Value;
+    }
+
+    private static bool AreBothMissionsCompleted()
+    {
+        return IsNormalMissionCompleted() && IsSabotageMissionCompleted();
     }
 
     private sealed class CircuitTileState
@@ -514,12 +829,16 @@ public class CircuitMissionUIManager : MonoBehaviour
         public int RequiredMask;
         public int CurrentMask;
         public int InitialMask;
+        public int SabotageSlot = -1;
         public bool IsPath;
         public bool IsSource;
         public bool IsSink;
+        public bool IsPrimarySink;
+        public bool IsSecondarySink;
         public bool IsRotatable;
         public bool IsLocked;
         public bool IsEnergized;
+        public bool IsSabotage;
     }
 
     private sealed class CircuitTileElement : VisualElement
@@ -538,16 +857,14 @@ public class CircuitMissionUIManager : MonoBehaviour
             state = tileState;
             AddToClassList("circuit-cell");
 
-            if (state.IsPath)
-                AddToClassList("path-cell");
-            if (state.IsLocked)
-                AddToClassList("locked-cell");
-            if (state.IsSource)
-                AddToClassList("source-cell");
-            if (state.IsSink)
-                AddToClassList("sink-cell");
-            if (state.IsRotatable)
-                AddToClassList("rotatable-cell");
+            if (state.IsPath) AddToClassList("path-cell");
+            if (state.IsLocked) AddToClassList("locked-cell");
+            if (state.IsSource) AddToClassList("source-cell");
+            if (state.IsSink) AddToClassList("sink-cell");
+            if (state.IsPrimarySink) AddToClassList("primary-sink-cell");
+            if (state.IsSecondarySink) AddToClassList("secondary-sink-cell");
+            if (state.IsRotatable) AddToClassList("rotatable-cell");
+            if (state.IsSabotage) AddToClassList("sabotage-cell");
 
             node = new VisualElement();
             node.AddToClassList("circuit-node");
@@ -555,7 +872,14 @@ public class CircuitMissionUIManager : MonoBehaviour
 
             if (state.IsSource || state.IsSink)
             {
-                Label label = new Label(state.IsSource ? "IN" : "OUT");
+                string endpointText = state.IsSource
+                    ? "IN"
+                    : state.IsPrimarySink
+                        ? "OUT-A"
+                        : state.IsSecondarySink
+                            ? "OUT-B"
+                            : "OUT";
+                Label label = new Label(endpointText);
                 label.AddToClassList("endpoint-label");
                 Add(label);
             }
@@ -586,16 +910,32 @@ public class CircuitMissionUIManager : MonoBehaviour
                 return;
 
             Color lineColor;
-            if (state.IsEnergized)
+            if (state.IsSabotage)
+            {
+                lineColor = state.IsEnergized
+                    ? new Color(1f, 0.19f, 0.17f, 1f)
+                    : state.IsSecondarySink
+                        ? new Color(1f, 0.55f, 0.25f, 0.92f)
+                        : new Color(0.8f, 0.32f, 0.28f, 0.68f);
+            }
+            else if (state.IsEnergized)
+            {
                 lineColor = new Color(0f, 1f, 0.5f, 1f);
+            }
             else if (state.IsSink)
+            {
                 lineColor = new Color(1f, 0.77f, 0f, 0.9f);
+            }
             else
+            {
                 lineColor = new Color(0f, 0.94f, 1f, 0.72f);
+            }
 
             Painter2D painter = context.painter2D;
-            DrawMask(painter, rect, state.CurrentMask, new Color(lineColor.r, lineColor.g, lineColor.b, 0.14f), 9f);
-            DrawMask(painter, rect, state.CurrentMask, lineColor, state.IsEnergized ? 3.5f : 2.5f);
+            DrawMask(painter, rect, state.CurrentMask,
+                new Color(lineColor.r, lineColor.g, lineColor.b, 0.14f), 9f);
+            DrawMask(painter, rect, state.CurrentMask, lineColor,
+                state.IsEnergized ? 3.5f : 2.5f);
         }
 
         private static void DrawMask(Painter2D painter, Rect rect, int mask, Color color, float width)
