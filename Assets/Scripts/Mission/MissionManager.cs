@@ -350,12 +350,12 @@ public class MissionManager : NetworkBehaviour
             InitializeWaveSatelliteSabotage();
     }
 
-    public void RequestConnectWaveSatellite(int satelliteIndex)
+    public void RequestConnectWaveSatellite(int satelliteIndex, int portIndex)
     {
         if (IsSpawned)
-            ConnectWaveSatelliteRpc(satelliteIndex);
+            ConnectWaveSatelliteRpc(satelliteIndex, portIndex);
         else
-            ConnectWaveSatellite(satelliteIndex);
+            ConnectWaveSatellite(satelliteIndex, portIndex);
     }
 
     public void RequestDisconnectWaveSatellite(int satelliteIndex)
@@ -373,9 +373,9 @@ public class MissionManager : NetworkBehaviour
     }
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void ConnectWaveSatelliteRpc(int satelliteIndex)
+    public void ConnectWaveSatelliteRpc(int satelliteIndex, int portIndex)
     {
-        ConnectWaveSatellite(satelliteIndex);
+        ConnectWaveSatellite(satelliteIndex, portIndex);
     }
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
@@ -401,23 +401,26 @@ public class MissionManager : NetworkBehaviour
         Debug.Log("[MissionManager] Wave satellite sabotage initialized.");
     }
 
-    private void ConnectWaveSatellite(int satelliteIndex)
+    private void ConnectWaveSatellite(int satelliteIndex, int portIndex)
     {
         if (!CanSimulateServerState() ||
             !IsWaveSatelliteSabotageInitialized.Value ||
             IsWaveSatelliteSabotageCompleted.Value ||
             satelliteIndex < 0 ||
-            satelliteIndex >= WaveSatelliteSabotageLayout.SatelliteCount)
+            satelliteIndex >= WaveSatelliteSabotageLayout.SatelliteCount ||
+            portIndex < 0 ||
+            portIndex >= WaveSatelliteSabotageLayout.SatelliteCount)
         {
             return;
         }
 
         ulong current = WaveSatelliteSabotagePackedConnections.Value;
-        ulong updated = WaveSatelliteSabotageLayout.ConnectToFirstEmptyPort(
+        ulong updated = WaveSatelliteSabotageLayout.ConnectToPort(
             current,
             satelliteIndex,
-            out int assignedPort);
-        if (assignedPort < 0 || updated == current)
+            portIndex,
+            out bool connected);
+        if (!connected || updated == current)
             return;
 
         WaveSatelliteSabotagePackedConnections.Value = updated;

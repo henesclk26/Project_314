@@ -41,7 +41,7 @@ public class WaveFrequencyUIManager : MonoBehaviour
     private Label satelliteSelectionStatus;
     private Label completeSubtitle;
     private Button closeButton;
-    private Button computerConnectButton;
+    private VisualElement computerConnectButton;
     private Button unlinkButton;
 
     private readonly VisualElement[] satelliteCards =
@@ -52,6 +52,12 @@ public class WaveFrequencyUIManager : MonoBehaviour
         new VisualElement[WaveSatelliteSabotageLayout.SatelliteCount];
     private readonly SatelliteCableElement[] cableElements =
         new SatelliteCableElement[WaveSatelliteSabotageLayout.SatelliteCount];
+
+    private SatelliteCableElement dragCable;
+    private VisualElement dragSourceCard;
+    private int dragSatellite = -1;
+    private int dragPointerId = -1;
+    private bool isDraggingCable;
 
     private FirstPersonController currentFpc;
     private WaveFrequencyTerminalInteractable currentTerminal;
@@ -117,7 +123,7 @@ public class WaveFrequencyUIManager : MonoBehaviour
         satelliteSelectionStatus = root.Q<Label>("satellite-selection-status");
         completeSubtitle = root.Q<Label>("complete-subtitle");
         closeButton = root.Q<Button>("close-btn");
-        computerConnectButton = root.Q<Button>("computer-connect-btn");
+        computerConnectButton = root.Q<VisualElement>("computer-connect-btn");
         unlinkButton = root.Q<Button>("unlink-btn");
 
         BuildMeter(wavelengthMeter);
@@ -128,7 +134,6 @@ public class WaveFrequencyUIManager : MonoBehaviour
         satelliteCanvas.RegisterCallback<GeometryChangedEvent>(
             _ => RefreshCableGeometry());
         closeButton.clicked += Close;
-        computerConnectButton.clicked += CommitSelectedSatellite;
         unlinkButton.clicked += UnlinkSelectedCable;
     }
 
@@ -279,6 +284,7 @@ public class WaveFrequencyUIManager : MonoBehaviour
         if (completionStarted || isSabotageMode == sabotage)
             return;
 
+        CancelCableDrag(false);
         isSabotageMode = sabotage;
         selectedSatellite = -1;
         selectedCableSatellite = -1;
@@ -411,10 +417,20 @@ public class WaveFrequencyUIManager : MonoBehaviour
 
     private void BuildSabotageInterface()
     {
+        CancelCableDrag(false);
         satelliteOrbitStage.Clear();
         computerPortRow.Clear();
         computerIconHost.Clear();
         targetSequenceList.Clear();
+
+        Label coreTitle = computerConnectButton.Q<Label>(
+            className: "computer-core-title");
+        Label coreAction = computerConnectButton.Q<Label>(
+            className: "computer-core-action");
+        if (coreTitle != null)
+            coreTitle.text = "ROUTING CORE";
+        if (coreAction != null)
+            coreAction.text = "HOLD A SATELLITE // DRAG TO INPUT";
 
         for (int satellite = 0;
              satellite < WaveSatelliteSabotageLayout.SatelliteCount;
@@ -442,10 +458,26 @@ public class WaveFrequencyUIManager : MonoBehaviour
             VisualElement uplinkPort = new VisualElement();
             uplinkPort.AddToClassList("satellite-uplink-port");
             card.Add(uplinkPort);
+
             card.RegisterCallback<PointerDownEvent>(evt =>
             {
-                HandleSatellitePointer(capturedSatellite);
+                BeginSatelliteCableDrag(capturedSatellite, card, evt);
                 evt.StopPropagation();
+            });
+            card.RegisterCallback<PointerMoveEvent>(evt =>
+            {
+                UpdateSatelliteCableDrag(capturedSatellite, evt);
+                evt.StopPropagation();
+            });
+            card.RegisterCallback<PointerUpEvent>(evt =>
+            {
+                FinishSatelliteCableDrag(capturedSatellite, evt);
+                evt.StopPropagation();
+            });
+            card.RegisterCallback<PointerCaptureOutEvent>(_ =>
+            {
+                if (isDraggingCable && dragSourceCard == card)
+                    CancelCableDrag();
             });
 
             satelliteOrbitStage.Add(card);
@@ -507,13 +539,21 @@ public class WaveFrequencyUIManager : MonoBehaviour
             cableElements[satellite] = cable;
         }
 
+        dragCable = new SatelliteCableElement(-1);
+        dragCable.SetPreview(true);
+        dragCable.style.display = DisplayStyle.None;
+        satelliteCanvas.Insert(0, dragCable);
+
         RefreshSabotageSelection();
         satelliteCanvas.schedule.Execute(RefreshCableGeometry).StartingIn(1);
     }
 
-    private void HandleSatellitePointer(int satelliteIndex)
+    private void BeginSatelliteCableDrag(
+        int satelliteIndex,
+        VisualElement sourceCard,
+        PointerDownEvent evt)
     {
-        if (!CanEditSabotage())
+        if (!CanEditSabotage() || evt.button != 0)
             return;
 
         ulong packed =
@@ -526,15 +566,186 @@ public class WaveFrequencyUIManager : MonoBehaviour
         {
             selectedSatellite = -1;
             selectedCableSatellite = satelliteIndex;
+            RefreshSabotageSelection();
+            return;
+        }
+
+        CancelCableDrag(false);
+        isDraggingCable = true;
+        dragSatellite = satelliteIndex;
+        dragPointerId = evt.pointerId;
+        dragSourceCard = sourceCard;
+        selectedSatellite = satelliteIndex;
+        selectedCableSatellite = -1;
+        sourceCard.AddToClassList("dragging");
+        sourceCard.CapturePointer(evt.pointerId);
+        dragCable.style.display = DisplayStyle.Flex;
+        satelliteSelectionStatus.text =
+            $"CABLE HELD // {sabotageLayout.Codes[satelliteIndex]} // DRAG TO INPUT";
+        UpdateDragPreview(evt.position);
+    }
+
+    private void UpdateSatelliteCableDrag(
+        int satelliteIndex,
+        PointerMoveEvent evt)
+    {
+        if (!isDraggingCable ||
+            satelliteIndex != dragSatellite ||
+            evt.pointerId != dragPointerId)
+        {
+            return;
+        }
+
+        UpdateDragPreview(evt.position);
+    }
+
+    private void FinishSatelliteCableDrag(
+        int satelliteIndex,
+        PointerUpEvent evt)
+    {
+        if (!isDraggingCable ||
+            satelliteIndex != dragSatellite ||
+            evt.pointerId != dragPointerId)
+        {
+            return;
+        }
+
+        Vector2 panelPosition = new Vector2(evt.position.x, evt.position.y);
+        int portIndex = FindDropPort(panelPosition);
+        bool canConnect = portIndex >= 0 && IsPortEmpty(portIndex);
+        int releasedSatellite = dragSatellite;
+        string releasedCode = sabotageLayout.Codes[releasedSatellite];
+        CancelCableDrag(false);
+
+        if (canConnect)
+        {
+            satelliteSelectionStatus.text =
+                $"LINKING // {releasedCode} -> INPUT {portIndex + 1:00}";
+            MissionManager.Instance.RequestConnectWaveSatellite(
+                releasedSatellite,
+                portIndex);
+            selectedSatellite = -1;
+            SyncSabotageState(true);
         }
         else
         {
-            selectedSatellite = satelliteIndex;
-            selectedCableSatellite = -1;
+            selectedSatellite = -1;
+            RefreshSabotageSelection();
+            satelliteSelectionStatus.text = portIndex >= 0
+                ? "INPUT OCCUPIED // RELEASE A DIFFERENT PORT"
+                : "CABLE RELEASED // NO INPUT TARGET";
+        }
+    }
+
+    private void UpdateDragPreview(Vector3 panelPointerPosition)
+    {
+        if (!isDraggingCable ||
+            dragCable == null ||
+            dragSatellite < 0 ||
+            satelliteUplinkPorts[dragSatellite] == null)
+        {
+            return;
         }
 
-        RefreshSabotageSelection();
+        VisualElement uplinkPort = satelliteUplinkPorts[dragSatellite];
+        Vector2 start = uplinkPort.ChangeCoordinatesTo(
+            satelliteCanvas,
+            uplinkPort.contentRect.center);
+        Vector2 panelPosition = new Vector2(
+            panelPointerPosition.x,
+            panelPointerPosition.y);
+        Vector2 end = satelliteCanvas.WorldToLocal(panelPosition);
+        dragCable.SetEndpoints(start, end);
+
+        int portIndex = FindDropPort(panelPosition);
+        SetDropPortHighlight(portIndex);
+        satelliteSelectionStatus.text = portIndex < 0
+            ? $"CABLE HELD // {sabotageLayout.Codes[dragSatellite]} // FIND AN INPUT"
+            : IsPortEmpty(portIndex)
+                ? $"RELEASE TO LINK // INPUT {portIndex + 1:00}"
+                : $"INPUT {portIndex + 1:00} OCCUPIED";
     }
+
+    private int FindDropPort(Vector2 panelPosition)
+    {
+        for (int port = 0; port < computerPorts.Length; port++)
+        {
+            VisualElement portElement = computerPorts[port];
+            if (portElement != null &&
+                portElement.worldBound.Contains(panelPosition))
+            {
+                return port;
+            }
+        }
+
+        return -1;
+    }
+
+    private bool IsPortEmpty(int portIndex)
+    {
+        if (MissionManager.Instance == null ||
+            portIndex < 0 ||
+            portIndex >= WaveSatelliteSabotageLayout.SatelliteCount)
+        {
+            return false;
+        }
+
+        ulong packed =
+            MissionManager.Instance.WaveSatelliteSabotagePackedConnections.Value;
+        return WaveSatelliteSabotageLayout.GetSatelliteAtPort(
+            packed,
+            portIndex) == WaveSatelliteSabotageLayout.EmptyPort;
+    }
+
+    private void SetDropPortHighlight(int portIndex)
+    {
+        for (int port = 0; port < computerPorts.Length; port++)
+        {
+            VisualElement portElement = computerPorts[port];
+            if (portElement == null)
+                continue;
+
+            bool targeted = port == portIndex;
+            portElement.EnableInClassList("drop-target", targeted);
+            portElement.EnableInClassList(
+                "drop-valid",
+                targeted && IsPortEmpty(port));
+            portElement.EnableInClassList(
+                "drop-blocked",
+                targeted && !IsPortEmpty(port));
+        }
+    }
+
+    private void CancelCableDrag(bool refreshSelection = true)
+    {
+        VisualElement source = dragSourceCard;
+        int pointerId = dragPointerId;
+
+        if (source != null)
+            source.RemoveFromClassList("dragging");
+        if (dragCable != null)
+            dragCable.style.display = DisplayStyle.None;
+
+        isDraggingCable = false;
+        dragSatellite = -1;
+        dragPointerId = -1;
+        dragSourceCard = null;
+        SetDropPortHighlight(-1);
+
+        if (source != null &&
+            pointerId >= 0 &&
+            source.HasPointerCapture(pointerId))
+        {
+            source.ReleasePointer(pointerId);
+        }
+
+        if (refreshSelection)
+        {
+            selectedSatellite = -1;
+            RefreshSabotageSelection();
+        }
+    }
+
 
     private void HandleCablePointer(int satelliteIndex)
     {
@@ -552,15 +763,7 @@ public class WaveFrequencyUIManager : MonoBehaviour
         RefreshSabotageSelection();
     }
 
-    private void CommitSelectedSatellite()
-    {
-        if (!CanEditSabotage() || selectedSatellite < 0)
-            return;
 
-        MissionManager.Instance.RequestConnectWaveSatellite(selectedSatellite);
-        selectedSatellite = -1;
-        SyncSabotageState(true);
-    }
 
     private void UnlinkSelectedCable()
     {
@@ -606,26 +809,24 @@ public class WaveFrequencyUIManager : MonoBehaviour
                 selectedCableSatellite == satellite);
         }
 
-        if (selectedSatellite >= 0)
-        {
-            satelliteSelectionStatus.text =
-                $"SELECTED // {sabotageLayout.Codes[selectedSatellite]}";
-        }
-        else if (selectedCableSatellite >= 0)
+        bool editable = CanEditSabotage();
+        computerConnectButton.SetEnabled(editable);
+        unlinkButton.SetEnabled(
+            editable && selectedCableSatellite >= 0);
+
+        if (isDraggingCable)
+            return;
+
+        if (selectedCableSatellite >= 0)
         {
             satelliteSelectionStatus.text =
                 $"CABLE SELECTED // {sabotageLayout.Codes[selectedCableSatellite]}";
         }
         else
         {
-            satelliteSelectionStatus.text = "NO UPLINK SELECTED";
+            satelliteSelectionStatus.text =
+                "HOLD A SATELLITE AND DRAG ITS CABLE TO AN INPUT PORT";
         }
-
-        bool editable = CanEditSabotage();
-        computerConnectButton.SetEnabled(
-            editable && selectedSatellite >= 0);
-        unlinkButton.SetEnabled(
-            editable && selectedCableSatellite >= 0);
     }
 
     private bool IsSatelliteLayoutUnavailable()
@@ -765,6 +966,7 @@ public class WaveFrequencyUIManager : MonoBehaviour
         if (!IsOpen)
             return;
 
+        CancelCableDrag(false);
         overlay.RemoveFromClassList("open");
         if (closeRoutine != null)
             StopCoroutine(closeRoutine);
@@ -968,32 +1170,63 @@ public class WaveFrequencyUIManager : MonoBehaviour
                 return;
 
             Painter2D painter = context.painter2D;
-            Color line = new Color(1f, 0.34f, 0.3f, 0.95f);
-            Color core = new Color(1f, 0.68f, 0.25f, 0.85f);
-            float left = rect.width * 0.2f;
-            float right = rect.width * 0.8f;
-            float top = rect.height * 0.15f;
-            float bottom = rect.height * 0.67f;
+            Color red = new Color(1f, 0.24f, 0.22f, 0.96f);
+            Color hot = new Color(1f, 0.62f, 0.28f, 0.95f);
+            Color dim = new Color(1f, 0.24f, 0.22f, 0.22f);
+            float left = rect.width * 0.12f;
+            float right = rect.width * 0.88f;
+            float top = rect.height * 0.08f;
+            float screenBottom = rect.height * 0.62f;
 
-            painter.strokeColor = line;
-            painter.lineWidth = 2f;
+            painter.fillColor = new Color(0.16f, 0.02f, 0.035f, 0.92f);
             painter.BeginPath();
             painter.MoveTo(new Vector2(left, top));
             painter.LineTo(new Vector2(right, top));
-            painter.LineTo(new Vector2(right, bottom));
-            painter.LineTo(new Vector2(left, bottom));
-            painter.LineTo(new Vector2(left, top));
-            painter.MoveTo(new Vector2(rect.width * 0.5f, bottom));
-            painter.LineTo(new Vector2(rect.width * 0.5f, rect.height * 0.82f));
-            painter.MoveTo(new Vector2(rect.width * 0.32f, rect.height * 0.82f));
-            painter.LineTo(new Vector2(rect.width * 0.68f, rect.height * 0.82f));
+            painter.LineTo(new Vector2(right, screenBottom));
+            painter.LineTo(new Vector2(left, screenBottom));
+            painter.ClosePath();
+            painter.Fill();
+
+            painter.strokeColor = red;
+            painter.lineWidth = 2.4f;
+            painter.BeginPath();
+            painter.MoveTo(new Vector2(left, top));
+            painter.LineTo(new Vector2(right, top));
+            painter.LineTo(new Vector2(right, screenBottom));
+            painter.LineTo(new Vector2(left, screenBottom));
+            painter.ClosePath();
             painter.Stroke();
 
-            painter.strokeColor = core;
-            painter.lineWidth = 3f;
+            painter.strokeColor = dim;
+            painter.lineWidth = 1f;
             painter.BeginPath();
-            painter.MoveTo(new Vector2(rect.width * 0.38f, rect.height * 0.4f));
-            painter.LineTo(new Vector2(rect.width * 0.62f, rect.height * 0.4f));
+            painter.MoveTo(new Vector2(left + 7f, top + 12f));
+            painter.LineTo(new Vector2(right - 7f, top + 12f));
+            painter.MoveTo(new Vector2(left + 8f, top + 22f));
+            painter.LineTo(new Vector2(right - 8f, top + 22f));
+            painter.Stroke();
+
+            float midY = rect.height * 0.43f;
+            painter.strokeColor = hot;
+            painter.lineWidth = 2.2f;
+            painter.BeginPath();
+            painter.MoveTo(new Vector2(left + 10f, midY));
+            painter.LineTo(new Vector2(left + 23f, midY - 8f));
+            painter.LineTo(new Vector2(left + 37f, midY + 4f));
+            painter.LineTo(new Vector2(left + 51f, midY - 11f));
+            painter.LineTo(new Vector2(right - 10f, midY));
+            painter.Stroke();
+
+            painter.strokeColor = red;
+            painter.lineWidth = 2f;
+            painter.BeginPath();
+            painter.MoveTo(new Vector2(rect.width * 0.5f, screenBottom));
+            painter.LineTo(new Vector2(rect.width * 0.5f, rect.height * 0.78f));
+            painter.MoveTo(new Vector2(rect.width * 0.27f, rect.height * 0.78f));
+            painter.LineTo(new Vector2(rect.width * 0.73f, rect.height * 0.78f));
+            painter.LineTo(new Vector2(rect.width * 0.82f, rect.height * 0.9f));
+            painter.LineTo(new Vector2(rect.width * 0.18f, rect.height * 0.9f));
+            painter.LineTo(new Vector2(rect.width * 0.27f, rect.height * 0.78f));
             painter.Stroke();
         }
     }
@@ -1010,6 +1243,8 @@ public class WaveFrequencyUIManager : MonoBehaviour
         private Vector2 curveStart;
         private bool hasGeometry;
         private bool hasRoute;
+
+        private bool preview;
         private bool selected;
 
         public int SatelliteIndex { get; }
@@ -1037,6 +1272,16 @@ public class WaveFrequencyUIManager : MonoBehaviour
             selected = isSelected;
             MarkDirtyRepaint();
         }
+
+        public void SetPreview(bool isPreview)
+        {
+            preview = isPreview;
+            pickingMode = isPreview
+                ? PickingMode.Ignore
+                : PickingMode.Position;
+            MarkDirtyRepaint();
+        }
+
 
         public void SetEndpoints(Vector2 startPoint, Vector2 endPoint)
         {
@@ -1111,15 +1356,19 @@ public class WaveFrequencyUIManager : MonoBehaviour
                 return;
 
             Painter2D painter = context.painter2D;
-            Color color = selected
-                ? new Color(1f, 0.67f, 0.2f, 1f)
-                : new Color(1f, 0.22f, 0.19f, 0.96f);
+            Color color = preview
+                ? new Color(1f, 0.44f, 0.22f, 1f)
+                : selected
+                    ? new Color(1f, 0.67f, 0.2f, 1f)
+                    : new Color(1f, 0.22f, 0.19f, 0.96f);
 
+            float glowWidth = preview ? 15f : selected ? 12f : 9f;
+            float coreWidth = preview ? 5f : selected ? 4f : 3f;
             DrawCurve(
                 painter,
-                new Color(color.r, color.g, color.b, 0.16f),
-                selected ? 12f : 9f);
-            DrawCurve(painter, color, selected ? 4f : 3f);
+                new Color(color.r, color.g, color.b, preview ? 0.24f : 0.16f),
+                glowWidth);
+            DrawCurve(painter, color, coreWidth);
         }
 
         private void DrawCurve(Painter2D painter, Color color, float width)

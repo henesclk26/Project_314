@@ -71,29 +71,25 @@ public static class WaveSatelliteSabotageLayout
         return -1;
     }
 
-    public static ulong ConnectToFirstEmptyPort(
+    public static ulong ConnectToPort(
         ulong packedConnections,
         int satelliteIndex,
-        out int assignedPort)
+        int portIndex,
+        out bool connected)
     {
-        assignedPort = -1;
+        connected = false;
         if (satelliteIndex < 0 ||
             satelliteIndex >= SatelliteCount ||
-            FindSatellitePort(packedConnections, satelliteIndex) >= 0)
+            portIndex < 0 ||
+            portIndex >= SatelliteCount ||
+            FindSatellitePort(packedConnections, satelliteIndex) >= 0 ||
+            GetSatelliteAtPort(packedConnections, portIndex) != EmptyPort)
         {
             return packedConnections;
         }
 
-        for (int port = 0; port < SatelliteCount; port++)
-        {
-            if (GetSatelliteAtPort(packedConnections, port) != EmptyPort)
-                continue;
-
-            assignedPort = port;
-            return SetPort(packedConnections, port, satelliteIndex);
-        }
-
-        return packedConnections;
+        connected = true;
+        return SetPort(packedConnections, portIndex, satelliteIndex);
     }
 
     public static ulong DisconnectSatellite(

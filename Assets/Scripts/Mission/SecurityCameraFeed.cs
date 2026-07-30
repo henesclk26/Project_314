@@ -70,7 +70,7 @@ public class SecurityCameraFeed : MonoBehaviour
         feedCamera.enabled = streaming;
     }
 
-    private void EnsureCamera()
+private void EnsureCamera()
     {
         if (cameraMount == null)
         {
@@ -101,7 +101,6 @@ public class SecurityCameraFeed : MonoBehaviour
         feedCamera.depth = -20f;
         feedCamera.allowHDR = false;
         feedCamera.allowMSAA = false;
-        feedCamera.enabled = false;
     }
 
     private void OnDisable()

@@ -194,7 +194,7 @@ public class SecurityCameraUIManager : MonoBehaviour
         SetDetailFeed();
     }
 
-    private void SetDetailFeed()
+private void SetDetailFeed()
     {
         if (feeds.Length == 0)
             return;
@@ -206,7 +206,7 @@ public class SecurityCameraUIManager : MonoBehaviour
         SecurityCameraFeed selected = feeds[selectedIndex];
         detailImage.image = selected.PrepareStream();
         detailImage.scaleMode = ScaleMode.ScaleAndCrop;
-        detailName.text = selected.DisplayName;
+        detailName.text = "CAM " + (selectedIndex + 1).ToString("00");
         detailIndex.text = (selectedIndex + 1).ToString("00") + " / " + feeds.Length.ToString("00");
     }
 
