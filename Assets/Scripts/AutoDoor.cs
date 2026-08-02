@@ -33,12 +33,15 @@ public class AutoDoor : MonoBehaviour
 
         foreach (KeyValuePair<string, GameObject> entry in doorsByName)
         {
+            bool hasLinkedDoor = doorsByName.TryGetValue(entry.Key + "-2", out GameObject linkedDoor);
+            bool isStandaloneDoor = IsStandaloneDoorName(entry.Key);
+
             if (!IsPrimaryDoorName(entry.Key)
-                || !doorsByName.TryGetValue(entry.Key + "-2", out GameObject linkedDoor)
                 || entry.Value.GetComponent<LockedAutoDoor>() != null
                 || entry.Value.GetComponent<AutoDoor>() != null
                 || entry.Value.GetComponentInChildren<Animator>(true) == null
-                || linkedDoor.GetComponentInChildren<Animator>(true) == null)
+                || (!hasLinkedDoor && !isStandaloneDoor)
+                || (hasLinkedDoor && linkedDoor.GetComponentInChildren<Animator>(true) == null))
             {
                 continue;
             }
@@ -56,6 +59,32 @@ public class AutoDoor : MonoBehaviour
         {
             if (!char.IsDigit(name[i]))
                 return false;
+        }
+
+        return true;
+    }
+
+    private static bool IsStandaloneDoorName(string name)
+    {
+        if (!TryParseDoorNumber(name, out int doorNumber))
+            return false;
+
+        return doorNumber >= 10 && doorNumber <= 14;
+    }
+
+    private static bool TryParseDoorNumber(string name, out int doorNumber)
+    {
+        doorNumber = 0;
+
+        if (!name.StartsWith("Door") || name.Length == "Door".Length)
+            return false;
+
+        for (int i = "Door".Length; i < name.Length; i++)
+        {
+            if (!char.IsDigit(name[i]))
+                return false;
+
+            doorNumber = (doorNumber * 10) + (name[i] - '0');
         }
 
         return true;

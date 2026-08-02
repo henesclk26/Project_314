@@ -257,6 +257,17 @@ public class SciFiMenuController : MonoBehaviour
 
         UnityEngine.Cursor.lockState = CursorLockMode.Locked;
         UnityEngine.Cursor.visible = false;
+
+        StartCoroutine(RequestSpawnDistributionAfterFrame());
+    }
+
+    private IEnumerator RequestSpawnDistributionAfterFrame()
+    {
+        yield return null;
+
+        var spawnCoordinator = FindFirstObjectByType<PlayerSpawnCoordinator>();
+        if (spawnCoordinator != null)
+            spawnCoordinator.RequestDistribution();
     }
 
     private void DisableMenuFpc()
@@ -341,7 +352,7 @@ public class SciFiMenuController : MonoBehaviour
 
     private IEnumerator TeleportPlayerToSpawn()
     {
-        // Wait up to 2 seconds for the network player to spawn
+        // Wait up to 2 seconds for the network player to spawn.
         float timeout = 2f;
         FirstPersonController spawnedFpc = null;
 
@@ -350,48 +361,46 @@ public class SciFiMenuController : MonoBehaviour
             var allFpcs = FindObjectsByType<FirstPersonController>(FindObjectsSortMode.None);
             foreach (var pFpc in allFpcs)
             {
-                if (pFpc.IsOwner && pFpc != fpc) // Not the menu FPC
+                if (pFpc.IsOwner && pFpc != fpc)
                 {
                     spawnedFpc = pFpc;
                     break;
                 }
             }
 
-            if (spawnedFpc != null) break;
-            
+            if (spawnedFpc != null)
+                break;
+
             timeout -= Time.deltaTime;
             yield return null;
         }
 
         if (spawnedFpc != null)
         {
-            // Find spawn point
-            Vector3 spawnPos = new Vector3(-48.5f, 2.49f, 1.82f); // Default fallback
-            var spawnObj = GameObject.Find("Spawn_1");
-            if (spawnObj != null) spawnPos = spawnObj.transform.position;
+            var spawnCoordinator = FindFirstObjectByType<PlayerSpawnCoordinator>();
+            if (spawnCoordinator != null)
+            {
+                spawnCoordinator.RequestDistribution();
+            }
+            else
+            {
+                Debug.LogWarning("[QuickTest] PlayerSpawnCoordinator bulunamadi, oyuncu mevcut konumunda birakildi.");
+            }
 
-            var cc = spawnedFpc.GetComponent<CharacterController>();
-            if (cc != null) cc.enabled = false;
-            
-            spawnedFpc.transform.position = spawnPos;
-            
-            if (cc != null) cc.enabled = true;
-            
             spawnedFpc.enabled = true;
             spawnedFpc.playerCanMove = true;
             spawnedFpc.cameraCanMove = true;
 
-            // Make sure the camera is enabled
             if (spawnedFpc.playerCamera != null)
             {
                 spawnedFpc.playerCamera.gameObject.SetActive(true);
             }
 
-            Debug.Log($"[QuickTest] Oyuncu {spawnPos} konumuna ışınlandı ve aktif edildi.");
+            Debug.Log("[QuickTest] Oyuncu yeni spawn koordinatoruyle yerlestirildi ve aktif edildi.");
         }
         else
         {
-            Debug.LogWarning("[QuickTest] Spawn edilmiş oyuncu bulunamadı (zaman aşımı)!");
+            Debug.LogWarning("[QuickTest] Spawn edilmis oyuncu bulunamadi (zaman asimi)!");
         }
     }
 

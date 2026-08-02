@@ -338,39 +338,6 @@ public class FirstPersonController : NetworkBehaviour
         if (newVal) Die();
     }
 
-    void OnEnable()
-    {
-        UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
-    }
-
-    void OnDisable()
-    {
-        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
-    }
-
-    // Sahne her yüklendiğinde (özellikle test_map'e geçildiğinde) çalışır
-    void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode mode)
-    {
-        // Karakterin asıl sahibi (bizsek) ve oyun sahnesindeysek:
-        if (IsOwner && scene.name != "MainMenu")
-        {
-            GameObject[] spawnPoints = GameObject.FindGameObjectsWithTag("Respawn");
-            if (spawnPoints != null && spawnPoints.Length > 0)
-            {
-                int spawnIndex = (int)(OwnerClientId % (ulong)spawnPoints.Length);
-                Transform selectedPoint = spawnPoints[spawnIndex].transform;
-                
-                // Fiziği sıfırlayıp ışınlarız ki duvarın içinden veya boşluğa düşme momentumuyla kaymasın
-                if (rb != null) rb.linearVelocity = Vector3.zero;
-                
-                transform.position = selectedPoint.position;
-                transform.rotation = selectedPoint.rotation;
-                
-                Debug.Log($"Harita yüklendi. Oyuncu Spawn_Numarası: {spawnIndex} noktasına ışınlandı.");
-            }
-        }
-    }
-
     private bool cursorLockedForGame = false;
 
     void Start()
