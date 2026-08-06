@@ -24,6 +24,12 @@ public class GameManager : NetworkBehaviour
         {
             isGameStarted.Value = MultiplayerManager.Instance != null && MultiplayerManager.Instance.IsGameInProgress;
             Debug.Log($"[GameManager] OnNetworkSpawn: isGameStarted = {isGameStarted.Value}");
+
+            // Oyun başladıysa rolleri dağıt
+            if (isGameStarted.Value && RoleManager.Instance != null)
+            {
+                RoleManager.Instance.DistributeRolesServerRpc();
+            }
         }
     }
 

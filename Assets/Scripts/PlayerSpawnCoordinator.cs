@@ -283,7 +283,16 @@ public class PlayerSpawnCoordinator : MonoBehaviour
             rb.angularVelocity = Vector3.zero;
         }
 
+        // Host için (veya sunucu yetkisi varsa) lokal olarak taşı, ardından Client'lara bildir (kendisi dahil)
         player.transform.SetPositionAndRotation(position, rotation);
+        
+        // Bu NetworkVariable, istemci tamamen yüklendiğinde pozisyonu bir kez zorlayacaktır.
+        if (player.IsServer)
+        {
+            player.serverSpawnPosition.Value = position;
+            player.serverSpawnRotation.Value = rotation;
+            player.hasServerSpawnPosition.Value = true;
+        }
     }
 
     private static bool TryGetPlayer(ulong clientId, out FirstPersonController player)

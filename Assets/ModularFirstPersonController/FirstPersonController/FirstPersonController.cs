@@ -157,6 +157,11 @@ public class FirstPersonController : NetworkBehaviour
 
     #region Random Event Integration
 
+    public NetworkVariable<Vector3> serverSpawnPosition = new NetworkVariable<Vector3>(Vector3.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    public NetworkVariable<Quaternion> serverSpawnRotation = new NetworkVariable<Quaternion>(Quaternion.identity, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    public NetworkVariable<bool> hasServerSpawnPosition = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    private bool hasConsumedSpawnPosition = false;
+
     /// <summary>
     /// true olduğunda WASD yönleri tersine çevrilir.
     /// RandomEventController tarafından kontrol edilir.
@@ -417,8 +422,23 @@ public class FirstPersonController : NetworkBehaviour
 
     private void Update()
     {
+        if (IsLocalPlayerControlled() && hasServerSpawnPosition.Value && !hasConsumedSpawnPosition)
+        {
+            hasConsumedSpawnPosition = true;
+            transform.SetPositionAndRotation(serverSpawnPosition.Value, serverSpawnRotation.Value);
+            if (rb != null)
+            {
+                rb.position = serverSpawnPosition.Value;
+                rb.rotation = serverSpawnRotation.Value;
+                rb.linearVelocity = Vector3.zero;
+            }
+        }
+
         if (IsLocalPlayerControlled())
-            UpdateInteractionUI();
+        {
+            try { UpdateInteractionUI(); }
+            catch (System.Exception ex) { Debug.LogError($"[FPC] UpdateInteractionUI Error: {ex.Message}"); }
+        }
 
         if (IsLocalPlayerControlled() &&
             Input.GetKeyDown(KeyCode.F1) &&
@@ -677,6 +697,9 @@ public class FirstPersonController : NetworkBehaviour
     private UnityEngine.UIElements.Label promptKeyLabel;
     private UnityEngine.UIElements.Label promptTextLabel;
     private UnityEngine.UIElements.VisualElement warningImg;
+    private UnityEngine.UIElements.VisualElement roleBadge;
+    private UnityEngine.UIElements.Label roleBadgeText;
+    private bool roleBadgeInitialized = false;
 
     public void SetInteractionText(string text)
     {
@@ -713,6 +736,8 @@ public class FirstPersonController : NetworkBehaviour
                 promptKeyLabel = promptContainer.Q<UnityEngine.UIElements.Label>(className: "prompt-key");
                 promptTextLabel = promptContainer.Q<UnityEngine.UIElements.Label>("game-prompt-text");
                 warningImg = doc.rootVisualElement.Q<UnityEngine.UIElements.VisualElement>("valve-warning-image");
+                roleBadge = doc.rootVisualElement.Q<UnityEngine.UIElements.VisualElement>("role-badge");
+                roleBadgeText = doc.rootVisualElement.Q<UnityEngine.UIElements.Label>("role-badge-text");
 
                 if (promptBox != null && promptKeyLabel != null && promptTextLabel != null)
                 {
@@ -739,6 +764,30 @@ public class FirstPersonController : NetworkBehaviour
         else
         {
             if (warningImg != null) warningImg.style.display = UnityEngine.UIElements.DisplayStyle.None;
+        }
+
+        // ── Rol Badge Güncelleme ──
+        if (roleBadge != null && roleBadgeText != null && !roleBadgeInitialized)
+        {
+            if (RoleManager.Instance != null && RoleManager.Instance.AreRolesDistributed())
+            {
+                PlayerRole myRole = RoleManager.Instance.GetLocalPlayerRole();
+                if (myRole != PlayerRole.None)
+                {
+                    roleBadgeInitialized = true;
+                    roleBadge.RemoveFromClassList("hidden");
+
+                    if (myRole == PlayerRole.Impostor)
+                    {
+                        roleBadgeText.text = "KATİL";
+                        roleBadge.AddToClassList("impostor");
+                    }
+                    else
+                    {
+                        roleBadgeText.text = "KÖYLÜ";
+                    }
+                }
+            }
         }
 
         if (promptContainer != null && promptTextLabel != null && promptKeyLabel != null && promptBox != null)
@@ -1052,6 +1101,18 @@ public class FirstPersonController : NetworkBehaviour
 
             // Statik bayrağı güncelle
             LocalPlayerIsDead = true;
+        }
+    }
+    [ClientRpc]
+    public void TeleportClientRpc(Vector3 position, Quaternion rotation)
+    {
+        transform.SetPositionAndRotation(position, rotation);
+        
+        if (rb != null)
+        {
+            rb.position = position;
+            rb.rotation = rotation;
+            rb.linearVelocity = Vector3.zero;
         }
     }
 }
