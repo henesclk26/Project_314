@@ -12,6 +12,9 @@ public class ReactorLeverInteractable : MonoBehaviour
         if (mission == null || !mission.IsMissionActive.Value || mission.IsMissionCompleted.Value)
             return;
 
+        if (!GameplayInteractionGate.IsTaskInteractionPhaseOpen())
+            return;
+
         FirstPersonController fpc = GetOwnerFpc();
         if (!CanPlayerInteract(fpc))
             return;

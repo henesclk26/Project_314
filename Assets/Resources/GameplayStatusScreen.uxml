@@ -1,0 +1,12 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement name="gameplay-status-root" class="gameplay-status-root">
+        <ui:VisualElement name="gameplay-alert" class="gameplay-alert is-hidden">
+            <ui:Label name="gameplay-alert-title" class="gameplay-alert-title" />
+            <ui:Label name="gameplay-alert-detail" class="gameplay-alert-detail" />
+        </ui:VisualElement>
+        <ui:VisualElement name="gameplay-loadout" class="gameplay-loadout">
+            <ui:Label name="gameplay-passive" class="gameplay-loadout-line" />
+            <ui:Label name="gameplay-tool" class="gameplay-loadout-line" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,0 +1,7 @@
+.gameplay-status-root { flex-grow: 1; position: relative; color: rgb(218, 232, 236); -unity-font-style: normal; }
+.gameplay-alert { position: absolute; top: 24px; left: 50%; width: 360px; margin-left: -180px; padding: 10px 14px; background-color: rgba(17, 9, 13, 0.94); border-left-width: 3px; border-left-color: rgb(231, 73, 66); border-top-width: 1px; border-top-color: rgba(243, 112, 94, 0.38); border-bottom-width: 1px; border-bottom-color: rgba(243, 112, 94, 0.18); }
+.gameplay-alert.is-hidden { display: none; }
+.gameplay-alert-title { color: rgb(255, 128, 110); font-size: 14px; -unity-font-style: bold; letter-spacing: 0; }
+.gameplay-alert-detail { margin-top: 3px; color: rgb(219, 224, 224); font-size: 11px; }
+.gameplay-loadout { position: absolute; right: 22px; bottom: 22px; width: 250px; padding: 9px 11px; background-color: rgba(5, 19, 25, 0.86); border-left-width: 2px; border-left-color: rgb(56, 202, 203); }
+.gameplay-loadout-line { color: rgb(186, 213, 217); font-size: 11px; margin-bottom: 3px; }

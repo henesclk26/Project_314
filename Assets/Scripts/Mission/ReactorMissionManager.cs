@@ -91,6 +91,23 @@ public class ReactorMissionManager : NetworkBehaviour
         base.OnDestroy();
     }
 
+    // Called by the server when a repeatable cooperative TaskRun is assigned.
+    // The task assignment owns lifecycle reset; opening the terminal does not.
+    public void ResetForTaskAssignment()
+    {
+        if (!IsServer)
+            return;
+
+        IsMissionActive.Value = false;
+        IsMissionCompleted.Value = false;
+        FuelPercent.Value = 0;
+        Phase.Value = ReactorMissionPhase.Inactive;
+        LeverMask.Value = 0;
+        LeverSyncProgress.Value = 0f;
+        leverParticipants.Clear();
+        SetAllCanStates(AvailableCan);
+    }
+
     private void Update()
     {
         if (!IsServer || !IsMissionActive.Value || IsMissionCompleted.Value)

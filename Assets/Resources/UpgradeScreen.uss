@@ -1,0 +1,38 @@
+.upgrade-root {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(2, 7, 13, 0.76);
+}
+.upgrade-root.hidden { display: none; }
+.upgrade-root.open { display: flex; }
+.upgrade-panel {
+    width: 1060px;
+    min-height: 390px;
+    padding: 32px;
+    background-color: rgba(7, 17, 28, 0.98);
+    border-left-width: 3px;
+    border-left-color: rgb(0, 223, 232);
+    border-right-width: 1px;
+    border-right-color: rgba(0, 223, 232, 0.45);
+    border-top-width: 1px;
+    border-top-color: rgba(255, 255, 255, 0.25);
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 255, 255, 0.25);
+}
+.upgrade-header { margin-bottom: 24px; }
+.upgrade-eyebrow { color: rgb(0, 223, 232); font-size: 14px; -unity-font-style: bold; letter-spacing: 1px; }
+.upgrade-title { color: rgb(242, 247, 242); font-size: 30px; -unity-font-style: bold; margin-top: 6px; }
+.upgrade-detail { color: rgb(148, 177, 184); font-size: 13px; margin-top: 7px; }
+.upgrade-cards { flex-direction: row; gap: 16px; }
+.upgrade-card { flex-grow: 1; min-height: 220px; padding: 18px; background-color: rgba(13, 32, 45, 0.96); border-top-width: 2px; border-top-color: rgba(0, 223, 232, 0.8); }
+.upgrade-card:hover { background-color: rgba(19, 48, 62, 1); border-top-color: rgb(255, 174, 51); }
+.upgrade-card-index { color: rgb(255, 174, 51); font-size: 14px; -unity-font-style: bold; }
+.upgrade-card-title { color: rgb(242, 247, 242); font-size: 19px; -unity-font-style: bold; margin-top: 18px; }
+.upgrade-card-description { color: rgb(169, 193, 196); font-size: 13px; white-space: normal; margin-top: 12px; flex-grow: 1; }
+.upgrade-card-button { height: 34px; margin-top: 18px; color: rgb(242, 247, 242); background-color: rgba(0, 170, 183, 0.22); border-width: 1px; border-color: rgb(0, 223, 232); }
+.upgrade-close { align-self: flex-end; margin-top: 20px; color: rgb(145, 162, 166); background-color: rgba(0, 0, 0, 0); border-width: 0; font-size: 12px; }

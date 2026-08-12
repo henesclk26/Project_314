@@ -24,11 +24,14 @@ public class MultiplayerManager : MonoBehaviour
 {
     public static MultiplayerManager Instance { get; private set; }
 
+    private const int DemoMinimumPlayers = 3;
+    private const int DemoMaximumPlayers = 8;
+
     public string CurrentJoinCode { get; private set; }
     public string CurrentLobbyCode => currentLobby?.LobbyCode;
     public string CurrentLobbyName => currentLobby?.Name ?? string.Empty;
     public bool CurrentLobbyIsPrivate => currentLobby != null && currentLobby.IsPrivate;
-    public int CurrentLobbyMaxPlayers => currentLobby != null ? currentLobby.MaxPlayers : 14;
+    public int CurrentLobbyMaxPlayers => currentLobby != null ? currentLobby.MaxPlayers : DemoMaximumPlayers;
     public bool HasActiveLobby => currentLobby != null;
     public bool IsReady { get; private set; }
     public bool IsGameInProgress { get; set; } = false;
@@ -110,6 +113,8 @@ async void Start()
     {
         if (!await EnsureReadyAsync()) return false;
 
+        maxPlayers = Mathf.Clamp(maxPlayers, DemoMinimumPlayers, DemoMaximumPlayers);
+
         try
         {
             Allocation allocation = await RelayService.Instance.CreateAllocationAsync(maxPlayers - 1);
@@ -146,6 +151,8 @@ async void Start()
     public async Task<bool> CreatePrivateLobby(string lobbyName, int maxPlayers)
     {
         if (!await EnsureReadyAsync()) return false;
+
+        maxPlayers = Mathf.Clamp(maxPlayers, DemoMinimumPlayers, DemoMaximumPlayers);
 
         try
         {

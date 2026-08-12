@@ -10,7 +10,8 @@ public class ReactorInteractable : MonoBehaviour
         ReactorMissionManager mission = ReactorMissionManager.Instance;
         if (mission == null || !mission.IsMissionActive.Value ||
             mission.IsMissionCompleted.Value ||
-            mission.Phase.Value != ReactorMissionPhase.Fueling)
+            mission.Phase.Value != ReactorMissionPhase.Fueling ||
+            !GameplayInteractionGate.IsTaskInteractionPhaseOpen())
         {
             return;
         }

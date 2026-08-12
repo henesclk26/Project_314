@@ -13,7 +13,7 @@ using UnityEngine.UIElements;
 public class UIToolkitLobbyBridge : MonoBehaviour
 {
     public const string GameSceneName = "sci-fi-map";
-    private const int PrivateMaxPlayers = 14;
+    private const int PrivateMaxPlayers = 8;
     private const float LobbyRefreshInterval = 3f;
 
     private MultiplayerManager _network;

@@ -1,0 +1,14 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="UpgradeScreen.uss" />
+    <ui:VisualElement name="upgrade-root" class="upgrade-root">
+        <ui:VisualElement name="upgrade-panel" class="upgrade-panel">
+            <ui:VisualElement class="upgrade-header">
+                <ui:Label name="upgrade-eyebrow" class="upgrade-eyebrow" text="SYSTEM EVOLUTION / PASSIVE" />
+                <ui:Label name="upgrade-title" class="upgrade-title" text="SELECT PASSIVE PROTOCOL" />
+                <ui:Label name="upgrade-detail" class="upgrade-detail" text="ONE PASSIVE WILL REMAIN ACTIVE FOR THIS UNIT." />
+            </ui:VisualElement>
+            <ui:VisualElement name="upgrade-cards" class="upgrade-cards" />
+            <ui:Button name="upgrade-close" class="upgrade-close" text="CLOSE WITHOUT REWARD" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

@@ -21,7 +21,8 @@ public class BatteryPickupInteractable : MonoBehaviour
         bool isCollected = MissionManager.Instance.IsBatteryCollected.Value;
         SetVisualsActive(!isCollected);
 
-        if (isCollected) return; // Already collected
+        if (isCollected || !GameplayInteractionGate.IsTaskInteractionPhaseOpen())
+            return;
 
         FirstPersonController fpc = GetOwnerFpc();
         if (fpc == null || fpc.isDead.Value || (GameManager.Instance && GameManager.Instance.isGameOver)) return;

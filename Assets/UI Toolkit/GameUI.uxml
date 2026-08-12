@@ -1,7 +1,27 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <Style src="project://database/Assets/UI%20Toolkit/ComputerScreen.uss?fileID=7433441132597879392&amp;guid=3b5808da99ad6324cbb7383a2a94a40d&amp;type=3#ComputerScreen"/>
     <ui:VisualElement style="flex-grow: 1; position: absolute; height: 119px; width: 342px; bottom: 3px; left: 3px; color: rgb(255, 255, 255);">
-        <ui:Label text="v0.0.21" style="height: 109px; width: 328px; font-size: 36px; color: rgb(156, 156, 156); -unity-text-align: lower-left;"/>
+        <ui:Label text="v0.0.22" style="height: 109px; width: 328px; font-size: 36px; color: rgb(156, 156, 156); -unity-text-align: lower-left;"/>
+    </ui:VisualElement>
+    <ui:VisualElement name="hud-top-left" style="position: absolute; top: 20px; left: 20px; background-color: rgba(6, 12, 22, 0.8); border-radius: 8px; padding: 10px; border-width: 2px; border-color: rgba(0, 240, 255, 0.5);">
+        <ui:Label name="crew-progress-label" text="GÖREV İLERLEMESİ: 0 / 0" style="color: rgb(0, 255, 255); font-size: 18px; -unity-font-style: bold; margin-bottom: 8px;"/>
+        <ui:Label name="current-task-label" text="AKTİF GÖREV: YOK" style="color: rgb(220, 220, 220); font-size: 16px; margin-bottom: 4px;"/>
+        <ui:Label name="current-room-label" text="" style="color: rgb(150, 150, 150); font-size: 14px;"/>
+    </ui:VisualElement>
+    <ui:VisualElement name="killer-hack-panel" style="position: absolute; top: 154px; left: 20px; width: 342px; display: none; background-color: rgba(26, 7, 12, 0.9); border-left-width: 3px; border-left-color: rgb(224, 69, 63); border-top-width: 1px; border-top-color: rgba(255, 125, 110, 0.45); padding: 10px;">
+        <ui:Label text="ROGUE HACK STATIONS" style="color: rgb(255, 132, 114); font-size: 13px; -unity-font-style: bold; margin-bottom: 7px;"/>
+        <ui:VisualElement style="flex-direction: row; justify-content: space-between; margin-bottom: 5px;">
+            <ui:Label text="MISSION COMPUTER" style="color: rgb(228, 224, 222); font-size: 12px;"/>
+            <ui:Label name="killer-hack-status-computer" text="LOCKED" style="color: rgb(164, 135, 132); font-size: 11px; -unity-font-style: bold;"/>
+        </ui:VisualElement>
+        <ui:VisualElement style="flex-direction: row; justify-content: space-between; margin-bottom: 5px;">
+            <ui:Label text="CIRCUIT MISSION" style="color: rgb(228, 224, 222); font-size: 12px;"/>
+            <ui:Label name="killer-hack-status-circuit" text="LOCKED" style="color: rgb(164, 135, 132); font-size: 11px; -unity-font-style: bold;"/>
+        </ui:VisualElement>
+        <ui:VisualElement style="flex-direction: row; justify-content: space-between;">
+            <ui:Label text="WAVE TERMINAL" style="color: rgb(228, 224, 222); font-size: 12px;"/>
+            <ui:Label name="killer-hack-status-wave" text="LOCKED" style="color: rgb(164, 135, 132); font-size: 11px; -unity-font-style: bold;"/>
+        </ui:VisualElement>
     </ui:VisualElement>
     <ui:VisualElement name="role-badge" class="role-badge hidden">
         <ui:Label name="role-badge-text" text="" class="role-badge-label"/>

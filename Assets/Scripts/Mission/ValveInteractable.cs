@@ -10,6 +10,7 @@ public class ValveInteractable : MonoBehaviour
     private bool isTurned = false;
     private bool isTurning = false;
     private float turnTimer = 0f;
+    private bool wasMissionActive;
 
     private void Update()
     {
@@ -28,11 +29,16 @@ public class ValveInteractable : MonoBehaviour
         if (MissionManager.Instance == null) return;
         
         bool isMissionActive = MissionManager.Instance.IsValveMissionActive.Value;
+        if (isMissionActive && !wasMissionActive)
+            isTurned = false;
+        wasMissionActive = isMissionActive;
         
-        if (isTurned || !isMissionActive) return;
+        if (isTurned || !isMissionActive || !GameplayInteractionGate.IsTaskInteractionPhaseOpen())
+            return;
 
         FirstPersonController fpc = GetOwnerFpc();
         if (fpc == null || fpc.isDead.Value || (GameManager.Instance && GameManager.Instance.isGameOver)) return;
+        if (!MissionManager.Instance.IsValveOverrideParticipant(fpc.OwnerClientId)) return;
 
         Ray ray = new Ray(fpc.playerCamera.transform.position, fpc.playerCamera.transform.forward);
         if (Physics.Raycast(ray, out RaycastHit hit, interactionRange))

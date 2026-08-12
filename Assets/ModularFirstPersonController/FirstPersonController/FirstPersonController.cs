@@ -81,6 +81,7 @@ public class FirstPersonController : NetworkBehaviour
     public bool playerCanMove = true;
     public float walkSpeed = 5f;
     public float maxVelocityChange = 10f;
+    private float baseWalkSpeed;
 
     // Internal Variables
     private bool isWalking = false;
@@ -91,6 +92,7 @@ public class FirstPersonController : NetworkBehaviour
     public bool unlimitedSprint = false;
     public KeyCode sprintKey = KeyCode.LeftShift;
     public float sprintSpeed = 7f;
+    private float baseSprintSpeed;
     public float sprintDuration = 5f;
     public float sprintCooldown = .5f;
     public float sprintFOV = 80f;
@@ -189,6 +191,8 @@ public class FirstPersonController : NetworkBehaviour
         playerCamera.fieldOfView = fov;
         originalScale = transform.localScale;
         jointOriginalPos = joint.localPosition;
+        baseWalkSpeed = walkSpeed;
+        baseSprintSpeed = sprintSpeed;
 
         if (!unlimitedSprint)
         {
@@ -229,11 +233,12 @@ public class FirstPersonController : NetworkBehaviour
         if (isDead.Value) OnDeadChanged(false, true);
 
         playerColorIndex.OnValueChanged += OnColorChanged;
+        effectiveColorOverride.OnValueChanged += OnEffectiveColorOverrideChanged;
         if (IsServer)
         {
             playerColorIndex.Value = (int)(OwnerClientId % 16) + 1;
         }
-        ApplyPlayerColor(playerColorIndex.Value);
+        ApplyEffectivePlayerColor();
 
         if (IsOwner)
         {
@@ -282,11 +287,17 @@ public class FirstPersonController : NetworkBehaviour
         base.OnNetworkDespawn();
         isDead.OnValueChanged -= OnDeadChanged;
         playerColorIndex.OnValueChanged -= OnColorChanged;
+        effectiveColorOverride.OnValueChanged -= OnEffectiveColorOverrideChanged;
     }
 
     private void OnColorChanged(int oldVal, int newVal)
     {
-        ApplyPlayerColor(newVal);
+        ApplyEffectivePlayerColor();
+    }
+
+    private void OnEffectiveColorOverrideChanged(int oldVal, int newVal)
+    {
+        ApplyEffectivePlayerColor();
     }
 
     private static readonly string[] PlayerColorHexes = new string[]
@@ -338,12 +349,21 @@ public class FirstPersonController : NetworkBehaviour
         }
     }
 
+    private void ApplyEffectivePlayerColor()
+    {
+        ApplyPlayerColor(effectiveColorOverride.Value > 0
+            ? effectiveColorOverride.Value
+            : playerColorIndex.Value);
+    }
+
     private void OnDeadChanged(bool oldVal, bool newVal)
     {
         if (newVal) Die();
+        else ReviveForNewMatch();
     }
 
     private bool cursorLockedForGame = false;
+    private bool crosshairWasEnabledBeforeDeath;
 
     void Start()
     {
@@ -406,6 +426,11 @@ public class FirstPersonController : NetworkBehaviour
     public NetworkVariable<FixedString32Bytes> playerName = new NetworkVariable<FixedString32Bytes>("", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     public NetworkVariable<float> networkAnimSpeed = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     public NetworkVariable<int> playerColorIndex = new NetworkVariable<int>(1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    public NetworkVariable<int> effectiveColorOverride = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+    public NetworkVariable<double> killCooldownEndTime = new NetworkVariable<double>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    public NetworkVariable<double> escapeRoutineEndTime = new NetworkVariable<double>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    public NetworkVariable<Vector3> deathPosition = new NetworkVariable<Vector3>(Vector3.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
     public bool CanBeReportedAsBody()
     {
@@ -422,6 +447,7 @@ public class FirstPersonController : NetworkBehaviour
 
     private void Update()
     {
+        ApplyPassiveMovementStats();
         if (IsLocalPlayerControlled() && hasServerSpawnPosition.Value && !hasConsumedSpawnPosition)
         {
             hasConsumedSpawnPosition = true;
@@ -440,6 +466,7 @@ public class FirstPersonController : NetworkBehaviour
             catch (System.Exception ex) { Debug.LogError($"[FPC] UpdateInteractionUI Error: {ex.Message}"); }
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         if (IsLocalPlayerControlled() &&
             Input.GetKeyDown(KeyCode.F1) &&
             MissionManager.Instance != null &&
@@ -452,6 +479,7 @@ public class FirstPersonController : NetworkBehaviour
         {
             MissionManager.Instance.ActivateValveMissionServerRpc();
         }
+#endif
 
         if (animator != null)
         {
@@ -470,17 +498,30 @@ public class FirstPersonController : NetworkBehaviour
 
         if (!IsLocalPlayerControlled()) return;
 
-        if (isDead.Value)
+        if (RoleManager.Instance != null && RoleManager.Instance.GetLocalPlayerRole() == PlayerRole.Impostor && !isDead.Value)
         {
-            HandleSpectator(); // Sadece girişleri (tıklamaları) kontrol et
-            return;
+            if (Input.GetKeyDown(KeyCode.Q))
+            {
+                FirstPersonController target = GetKillTarget();
+                if (target != null)
+                {
+                    AttemptKillServerRpc(target.OwnerClientId);
+                }
+            }
         }
+
+        // Sadece girişleri (tıklamaları) kontrol eden Spectator kodu kaldırıldı, çünkü artık hayalet modundayız.
+        // Artık early return yapmıyoruz, kamera ve hareket (eğer isDead ise havada uçarak) Update içinde devam edecek.
 
         // EĞER ŞU AN ANA MENÜDE VEYA LOBİDE İSEK: Fareyi göster, karakteri dondur ve crosshair'ı kapat!
         bool isMainMenu = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "MainMenu";
         bool isLobbyMode = GameManager.Instance == null || !GameManager.Instance.isGameStarted.Value;
+        
+        bool isLockedPhase = MatchFlowManager.Instance != null && 
+                            (MatchFlowManager.Instance.CurrentPhase.Value == MatchPhase.Meeting || 
+                             MatchFlowManager.Instance.CurrentPhase.Value == MatchPhase.PostMeetingLock);
 
-        if (isMainMenu || isLobbyMode)
+        if (isMainMenu || isLobbyMode || isLockedPhase)
         {
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
@@ -665,9 +706,22 @@ public class FirstPersonController : NetworkBehaviour
 
         CheckGround();
 
-        if(enableHeadBob)
+        if(enableHeadBob && !isDead.Value)
         {
             HeadBob();
+        }
+
+        if (isDead.Value && IsLocalPlayerControlled())
+        {
+            // Hayalet modu serbest uçuş
+            float moveX = Input.GetAxis("Horizontal");
+            float moveZ = Input.GetAxis("Vertical");
+            float moveY = 0f;
+            if (enableJump && Input.GetKey(jumpKey)) moveY = 1f;
+            if (enableCrouch && Input.GetKey(crouchKey)) moveY = -1f;
+
+            Vector3 flyMove = transform.right * moveX + transform.up * moveY + playerCamera.transform.forward * moveZ;
+            transform.position += flyMove * (walkSpeed * 1.5f) * Time.deltaTime;
         }
     }
 
@@ -699,6 +753,13 @@ public class FirstPersonController : NetworkBehaviour
     private UnityEngine.UIElements.VisualElement warningImg;
     private UnityEngine.UIElements.VisualElement roleBadge;
     private UnityEngine.UIElements.Label roleBadgeText;
+    private UnityEngine.UIElements.Label crewProgressLabel;
+    private UnityEngine.UIElements.Label currentTaskLabel;
+    private UnityEngine.UIElements.Label currentRoomLabel;
+    private UnityEngine.UIElements.VisualElement killerHackPanel;
+    private UnityEngine.UIElements.Label killerHackComputerStatus;
+    private UnityEngine.UIElements.Label killerHackCircuitStatus;
+    private UnityEngine.UIElements.Label killerHackWaveStatus;
     private bool roleBadgeInitialized = false;
 
     public void SetInteractionText(string text)
@@ -738,6 +799,13 @@ public class FirstPersonController : NetworkBehaviour
                 warningImg = doc.rootVisualElement.Q<UnityEngine.UIElements.VisualElement>("valve-warning-image");
                 roleBadge = doc.rootVisualElement.Q<UnityEngine.UIElements.VisualElement>("role-badge");
                 roleBadgeText = doc.rootVisualElement.Q<UnityEngine.UIElements.Label>("role-badge-text");
+                crewProgressLabel = doc.rootVisualElement.Q<UnityEngine.UIElements.Label>("crew-progress-label");
+                currentTaskLabel = doc.rootVisualElement.Q<UnityEngine.UIElements.Label>("current-task-label");
+                currentRoomLabel = doc.rootVisualElement.Q<UnityEngine.UIElements.Label>("current-room-label");
+                killerHackPanel = doc.rootVisualElement.Q<UnityEngine.UIElements.VisualElement>("killer-hack-panel");
+                killerHackComputerStatus = doc.rootVisualElement.Q<UnityEngine.UIElements.Label>("killer-hack-status-computer");
+                killerHackCircuitStatus = doc.rootVisualElement.Q<UnityEngine.UIElements.Label>("killer-hack-status-circuit");
+                killerHackWaveStatus = doc.rootVisualElement.Q<UnityEngine.UIElements.Label>("killer-hack-status-wave");
 
                 if (promptBox != null && promptKeyLabel != null && promptTextLabel != null)
                 {
@@ -790,6 +858,53 @@ public class FirstPersonController : NetworkBehaviour
             }
         }
 
+        if (crewProgressLabel != null && TaskManager.Instance != null && IsLocalPlayerControlled() && !isDead.Value)
+        {
+            crewProgressLabel.text = $"GÖREV İLERLEMESİ: {TaskManager.Instance.CrewTaskProgress.Value} / {TaskManager.Instance.CrewTaskTarget.Value}";
+
+            var task = TaskManager.Instance.GetActiveTaskForPlayer(OwnerClientId);
+            if (task.HasValue && task.Value.State != TaskRunState.Completed)
+            {
+                string tId = task.Value.TaskID.ToString();
+                TaskDefinition def = null;
+                if (TaskManager.Instance.AvailableTasks != null)
+                {
+                    foreach (var t in TaskManager.Instance.AvailableTasks)
+                    {
+                        if (t != null && t.TaskID == tId)
+                        {
+                            def = t;
+                            break;
+                        }
+                    }
+                }
+                
+                if (def != null)
+                {
+                    currentTaskLabel.text = $"AKTİF GÖREV: {def.DisplayName}";
+                    currentRoomLabel.text = $"Oda: {def.RoomName}";
+                }
+                else
+                {
+                    currentTaskLabel.text = $"AKTİF GÖREV: {tId}";
+                    currentRoomLabel.text = "";
+                }
+            }
+            else
+            {
+                currentTaskLabel.text = "AKTİF GÖREV: YOK";
+                currentRoomLabel.text = "";
+            }
+        }
+        else if (crewProgressLabel != null)
+        {
+            crewProgressLabel.text = "";
+            currentTaskLabel.text = "";
+            currentRoomLabel.text = "";
+        }
+
+        UpdateKillerHackList();
+
         if (promptContainer != null && promptTextLabel != null && promptKeyLabel != null && promptBox != null)
         {
             if (Time.time < interactionTextTimer && !string.IsNullOrEmpty(interactionText) && IsLocalPlayerControlled() && !isDead.Value)
@@ -834,15 +949,157 @@ public class FirstPersonController : NetworkBehaviour
         // OnGUI interaction text logic removed, replaced by UI Toolkit (UpdateInteractionUI)
     }
 
+    private FirstPersonController GetKillTarget()
+    {
+        FirstPersonController bestTarget = null;
+        float bestDistance = UpgradeManager.Instance != null
+            ? UpgradeManager.Instance.GetKillRange(OwnerClientId)
+            : 4f;
+
+        foreach (var fpc in FindObjectsByType<FirstPersonController>(FindObjectsSortMode.None))
+        {
+            if (fpc == this || fpc.isDead.Value) continue;
+
+            float dist = Vector3.Distance(transform.position, fpc.transform.position);
+            if (dist <= bestDistance)
+            {
+                if (!Physics.Linecast(transform.position + Vector3.up, fpc.transform.position + Vector3.up))
+                {
+                    bestTarget = fpc;
+                    bestDistance = dist;
+                }
+            }
+        }
+        return bestTarget;
+    }
+
+    [ServerRpc]
+    private void AttemptKillServerRpc(ulong targetId)
+    {
+        MatchFlowManager flow = MatchFlowManager.Instance;
+        if (flow == null || flow.CurrentPhase.Value != MatchPhase.Active) return;
+        if (isDead.Value || RoleManager.Instance.GetPlayerRole(OwnerClientId) != PlayerRole.Impostor) return;
+        if (NetworkManager.Singleton.LocalTime.Time < killCooldownEndTime.Value) return;
+
+        FirstPersonController target = null;
+        foreach (var fpc in FindObjectsByType<FirstPersonController>(FindObjectsSortMode.None))
+        {
+            if (fpc.OwnerClientId == targetId)
+            {
+                target = fpc;
+                break;
+            }
+        }
+
+        if (target == null || target.isDead.Value) return;
+
+        float distance = Vector3.Distance(transform.position, target.transform.position);
+        float killRange = UpgradeManager.Instance != null
+            ? UpgradeManager.Instance.GetKillRange(OwnerClientId)
+            : 4f;
+        if (distance > killRange) return;
+
+        if (Physics.Linecast(transform.position + Vector3.up, target.transform.position + Vector3.up, out RaycastHit hit))
+        {
+            if (hit.collider.gameObject != target.gameObject && !hit.collider.isTrigger)
+            {
+                return;
+            }
+        }
+
+        target.deathCause.Value = PlayerDeathCause.ImpostorKill;
+        target.deathPosition.Value = target.transform.position;
+        target.isDead.Value = true;
+        killCooldownEndTime.Value = NetworkManager.Singleton.LocalTime.Time +
+            (UpgradeManager.Instance != null ? UpgradeManager.Instance.GetKillCooldown(OwnerClientId) : 30.0);
+        if (UpgradeManager.Instance != null)
+            UpgradeManager.Instance.NotifySuccessfulKill(OwnerClientId, target.OwnerClientId);
+
+        if (MatchFlowManager.Instance != null)
+        {
+            MatchFlowManager.Instance.SpawnBody(target.transform.position, target.OwnerClientId);
+            MatchFlowManager.Instance.CheckWinConditions();
+        }
+
+    }
+
+    private void UpdateKillerHackList()
+    {
+        if (killerHackPanel == null)
+            return;
+
+        bool visible = IsLocalPlayerControlled() && !isDead.Value &&
+            RoleManager.Instance != null &&
+            RoleManager.Instance.GetLocalPlayerRole() == PlayerRole.Impostor &&
+            TaskManager.Instance != null;
+        killerHackPanel.style.display = visible
+            ? UnityEngine.UIElements.DisplayStyle.Flex
+            : UnityEngine.UIElements.DisplayStyle.None;
+        if (!visible)
+            return;
+
+        SetHackStatus(killerHackComputerStatus, "MissionComputer");
+        SetHackStatus(killerHackCircuitStatus, "CircuitMission");
+        SetHackStatus(killerHackWaveStatus, "WaveFrequency");
+    }
+
+    private static void SetHackStatus(UnityEngine.UIElements.Label label, string taskId)
+    {
+        if (label == null || TaskManager.Instance == null)
+            return;
+
+        string status;
+        Color color;
+        if (TaskManager.Instance.IsRogueHackCompleted(taskId))
+        {
+            status = "COMPLETE";
+            color = new Color(0.35f, 0.9f, 0.63f);
+        }
+        else
+        {
+            TerminalHackPhase phase = TaskManager.Instance.GetTerminalHackPhase(taskId);
+            switch (phase)
+            {
+                case TerminalHackPhase.Preparing:
+                    status = "PREPARING";
+                    color = new Color(1f, 0.72f, 0.32f);
+                    break;
+                case TerminalHackPhase.Available:
+                    status = "READY";
+                    color = new Color(1f, 0.36f, 0.31f);
+                    break;
+                case TerminalHackPhase.Active:
+                    status = "IN PROGRESS";
+                    color = new Color(1f, 0.63f, 0.27f);
+                    break;
+                default:
+                    status = "LOCKED";
+                    color = new Color(0.64f, 0.53f, 0.52f);
+                    break;
+            }
+        }
+
+        label.text = status;
+        label.style.color = new StyleColor(color);
+    }
+
+    private void ApplyPassiveMovementStats()
+    {
+        if (baseWalkSpeed <= 0f)
+            return;
+
+        float multiplier = UpgradeManager.Instance != null
+            ? UpgradeManager.Instance.GetMovementMultiplier(OwnerClientId)
+            : 1f;
+        walkSpeed = baseWalkSpeed * multiplier;
+        sprintSpeed = baseSprintSpeed * multiplier;
+    }
+
     private void LateUpdate()
     {
         if (!IsLocalPlayerControlled()) return;
 
-        // İzleyici modundaysak, kamera takibini LateUpdate'te yapıyoruz ki titreme (jitter) olmasın.
-        if (isDead.Value)
-        {
-            SpectateCurrentTarget();
-        }
+        // LateUpdate spectator logic is removed
     }
 
     private void CycleSpectator(int direction)
@@ -901,7 +1158,15 @@ public class FirstPersonController : NetworkBehaviour
 
         bool isMainMenu = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "MainMenu";
         bool isLobbyMode = GameManager.Instance == null || !GameManager.Instance.isGameStarted.Value;
-        if (isMainMenu || isLobbyMode) return;
+        bool isLockedPhase = MatchFlowManager.Instance != null && 
+                            (MatchFlowManager.Instance.CurrentPhase.Value == MatchPhase.Meeting || 
+                             MatchFlowManager.Instance.CurrentPhase.Value == MatchPhase.PostMeetingLock);
+                             
+        if (isMainMenu || isLobbyMode || isLockedPhase)
+        {
+            if (rb != null && !isDead.Value) rb.linearVelocity = new Vector3(0f, rb.linearVelocity.y, 0f);
+            return;
+        }
 
         #region Movement
 
@@ -1075,34 +1340,101 @@ public class FirstPersonController : NetworkBehaviour
 
     public void Die()
     {
+        crosshairWasEnabledBeforeDeath = crosshair;
         // Not: isDead.Value artık server tarafından set ediliyor.
         playerCanMove = false;
-        cameraCanMove = false;
+        cameraCanMove = false; // We will handle ghost camera movement separately if needed
+
         if (rb != null)
         {
             rb.linearVelocity = Vector3.zero;
+            rb.useGravity = false;
+            rb.isKinematic = true;
+        }
+
+        if (capsuleCollider != null)
+        {
+            capsuleCollider.enabled = false;
+        }
+
+        // Hide renderers for ghosts
+        if (animator != null)
+        {
+            Renderer[] bodyRenderers = animator.GetComponentsInChildren<Renderer>();
+            foreach (Renderer r in bodyRenderers)
+            {
+                if (r != null) r.enabled = false;
+            }
         }
 
         if (IsLocalPlayerControlled())
         {
-            Debug.Log("ÖLDÜRÜLDÜN!");
-            // Role manager references removed
+            Debug.Log("ÖLDÜRÜLDÜN! Ghost Mode aktif.");
+            
+            // Enable free ghost camera movement by allowing standard inputs without rigidbody forces
+            playerCanMove = true; 
+            cameraCanMove = true;
+            
+            // Disable crosshair to indicate no interactions
+            crosshair = false;
+            if (crosshairObject != null) crosshairObject.gameObject.SetActive(false);
+            
+            lockCursor = true;
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+            cursorLockedForGame = true;
 
-
-            // Spectator modunu otomatik başlat — ilk hayatta kalana geç
-            spectatorInitialized = false; // Hint mesajını yeniden göster
-            CycleSpectator(1);
-
-            // Cursor'u serbest bırak: sol/sağ tıkla kamera değiştirebilsin
-            lockCursor = false;
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-            cursorLockedForGame = false;
-
-            // Statik bayrağı güncelle
             LocalPlayerIsDead = true;
         }
     }
+    /// <summary>
+    /// Restores the player when the server starts a fresh match in the same scene.
+    /// Death remains permanent for the current round.
+    /// </summary>
+    public void ReviveForNewMatch()
+    {
+        playerCanMove = true;
+        cameraCanMove = true;
+
+        if (rb != null)
+        {
+            rb.useGravity = true;
+            rb.isKinematic = false;
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+        }
+
+        if (capsuleCollider != null)
+            capsuleCollider.enabled = true;
+
+        if (animator != null)
+        {
+            Renderer[] bodyRenderers = animator.GetComponentsInChildren<Renderer>(true);
+            foreach (Renderer renderer in bodyRenderers)
+            {
+                if (renderer != null)
+                    renderer.enabled = true;
+            }
+        }
+
+        if (isCrouched)
+        {
+            transform.localScale = originalScale;
+            walkSpeed /= speedReduction;
+            isCrouched = false;
+        }
+
+        crosshair = crosshairWasEnabledBeforeDeath || crosshair;
+        if (crosshairObject != null)
+            crosshairObject.gameObject.SetActive(crosshair);
+
+        LocalPlayerIsDead = false;
+        spectatorInitialized = false;
+        spectatedPlayer = null;
+        currentSpectateIndex = 0;
+        cursorLockedForGame = false;
+    }
+
     [ClientRpc]
     public void TeleportClientRpc(Vector3 position, Quaternion rotation)
     {

@@ -52,7 +52,10 @@ public class RoleManager : NetworkBehaviour
     /// <summary>
     /// Tüm oyuncuların rolleri. Server yazabilir, herkes okuyabilir.
     /// </summary>
-    private NetworkList<RoleEntry> roleEntries;
+    private NetworkList<RoleEntry> roleEntries = new NetworkList<RoleEntry>(
+        readPerm: NetworkVariableReadPermission.Everyone,
+        writePerm: NetworkVariableWritePermission.Server
+    );
 
     /// <summary>
     /// Belirli bir oyuncuya rol atandığında tetiklenir. (clientId, role)
@@ -72,12 +75,6 @@ public class RoleManager : NetworkBehaviour
             return;
         }
         Instance = this;
-
-        // NetworkList, Awake'te initialize edilmeli
-        roleEntries = new NetworkList<RoleEntry>(
-            readPerm: NetworkVariableReadPermission.Everyone,
-            writePerm: NetworkVariableWritePermission.Server
-        );
     }
 
     public override void OnNetworkSpawn()
@@ -112,8 +109,7 @@ public class RoleManager : NetworkBehaviour
     /// </summary>
     public int GetImpostorCount()
     {
-        int playerCount = NetworkManager.Singleton.ConnectedClientsIds.Count;
-        return playerCount >= 9 ? 2 : 1;
+        return NetworkManager.Singleton != null && NetworkManager.Singleton.ConnectedClientsIds.Count > 0 ? 1 : 0;
     }
 
     /// <summary>
@@ -170,8 +166,7 @@ public class RoleManager : NetworkBehaviour
 
     // ─── Server: Rol Dağıtımı ───
 
-    [ServerRpc(RequireOwnership = false)]
-    public void DistributeRolesServerRpc()
+    public void DistributeRolesServer()
     {
         if (!IsServer) return;
         if (roleEntries.Count > 0)
@@ -182,7 +177,7 @@ public class RoleManager : NetworkBehaviour
 
         var connectedClients = new List<ulong>(NetworkManager.Singleton.ConnectedClientsIds);
         int playerCount = connectedClients.Count;
-        int impostorCount = playerCount >= 9 ? 2 : 1;
+        int impostorCount = playerCount > 0 ? 1 : 0;
 
         // Listeyi karıştır (Fisher-Yates shuffle)
         for (int i = connectedClients.Count - 1; i > 0; i--)
@@ -200,5 +195,12 @@ public class RoleManager : NetworkBehaviour
 
         Debug.Log($"[RoleManager] Roller dağıtıldı! {playerCount} oyuncu, {impostorCount} katil.");
         OnRolesDistributed?.Invoke();
+    }
+
+    public void ClearRoles()
+    {
+        if (!IsServer) return;
+        roleEntries.Clear();
+        Debug.Log("[RoleManager] Roller temizlendi.");
     }
 }

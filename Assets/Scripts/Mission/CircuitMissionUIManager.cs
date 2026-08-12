@@ -86,6 +86,7 @@ public class CircuitMissionUIManager : MonoBehaviour
     private int lastSabotageRevision = -1;
     private bool completionStarted;
     private bool normalPuzzleReady;
+    private int normalTaskRevision = -1;
     private bool isSabotageMode;
     private bool normalCompletedWhenOpened;
     private bool sabotageCompletedWhenOpened;
@@ -141,7 +142,7 @@ public class CircuitMissionUIManager : MonoBehaviour
 
     public void Open(CircuitMissionInteractable terminal, FirstPersonController fpc)
     {
-        if (IsOpen || AreBothMissionsCompleted())
+        if (IsOpen)
             return;
 
         if (closeRoutine != null)
@@ -154,11 +155,23 @@ public class CircuitMissionUIManager : MonoBehaviour
         currentFpc = fpc;
         completionStarted = false;
         isSabotageMode = false;
-        normalCompletedWhenOpened = IsNormalMissionCompleted();
-        sabotageCompletedWhenOpened = IsSabotageMissionCompleted();
+        // Repeatable TaskRuns own completion. MissionManager flags are reset by
+        // TaskManager when the current normal/rogue run starts.
+        normalCompletedWhenOpened = false;
+        sabotageCompletedWhenOpened = false;
         IsOpen = true;
 
-        if (!normalPuzzleReady)
+#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
+        if (CanOpenRogueMode())
+        {
+            isSabotageMode = true;
+            MissionManager.Instance?.RequestInitializeCircuitSabotage();
+        }
+#endif
+
+        if (!normalPuzzleReady ||
+            (MissionManager.Instance != null &&
+             normalTaskRevision != MissionManager.Instance.CircuitMissionRevision.Value))
             BuildNormalPuzzle();
         ApplyModePresentation();
 
@@ -232,6 +245,9 @@ public class CircuitMissionUIManager : MonoBehaviour
 
         normalSelectedIndex = activeRouteIndices.Length > 1 ? activeRouteIndices[1] : -1;
         normalPuzzleReady = true;
+        normalTaskRevision = MissionManager.Instance != null
+            ? MissionManager.Instance.CircuitMissionRevision.Value
+            : 0;
         UpdateNormalPowerFlow(false);
     }
 
@@ -239,6 +255,15 @@ public class CircuitMissionUIManager : MonoBehaviour
     {
         if (!IsOpen)
             return;
+
+#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
+        if (!isSabotageMode && CanOpenRogueMode())
+        {
+            isSabotageMode = true;
+            MissionManager.Instance?.RequestInitializeCircuitSabotage();
+            ApplyModePresentation();
+        }
+#endif
 
         if (isSabotageMode)
         {
@@ -262,11 +287,13 @@ public class CircuitMissionUIManager : MonoBehaviour
         if (completionStarted)
             return;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         if (Input.GetKeyDown(KeyCode.F1))
         {
             ToggleSabotageMode();
             return;
         }
+#endif
 
         if (Input.GetKeyDown(KeyCode.Escape))
         {
@@ -311,6 +338,11 @@ public class CircuitMissionUIManager : MonoBehaviour
         }
         else
         {
+            if (!CanOpenRogueMode() && !IsDevelopmentSabotagePreviewEnabled())
+            {
+                return;
+            }
+
             normalSelectedIndex = selectedIndex;
             isSabotageMode = true;
             MissionManager.Instance?.RequestInitializeCircuitSabotage();
@@ -319,6 +351,24 @@ public class CircuitMissionUIManager : MonoBehaviour
         }
 
         ApplyModePresentation();
+    }
+
+    private bool CanOpenRogueMode()
+    {
+        return currentFpc != null &&
+               TaskManager.Instance != null &&
+               TaskManager.Instance.CanUseRogueTask(
+                   currentFpc.OwnerClientId,
+                   "CircuitMission");
+    }
+
+    private static bool IsDevelopmentSabotagePreviewEnabled()
+    {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        return true;
+#else
+        return false;
+#endif
     }
 
     private void ApplyModePresentation()
@@ -667,8 +717,30 @@ public class CircuitMissionUIManager : MonoBehaviour
 
         completionStarted = true;
         currentTerminal?.MarkCompleted();
-        if (reportToServer && MissionManager.Instance != null && MissionManager.Instance.IsSpawned)
-            MissionManager.Instance.CompleteCircuitMissionRpc();
+        if (reportToServer)
+        {
+            if (currentFpc != null &&
+                TaskManager.Instance != null &&
+                TaskManager.Instance.IsSpawned)
+            {
+                TaskManager.Instance.ReportTaskCompletedRpc("CircuitMission");
+            }
+            else
+            {
+                Debug.LogWarning(
+                    "[CircuitMissionUI] Could not report CircuitMission completion: " +
+                    "local player or spawned TaskManager is missing.");
+            }
+
+            // In an online match TaskManager marks the mission state only
+            // after validating this player's TaskRun. Keep the direct path
+            // for Quick Test, where there is no spawned TaskManager.
+            if ((TaskManager.Instance == null || !TaskManager.Instance.IsSpawned) &&
+                MissionManager.Instance != null)
+            {
+                MissionManager.Instance.CompleteNormalTaskServer("CircuitMission");
+            }
+        }
 
         ShowCompletedState(false);
         closeButton.SetEnabled(false);
@@ -682,6 +754,12 @@ public class CircuitMissionUIManager : MonoBehaviour
             return;
 
         completionStarted = true;
+        if (currentFpc != null &&
+            TaskManager.Instance != null &&
+            TaskManager.Instance.IsSpawned)
+        {
+            TaskManager.Instance.ReportTaskCompletedRpc("CircuitMission");
+        }
         ShowCompletedState(true);
         closeButton.SetEnabled(false);
         resetButton.SetEnabled(false);

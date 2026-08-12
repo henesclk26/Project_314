@@ -1,0 +1,21 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI%20Toolkit/MeetingScreen.uss?fileID=7433441132597879392&amp;guid=meeting_screen_uss_guid&amp;type=3#MeetingScreen" />
+    <ui:VisualElement class="meeting-root">
+        <ui:VisualElement class="meeting-panel">
+            <ui:VisualElement class="meeting-header">
+                <ui:Label text="EMERGENCY MEETING" class="meeting-title" name="TitleLabel" />
+                <ui:Label text="35s" class="meeting-timer" name="TimerLabel" />
+            </ui:VisualElement>
+            <ui:Label text="" class="forensic-intel" name="BodyIntelLabel" />
+            <ui:VisualElement class="player-list" name="PlayerListContainer">
+                <!-- Player cards will be injected here dynamically -->
+            </ui:VisualElement>
+            <ui:VisualElement class="meeting-footer">
+                <ui:Button text="ABSTAIN" class="abstain-button" name="AbstainButton" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement class="result-overlay" name="ResultOverlay">
+            <ui:Label text="No one was ejected (Tie)" class="result-text" name="ResultLabel" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

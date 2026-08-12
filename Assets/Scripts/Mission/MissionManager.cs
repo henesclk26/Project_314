@@ -12,6 +12,13 @@ public enum FileSabotagePhase : byte
     Completed
 }
 
+public enum SharedValveSessionState : byte
+{
+    Idle = 0,
+    PressureCalibrationActive = 1,
+    ValveOverrideActive = 2
+}
+
 public class MissionManager : NetworkBehaviour
 {
     public static MissionManager Instance { get; private set; }
@@ -22,8 +29,11 @@ public class MissionManager : NetworkBehaviour
     public NetworkVariable<bool> IsGeneratorActive = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     public NetworkVariable<bool> IsWaveFrequencyMissionCompleted = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     public NetworkVariable<bool> IsCircuitMissionCompleted = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    public NetworkVariable<int> WaveFrequencyMissionRevision = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    public NetworkVariable<int> CircuitMissionRevision = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     public NetworkVariable<bool> IsPressureMissionActive = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     public NetworkVariable<bool> IsPressureMissionCompleted = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    public NetworkVariable<bool> IsValveOverrideUnlocked = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     public NetworkVariable<float> CurrentPressure = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     public NetworkVariable<float> PressureTargetMin = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     public NetworkVariable<float> PressureTargetMax = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
@@ -34,6 +44,10 @@ public class MissionManager : NetworkBehaviour
     public NetworkVariable<int> Valve004TurnSequence = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     public NetworkVariable<int> Valve003TurnDirection = new NetworkVariable<int>(1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     public NetworkVariable<int> Valve004TurnDirection = new NetworkVariable<int>(1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    public NetworkVariable<SharedValveSessionState> SharedValveSession = new NetworkVariable<SharedValveSessionState>(
+        SharedValveSessionState.Idle,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
 
     // MissionComputer file sabotage state
     public NetworkVariable<FileSabotagePhase> FileSabotageState = new NetworkVariable<FileSabotagePhase>(
@@ -100,6 +114,10 @@ public class MissionManager : NetworkBehaviour
     // Valve Mission states
     public NetworkVariable<bool> IsValveMissionActive = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     public NetworkVariable<int> ValvesTurned = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    public NetworkVariable<float> ValveOverrideRemainingSeconds = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    public NetworkVariable<ulong> ValveOverrideOwnerId = new NetworkVariable<ulong>(ulong.MaxValue, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    public NetworkList<ulong> ValveOverrideParticipants = new NetworkList<ulong>();
+    public NetworkList<ulong> ValveOverrideTurnedParticipants = new NetworkList<ulong>();
 
     public event Action OnBatteryRoomUnlocked;
     public event Action OnBatteryCollected;
@@ -159,6 +177,8 @@ public class MissionManager : NetworkBehaviour
 
         UpdateFileSabotage();
 
+        UpdateValveOverride();
+
         if (!IsPressureMissionActive.Value || IsPressureMissionCompleted.Value)
             return;
 
@@ -196,15 +216,94 @@ public class MissionManager : NetworkBehaviour
             StartFolderDeletion(folderIndex);
     }
 
-    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void RequestStartFileCopyRpc()
+    // TaskManager uses these server-side resets when a repeatable TaskRun starts
+    // a new normal or rogue cycle. They do not reset the match-level task target.
+    public void ResetNormalTaskState(string taskID)
     {
+        if (!CanSimulateServerState())
+            return;
+
+        if (taskID == "CircuitMission")
+        {
+            IsCircuitMissionCompleted.Value = false;
+            CircuitMissionRevision.Value++;
+        }
+        else if (taskID == "WaveFrequency")
+        {
+            IsWaveFrequencyMissionCompleted.Value = false;
+            WaveFrequencyMissionRevision.Value++;
+        }
+        else if (taskID == "PressureTerminal")
+        {
+            SharedValveSession.Value = SharedValveSessionState.Idle;
+            IsPressureMissionActive.Value = false;
+            IsPressureMissionCompleted.Value = false;
+            PressureStabilizeProgress.Value = 0f;
+        }
+    }
+
+    public void CompleteNormalTaskServer(string taskID)
+    {
+        if (!CanSimulateServerState())
+            return;
+
+        if (taskID == "WaveFrequency")
+        {
+            IsWaveFrequencyMissionCompleted.Value = true;
+            Debug.Log("[MissionManager] Wave frequency mission completed!");
+        }
+        else if (taskID == "CircuitMission")
+        {
+            IsCircuitMissionCompleted.Value = true;
+            Debug.Log("[MissionManager] Circuit mission completed!");
+        }
+    }
+
+    public void ResetRogueTaskState(string taskID)
+    {
+        if (!CanSimulateServerState())
+            return;
+
+        if (taskID == "MissionComputer")
+        {
+            FileSabotageState.Value = FileSabotagePhase.AwaitingExecutable;
+            FileSabotageDeletedFolderMask.Value = 0;
+            FileSabotageActiveFolderIndex.Value = -1;
+            FileSabotageOperationEndTime.Value = 0d;
+        }
+        else if (taskID == "CircuitMission")
+        {
+            IsCircuitSabotageInitialized.Value = false;
+            IsCircuitSabotageCompleted.Value = false;
+            CircuitSabotageTemplateIndex.Value = -1;
+            CircuitSabotagePackedState.Value = 0UL;
+            CircuitSabotageRevision.Value++;
+        }
+        else if (taskID == "WaveFrequency")
+        {
+            IsWaveSatelliteSabotageInitialized.Value = false;
+            IsWaveSatelliteSabotageCompleted.Value = false;
+            WaveSatelliteSabotageSeed.Value = 0;
+            WaveSatelliteSabotagePackedConnections.Value = WaveSatelliteSabotageLayout.EmptyConnections;
+            WaveSatelliteSabotageRevision.Value++;
+        }
+    }
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void RequestStartFileCopyRpc(RpcParams rpcParams = default)
+    {
+        if (!CanAcceptRogueMissionInput(rpcParams.Receive.SenderClientId, "MissionComputer"))
+            return;
+
         StartFileCopy();
     }
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void RequestDeleteFolderRpc(int folderIndex)
+    public void RequestDeleteFolderRpc(int folderIndex, RpcParams rpcParams = default)
     {
+        if (!CanAcceptRogueMissionInput(rpcParams.Receive.SenderClientId, "MissionComputer"))
+            return;
+
         StartFolderDeletion(folderIndex);
     }
 
@@ -255,20 +354,29 @@ public class MissionManager : NetworkBehaviour
     }
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void InitializeCircuitSabotageRpc()
+    public void InitializeCircuitSabotageRpc(RpcParams rpcParams = default)
     {
+        if (!CanAcceptRogueMissionInput(rpcParams.Receive.SenderClientId, "CircuitMission"))
+            return;
+
         InitializeCircuitSabotage();
     }
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void RotateCircuitSabotageNodeRpc(int slot, int direction)
+    public void RotateCircuitSabotageNodeRpc(int slot, int direction, RpcParams rpcParams = default)
     {
+        if (!CanAcceptRogueMissionInput(rpcParams.Receive.SenderClientId, "CircuitMission"))
+            return;
+
         RotateCircuitSabotageNode(slot, direction);
     }
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void ResetCircuitSabotageRpc()
+    public void ResetCircuitSabotageRpc(RpcParams rpcParams = default)
     {
+        if (!CanAcceptRogueMissionInput(rpcParams.Receive.SenderClientId, "CircuitMission"))
+            return;
+
         ResetCircuitSabotage();
     }
 
@@ -367,20 +475,29 @@ public class MissionManager : NetworkBehaviour
     }
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void InitializeWaveSatelliteSabotageRpc()
+    public void InitializeWaveSatelliteSabotageRpc(RpcParams rpcParams = default)
     {
+        if (!CanAcceptRogueMissionInput(rpcParams.Receive.SenderClientId, "WaveFrequency"))
+            return;
+
         InitializeWaveSatelliteSabotage();
     }
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void ConnectWaveSatelliteRpc(int satelliteIndex, int portIndex)
+    public void ConnectWaveSatelliteRpc(int satelliteIndex, int portIndex, RpcParams rpcParams = default)
     {
+        if (!CanAcceptRogueMissionInput(rpcParams.Receive.SenderClientId, "WaveFrequency"))
+            return;
+
         ConnectWaveSatellite(satelliteIndex, portIndex);
     }
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void DisconnectWaveSatelliteRpc(int satelliteIndex)
+    public void DisconnectWaveSatelliteRpc(int satelliteIndex, RpcParams rpcParams = default)
     {
+        if (!CanAcceptRogueMissionInput(rpcParams.Receive.SenderClientId, "WaveFrequency"))
+            return;
+
         DisconnectWaveSatellite(satelliteIndex);
     }
 
@@ -542,6 +659,64 @@ public class MissionManager : NetworkBehaviour
             !NetworkManager.Singleton.IsListening;
     }
 
+    private bool CanAcceptGameplayRpc(ulong clientId)
+    {
+        if (!CanSimulateServerState())
+            return false;
+
+        if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
+            return true;
+
+        if (!GameplayInteractionGate.IsTaskInteractionPhaseOpen())
+            return false;
+
+        bool isConnected = false;
+        foreach (ulong connectedClientId in NetworkManager.Singleton.ConnectedClientsIds)
+        {
+            if (connectedClientId == clientId)
+            {
+                isConnected = true;
+                break;
+            }
+        }
+
+        if (!isConnected)
+            return false;
+
+        foreach (FirstPersonController player in FindObjectsByType<FirstPersonController>(FindObjectsSortMode.None))
+        {
+            if (player.OwnerClientId == clientId)
+                return !player.isDead.Value;
+        }
+
+        return false;
+    }
+
+    private bool CanAcceptRogueMissionInput(ulong clientId, string taskID)
+    {
+        if (!CanAcceptGameplayRpc(clientId))
+            return false;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        // Development builds intentionally retain the F1 preview path.
+        return true;
+#else
+        return TaskManager.Instance != null &&
+               TaskManager.Instance.CanUseRogueTask(clientId, taskID);
+#endif
+    }
+
+    private bool CanAcceptLegacyNormalCompletion(ulong clientId)
+    {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        return CanAcceptGameplayRpc(clientId);
+#else
+        // Production completion is reported through TaskManager, which
+        // validates the active TaskRun before updating mission state.
+        return false;
+#endif
+    }
+
     private static double GetSynchronizedTime()
     {
         if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
@@ -550,27 +725,32 @@ public class MissionManager : NetworkBehaviour
         return Time.timeAsDouble;
     }
 
-    [ServerRpc(RequireOwnership = false)]
-    public void UnlockBatteryRoomServerRpc()
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void UnlockBatteryRoomServerRpc(RpcParams rpcParams = default)
     {
+        if (!CanAcceptGameplayRpc(rpcParams.Receive.SenderClientId))
+            return;
+
         IsBatteryRoomUnlocked.Value = true;
         Debug.Log("[MissionManager] Battery room unlocked!");
     }
 
-    [ServerRpc(RequireOwnership = false)]
-    public void CollectBatteryServerRpc()
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void CollectBatteryServerRpc(RpcParams rpcParams = default)
     {
-        if (IsBatteryRoomUnlocked.Value)
+        if (CanAcceptGameplayRpc(rpcParams.Receive.SenderClientId) &&
+            IsBatteryRoomUnlocked.Value)
         {
             IsBatteryCollected.Value = true;
             Debug.Log("[MissionManager] Battery collected!");
         }
     }
 
-    [ServerRpc(RequireOwnership = false)]
-    public void ActivateGeneratorServerRpc()
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void ActivateGeneratorServerRpc(RpcParams rpcParams = default)
     {
-        if (IsBatteryCollected.Value)
+        if (CanAcceptGameplayRpc(rpcParams.Receive.SenderClientId) &&
+            IsBatteryCollected.Value)
         {
             IsGeneratorActive.Value = true;
             IsBatteryRoomUnlocked.Value = false; // Lock the door again as requested
@@ -578,39 +758,124 @@ public class MissionManager : NetworkBehaviour
         }
     }
 
-    [ServerRpc(RequireOwnership = false)]
-    public void ActivateValveMissionServerRpc()
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void ActivateValveMissionServerRpc(RpcParams rpcParams = default)
     {
-        if (!IsValveMissionActive.Value && ValvesTurned.Value < 3)
+        TryStartValveOverride(rpcParams.Receive.SenderClientId);
+    }
+
+    public bool TryStartValveOverride(ulong clientId)
+    {
+        if (!CanSimulateServerState() || !CanAcceptGameplayRpc(clientId) || RoleManager.Instance == null ||
+            RoleManager.Instance.GetPlayerRole(clientId) != PlayerRole.Impostor ||
+            SharedValveSession.Value != SharedValveSessionState.Idle ||
+             IsValveMissionActive.Value || ValvesTurned.Value >= 3 ||
+             !IsValveOverrideUnlocked.Value ||
+             MatchFlowManager.Instance == null ||
+             MatchFlowManager.Instance.CurrentPhase.Value != MatchPhase.Active)
+            return false;
+
+        List<ulong> eligibleVillagers = TaskManager.Instance?.GetEligibleVillagerIds();
+        if (eligibleVillagers == null || eligibleVillagers.Count < 3)
+            return false;
+
+        for (int i = eligibleVillagers.Count - 1; i > 0; i--)
         {
-            IsValveMissionActive.Value = true;
-            Debug.Log("[MissionManager] Valve mission activated!");
+            int swapIndex = UnityEngine.Random.Range(0, i + 1);
+            (eligibleVillagers[i], eligibleVillagers[swapIndex]) = (eligibleVillagers[swapIndex], eligibleVillagers[i]);
         }
+
+        SharedValveSession.Value = SharedValveSessionState.ValveOverrideActive;
+        IsValveMissionActive.Value = true;
+        ValvesTurned.Value = 0;
+        ValveOverrideOwnerId.Value = clientId;
+        ValveOverrideRemainingSeconds.Value = 30f;
+        ValveOverrideParticipants.Clear();
+        ValveOverrideTurnedParticipants.Clear();
+        for (int i = 0; i < 3; i++)
+            ValveOverrideParticipants.Add(eligibleVillagers[i]);
+        Debug.Log($"[MissionManager] Valve Override activated by killer {clientId}.");
+        return true;
     }
 
-    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void CompleteWaveFrequencyMissionRpc()
+    public bool IsValveOverrideParticipant(ulong clientId)
     {
-        if (IsWaveFrequencyMissionCompleted.Value)
+        for (int i = 0; i < ValveOverrideParticipants.Count; i++)
+        {
+            if (ValveOverrideParticipants[i] == clientId)
+                return true;
+        }
+
+        return false;
+    }
+
+    private void UpdateValveOverride()
+    {
+        if (!IsValveMissionActive.Value || SharedValveSession.Value != SharedValveSessionState.ValveOverrideActive)
             return;
 
-        IsWaveFrequencyMissionCompleted.Value = true;
-        Debug.Log("[MissionManager] Wave frequency mission completed!");
-    }
+        MatchFlowManager flow = MatchFlowManager.Instance;
+        if (flow == null || flow.CurrentPhase.Value == MatchPhase.Ended)
+        {
+            EndValveOverride(false);
+            return;
+        }
 
-    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void CompleteCircuitMissionRpc()
-    {
-        if (IsCircuitMissionCompleted.Value)
+        if (flow.CurrentPhase.Value != MatchPhase.Active)
             return;
 
-        IsCircuitMissionCompleted.Value = true;
-        Debug.Log("[MissionManager] Circuit mission completed!");
+        ValveOverrideRemainingSeconds.Value = Mathf.Max(0f, ValveOverrideRemainingSeconds.Value - Time.deltaTime);
+        if (ValveOverrideRemainingSeconds.Value <= 0f)
+            EndValveOverride(false);
+    }
+
+    private void EndValveOverride(bool villagersSucceeded)
+    {
+        if (!IsValveMissionActive.Value)
+            return;
+
+        ulong owner = ValveOverrideOwnerId.Value;
+        IsValveMissionActive.Value = false;
+        SharedValveSession.Value = SharedValveSessionState.Idle;
+        ValveOverrideRemainingSeconds.Value = 0f;
+        ValveOverrideParticipants.Clear();
+        ValveOverrideTurnedParticipants.Clear();
+        ValveOverrideOwnerId.Value = ulong.MaxValue;
+
+        if (!villagersSucceeded && owner != ulong.MaxValue)
+            TaskManager.Instance?.AwardKillerSabotagePoint(owner);
     }
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void ActivatePressureMissionRpc()
+    public void CompleteWaveFrequencyMissionRpc(RpcParams rpcParams = default)
     {
+        if (!CanAcceptLegacyNormalCompletion(rpcParams.Receive.SenderClientId))
+            return;
+
+        CompleteNormalTaskServer("WaveFrequency");
+    }
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void CompleteCircuitMissionRpc(RpcParams rpcParams = default)
+    {
+        if (!CanAcceptLegacyNormalCompletion(rpcParams.Receive.SenderClientId))
+            return;
+
+        CompleteNormalTaskServer("CircuitMission");
+    }
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void ActivatePressureMissionRpc(RpcParams rpcParams = default)
+    {
+        ulong senderClientId = rpcParams.Receive.SenderClientId;
+        if (!CanAcceptGameplayRpc(senderClientId) ||
+            TaskManager.Instance == null ||
+            !TaskManager.Instance.IsCooperativeRoleOwner(senderClientId, "PressureTerminal", 0))
+            return;
+
+        if (SharedValveSession.Value != SharedValveSessionState.Idle)
+            return;
+
         if (IsPressureMissionCompleted.Value)
             return;
 
@@ -637,6 +902,7 @@ public class MissionManager : NetworkBehaviour
         valve004NextInputTime = 0f;
         isPressureStabilizing = false;
         PressureStabilizeProgress.Value = 0f;
+        SharedValveSession.Value = SharedValveSessionState.PressureCalibrationActive;
         IsPressureMissionActive.Value = true;
         Debug.Log("[MissionManager] Pressure calibration mission activated!");
     }
@@ -714,9 +980,19 @@ public class MissionManager : NetworkBehaviour
     }
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void AdjustPressureValveRpc(int valveId, int direction)
+    public void AdjustPressureValveRpc(int valveId, int direction, RpcParams rpcParams = default)
     {
-        if (!IsPressureMissionActive.Value || IsPressureMissionCompleted.Value || direction == 0)
+        if (SharedValveSession.Value != SharedValveSessionState.PressureCalibrationActive ||
+            !IsPressureMissionActive.Value || IsPressureMissionCompleted.Value || direction == 0)
+            return;
+
+        ulong senderClientId = rpcParams.Receive.SenderClientId;
+        if (!CanAcceptGameplayRpc(senderClientId))
+            return;
+
+        byte requiredRole = (byte)(valveId == 3 ? 1 : 2);
+        if (TaskManager.Instance == null ||
+            !TaskManager.Instance.IsCooperativeRoleOwner(senderClientId, "PressureTerminal", requiredRole))
             return;
 
         direction = direction > 0 ? 1 : -1;
@@ -767,8 +1043,14 @@ public class MissionManager : NetworkBehaviour
     }
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void BeginPressureStabilizationRpc()
+    public void BeginPressureStabilizationRpc(RpcParams rpcParams = default)
     {
+        ulong senderClientId = rpcParams.Receive.SenderClientId;
+        if (!CanAcceptGameplayRpc(senderClientId) ||
+            TaskManager.Instance == null ||
+            !TaskManager.Instance.IsCooperativeRoleOwner(senderClientId, "PressureTerminal", 0))
+            return;
+
         if (!IsPressureMissionActive.Value || IsPressureMissionCompleted.Value)
             return;
 
@@ -780,8 +1062,14 @@ public class MissionManager : NetworkBehaviour
     }
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void CancelPressureStabilizationRpc()
+    public void CancelPressureStabilizationRpc(RpcParams rpcParams = default)
     {
+        ulong senderClientId = rpcParams.Receive.SenderClientId;
+        if (!CanAcceptGameplayRpc(senderClientId) ||
+            TaskManager.Instance == null ||
+            !TaskManager.Instance.IsCooperativeRoleOwner(senderClientId, "PressureTerminal", 0))
+            return;
+
         if (!IsPressureMissionActive.Value || IsPressureMissionCompleted.Value)
             return;
 
@@ -810,7 +1098,9 @@ public class MissionManager : NetworkBehaviour
 
         isPressureStabilizing = false;
         IsPressureMissionCompleted.Value = true;
+        IsValveOverrideUnlocked.Value = true;
         IsPressureMissionActive.Value = false;
+        SharedValveSession.Value = SharedValveSessionState.Idle;
         pendingPressureAdjustments.Clear();
         Debug.Log("[MissionManager] Pressure calibration mission completed!");
     }
@@ -821,11 +1111,23 @@ public class MissionManager : NetworkBehaviour
             CurrentPressure.Value <= PressureTargetMax.Value;
     }
 
-    [ServerRpc(RequireOwnership = false)]
-    public void TurnValveServerRpc()
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void TurnValveServerRpc(RpcParams rpcParams = default)
     {
-        if (IsValveMissionActive.Value)
+        ulong sender = rpcParams.Receive.SenderClientId;
+        if (!CanAcceptGameplayRpc(sender))
+            return;
+
+        if (SharedValveSession.Value == SharedValveSessionState.ValveOverrideActive &&
+            IsValveMissionActive.Value && IsValveOverrideParticipant(sender))
         {
+            for (int i = 0; i < ValveOverrideTurnedParticipants.Count; i++)
+            {
+                if (ValveOverrideTurnedParticipants[i] == sender)
+                    return;
+            }
+
+            ValveOverrideTurnedParticipants.Add(sender);
             ValvesTurned.Value++;
             Debug.Log($"[MissionManager] Valve turned! Total: {ValvesTurned.Value}/3");
             if (ValvesTurned.Value >= 3)
@@ -838,8 +1140,22 @@ public class MissionManager : NetworkBehaviour
     private System.Collections.IEnumerator CompleteValveMissionDelayed()
     {
         yield return new WaitForSeconds(2f);
-        IsValveMissionActive.Value = false; // Mission complete
+        EndValveOverride(true);
         Debug.Log("[MissionManager] All valves turned! Valve mission complete after delay!");
+    }
+
+    public void ReleaseSharedValveSession()
+    {
+        if (!CanSimulateServerState())
+            return;
+
+        SharedValveSession.Value = SharedValveSessionState.Idle;
+        IsPressureMissionActive.Value = false;
+        IsValveMissionActive.Value = false;
+        ValveOverrideRemainingSeconds.Value = 0f;
+        ValveOverrideOwnerId.Value = ulong.MaxValue;
+        ValveOverrideParticipants.Clear();
+        ValveOverrideTurnedParticipants.Clear();
     }
 
     private struct PendingPressureAdjustment

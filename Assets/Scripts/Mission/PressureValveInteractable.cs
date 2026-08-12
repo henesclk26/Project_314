@@ -29,9 +29,20 @@ public class PressureValveInteractable : MonoBehaviour
         if (mission == null || !mission.IsPressureMissionActive.Value || mission.IsPressureMissionCompleted.Value)
             return;
 
+        if (!GameplayInteractionGate.IsTaskInteractionPhaseOpen())
+        {
+            PressureMissionUIManager.Instance?.SetValveHint(this, false);
+            return;
+        }
+
         FirstPersonController fpc = GetOwnerFpc();
         if (fpc == null || fpc.playerCamera == null || fpc.isDead.Value ||
             (GameManager.Instance != null && GameManager.Instance.isGameOver))
+            return;
+
+        byte requiredRole = (byte)(valveId == 3 ? 1 : 2);
+        if (TaskManager.Instance == null ||
+            !TaskManager.Instance.IsCooperativeRoleOwner(fpc.OwnerClientId, "PressureTerminal", requiredRole))
             return;
 
         Ray ray = new Ray(fpc.playerCamera.transform.position, fpc.playerCamera.transform.forward);

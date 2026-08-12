@@ -50,6 +50,9 @@ public class GeneratorInteractable : MonoBehaviour
             return; // No interaction needed anymore
         }
 
+        if (!GameplayInteractionGate.IsTaskInteractionPhaseOpen())
+            return;
+
         FirstPersonController fpc = GetOwnerFpc();
         if (fpc == null || fpc.isDead.Value || (GameManager.Instance && GameManager.Instance.isGameOver)) return;
 

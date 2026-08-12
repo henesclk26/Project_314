@@ -75,6 +75,7 @@ public class WaveFrequencyUIManager : MonoBehaviour
     private bool isSabotageMode;
     private bool normalCompletedWhenOpened;
     private bool sabotageCompletedWhenOpened;
+    private int normalTaskRevision = -1;
 
     private void Awake()
     {
@@ -152,7 +153,7 @@ public class WaveFrequencyUIManager : MonoBehaviour
         WaveFrequencyTerminalInteractable terminal,
         FirstPersonController fpc)
     {
-        if (IsOpen || AreBothMissionsCompleted())
+        if (IsOpen)
             return;
 
         if (closeRoutine != null)
@@ -165,13 +166,24 @@ public class WaveFrequencyUIManager : MonoBehaviour
         currentFpc = fpc;
         completionStarted = false;
         isSabotageMode = false;
-        normalCompletedWhenOpened = IsNormalMissionCompleted();
-        sabotageCompletedWhenOpened = IsSabotageMissionCompleted();
+        // Repeatable TaskRuns own completion. MissionManager flags are reset by
+        // TaskManager when the current normal/rogue run starts.
+        normalCompletedWhenOpened = false;
+        sabotageCompletedWhenOpened = false;
         selectedSatellite = -1;
         selectedCableSatellite = -1;
         IsOpen = true;
 
-        if (!normalCompletedWhenOpened)
+#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
+        if (CanOpenRogueMode())
+        {
+            isSabotageMode = true;
+            MissionManager.Instance?.RequestInitializeWaveSatelliteSabotage();
+        }
+#endif
+
+        if (!normalCompletedWhenOpened &&
+            (!HasNormalPuzzleForCurrentTask()))
             CreatePuzzleState();
 
         overlay.RemoveFromClassList("hidden");
@@ -199,6 +211,10 @@ public class WaveFrequencyUIManager : MonoBehaviour
 
     private void CreatePuzzleState()
     {
+        normalTaskRevision = MissionManager.Instance != null
+            ? MissionManager.Instance.WaveFrequencyMissionRevision.Value
+            : 0;
+
         int desiredMoves = UnityEngine.Random.Range(
             MinimumOptimalMoves,
             MaximumOptimalMoves + 1);
@@ -220,6 +236,13 @@ public class WaveFrequencyUIManager : MonoBehaviour
         targetWaveWidth = 1;
     }
 
+    private bool HasNormalPuzzleForCurrentTask()
+    {
+        return MissionManager.Instance != null
+            ? normalTaskRevision == MissionManager.Instance.WaveFrequencyMissionRevision.Value
+            : normalTaskRevision >= 0;
+    }
+
     private int CalculateOptimalMoveCount()
     {
         return Mathf.Abs(currentWavelength - targetWavelength) +
@@ -230,6 +253,15 @@ public class WaveFrequencyUIManager : MonoBehaviour
     {
         if (!IsOpen)
             return;
+
+#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
+        if (!isSabotageMode && CanOpenRogueMode())
+        {
+            isSabotageMode = true;
+            MissionManager.Instance?.RequestInitializeWaveSatelliteSabotage();
+            ApplyModePresentation();
+        }
+#endif
 
         if (isSabotageMode)
         {
@@ -253,11 +285,13 @@ public class WaveFrequencyUIManager : MonoBehaviour
         if (completionStarted)
             return;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         if (Input.GetKeyDown(KeyCode.F1))
         {
             SetSabotageMode(!isSabotageMode);
             return;
         }
+#endif
 
         if (Input.GetKeyDown(KeyCode.Escape))
         {
@@ -284,6 +318,13 @@ public class WaveFrequencyUIManager : MonoBehaviour
         if (completionStarted || isSabotageMode == sabotage)
             return;
 
+        if (sabotage &&
+            !CanOpenRogueMode() &&
+            !IsDevelopmentSabotagePreviewEnabled())
+        {
+            return;
+        }
+
         CancelCableDrag(false);
         isSabotageMode = sabotage;
         selectedSatellite = -1;
@@ -291,6 +332,24 @@ public class WaveFrequencyUIManager : MonoBehaviour
         if (isSabotageMode)
             MissionManager.Instance?.RequestInitializeWaveSatelliteSabotage();
         ApplyModePresentation();
+    }
+
+    private bool CanOpenRogueMode()
+    {
+        return currentFpc != null &&
+               TaskManager.Instance != null &&
+               TaskManager.Instance.CanUseRogueTask(
+                   currentFpc.OwnerClientId,
+                   "WaveFrequency");
+    }
+
+    private static bool IsDevelopmentSabotagePreviewEnabled()
+    {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        return true;
+#else
+        return false;
+#endif
     }
 
     private void ApplyModePresentation()
@@ -911,11 +970,29 @@ public class WaveFrequencyUIManager : MonoBehaviour
 
         completionStarted = true;
         currentTerminal?.MarkCompleted();
-        if (reportToServer &&
-            MissionManager.Instance != null &&
-            MissionManager.Instance.IsSpawned)
+        if (reportToServer)
         {
-            MissionManager.Instance.CompleteWaveFrequencyMissionRpc();
+            if (currentFpc != null &&
+                TaskManager.Instance != null &&
+                TaskManager.Instance.IsSpawned)
+            {
+                TaskManager.Instance.ReportTaskCompletedRpc("WaveFrequency");
+            }
+            else
+            {
+                Debug.LogWarning(
+                    "[WaveFrequencyUI] Could not report WaveFrequency completion: " +
+                    "local player or spawned TaskManager is missing.");
+            }
+
+            // In an online match TaskManager marks the mission state only
+            // after validating this player's TaskRun. Keep the direct path
+            // for Quick Test, where there is no spawned TaskManager.
+            if ((TaskManager.Instance == null || !TaskManager.Instance.IsSpawned) &&
+                MissionManager.Instance != null)
+            {
+                MissionManager.Instance.CompleteNormalTaskServer("WaveFrequency");
+            }
         }
 
         UpdateVisuals();
@@ -930,6 +1007,12 @@ public class WaveFrequencyUIManager : MonoBehaviour
             return;
 
         completionStarted = true;
+        if (currentFpc != null &&
+            TaskManager.Instance != null &&
+            TaskManager.Instance.IsSpawned)
+        {
+            TaskManager.Instance.ReportTaskCompletedRpc("WaveFrequency");
+        }
         ShowCompletedState(true);
         closeButton.SetEnabled(false);
         computerConnectButton.SetEnabled(false);

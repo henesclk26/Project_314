@@ -1,0 +1,194 @@
+:root {
+    --hull: rgb(17, 20, 16);
+    --hull-deep: rgb(10, 12, 10);
+    --hull-raised: rgb(26, 30, 23);
+    --hull-line: rgba(232, 239, 213, 0.12);
+    --phosphor: rgb(178, 255, 85);
+    --ivory: rgb(238, 241, 224);
+    --muted: rgba(226, 232, 203, 0.38);
+    --amber: rgb(255, 189, 72);
+    --red: rgb(246, 100, 82);
+    
+    -unity-font-definition: url("project://database/Assets/TextMesh%20Pro/Resources/Fonts%20%26%20Materials/Orbitron-VariableFont_wght.ttf?fileID=12800000&guid=4fff0ea22d9a9894389a3116ec5368fe&type=3#Orbitron-VariableFont_wght");
+}
+
+.meeting-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(10, 12, 10, 0.95);
+    align-items: center;
+    justify-content: center;
+}
+
+.meeting-panel {
+    width: 800px;
+    height: 600px;
+    background-color: var(--hull);
+    border-width: 2px;
+    border-color: var(--phosphor);
+    padding: 20px;
+    flex-direction: column;
+}
+
+.meeting-header {
+    height: 80px;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--hull-line);
+    margin-bottom: 20px;
+}
+
+.forensic-intel {
+    color: var(--amber);
+    font-size: 12px;
+    -unity-font-style: bold;
+    margin-bottom: 10px;
+    display: none;
+}
+
+.meeting-title {
+    color: var(--amber);
+    font-size: 32px;
+    -unity-font-style: bold;
+}
+
+.meeting-timer {
+    color: var(--phosphor);
+    font-size: 32px;
+    -unity-font-style: bold;
+}
+
+.player-list {
+    flex-grow: 1;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-around;
+}
+
+.player-card {
+    width: 200px;
+    height: 80px;
+    margin: 10px;
+    background-color: var(--hull-raised);
+    border-width: 1px;
+    border-color: var(--hull-line);
+    flex-direction: row;
+    align-items: center;
+    padding: 10px;
+}
+
+.player-card.dead {
+    opacity: 0.5;
+    background-color: var(--hull-deep);
+    border-color: var(--red);
+}
+
+.player-card.voted-for {
+    border-color: var(--amber);
+    border-width: 2px;
+}
+
+.player-color-box {
+    width: 40px;
+    height: 40px;
+    margin-right: 10px;
+    border-width: 1px;
+    border-color: var(--ivory);
+}
+
+.player-info {
+    flex-grow: 1;
+    flex-direction: column;
+}
+
+.player-name {
+    color: var(--ivory);
+    font-size: 14px;
+    -unity-font-style: bold;
+}
+
+.player-status {
+    color: var(--muted);
+    font-size: 10px;
+}
+
+.vote-button {
+    width: 60px;
+    height: 40px;
+    background-color: var(--hull-deep);
+    color: var(--phosphor);
+    border-width: 1px;
+    border-color: var(--phosphor);
+    font-size: 12px;
+    -unity-font-style: bold;
+}
+
+.vote-button:hover {
+    background-color: var(--phosphor);
+    color: var(--hull-deep);
+}
+
+.vote-count-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 20px;
+    height: 20px;
+    background-color: var(--amber);
+    color: var(--hull-deep);
+    border-radius: 10px;
+    -unity-text-align: middle-center;
+    font-size: 12px;
+    -unity-font-style: bold;
+    display: none;
+}
+
+.meeting-footer {
+    height: 60px;
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
+    border-top-width: 1px;
+    border-top-color: var(--hull-line);
+    margin-top: 20px;
+}
+
+.abstain-button {
+    width: 150px;
+    height: 40px;
+    background-color: var(--hull-deep);
+    color: var(--amber);
+    border-width: 1px;
+    border-color: var(--amber);
+    font-size: 14px;
+    -unity-font-style: bold;
+}
+
+.abstain-button:hover {
+    background-color: var(--amber);
+    color: var(--hull-deep);
+}
+
+.result-overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(10, 12, 10, 0.98);
+    align-items: center;
+    justify-content: center;
+    display: none;
+}
+
+.result-text {
+    color: var(--ivory);
+    font-size: 48px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}

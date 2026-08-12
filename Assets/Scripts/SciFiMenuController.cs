@@ -115,6 +115,7 @@ public class SciFiMenuController : MonoBehaviour
     }
 
     private bool _gameplayModeEntered = false;
+    public bool IsGameplayModeActive => _gameplayModeEntered;
 
     private void Update()
     {
@@ -249,6 +250,7 @@ public class SciFiMenuController : MonoBehaviour
 
     private void EnterGameplayMode(bool hideMenusOnly)
     {
+        _gameplayModeEntered = true;
         HideMenuFpcObject();
 
         if (menuObject != null) menuObject.SetActive(false);
@@ -380,7 +382,7 @@ public class SciFiMenuController : MonoBehaviour
             var spawnCoordinator = FindFirstObjectByType<PlayerSpawnCoordinator>();
             if (spawnCoordinator != null)
             {
-                spawnCoordinator.RequestDistribution();
+                spawnCoordinator.RequestDistribution(true);
             }
             else
             {

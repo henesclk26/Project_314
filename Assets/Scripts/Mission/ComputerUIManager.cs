@@ -57,6 +57,7 @@ public class ComputerUIManager : MonoBehaviour
     private bool sabotageAvailable;
     private bool isSabotageMode;
     private bool completionCloseScheduled;
+    private bool sabotageTaskReported;
     private int selectedFolderIndex = -1;
     private Coroutine accessDeniedRoutine;
     private FileSabotagePhase lastSabotagePhase =
@@ -80,12 +81,19 @@ public class ComputerUIManager : MonoBehaviour
     {
         WasClosedThisFrame = false;
 
+#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
+        if (IsComputerOpen && sabotageAvailable && !isSabotageMode)
+            SetSabotageMode(true);
+#endif
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         if (IsComputerOpen &&
             sabotageAvailable &&
             Input.GetKeyDown(KeyCode.F1))
         {
             SetSabotageMode(!isSabotageMode);
         }
+#endif
 
         RefreshSabotageUI();
 
@@ -174,15 +182,25 @@ public class ComputerUIManager : MonoBehaviour
         IsComputerOpen = true;
         currentData = data;
         currentFpc = fpc;
-        sabotageAvailable =
+        bool isMissionComputer =
             source != null &&
             source.gameObject.name == "MissionComputer" &&
             data != null &&
             data.computerType == ComputerType.Password;
+        sabotageAvailable =
+            isMissionComputer &&
+            fpc != null &&
+            TaskManager.Instance != null &&
+            TaskManager.Instance.CanUseRogueTask(fpc.OwnerClientId, "MissionComputer");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        // F1 remains an editor/development-only minigame preview path.
+        sabotageAvailable |= isMissionComputer;
+#endif
         completionCloseScheduled =
             MissionManager.Instance != null &&
             MissionManager.Instance.FileSabotageState.Value ==
                 FileSabotagePhase.Completed;
+        sabotageTaskReported = false;
         lastSabotagePhase = MissionManager.Instance != null
             ? MissionManager.Instance.FileSabotageState.Value
             : FileSabotagePhase.AwaitingExecutable;
@@ -192,7 +210,11 @@ public class ComputerUIManager : MonoBehaviour
 
         passwordField.value = "";
         statusLabel.AddToClassList("hidden");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         SetSabotageMode(false);
+#else
+        SetSabotageMode(sabotageAvailable);
+#endif
         overlay.RemoveFromClassList("hidden");
         StartCoroutine(AddOpenClassRoutine());
     }
@@ -347,6 +369,18 @@ public class ComputerUIManager : MonoBehaviour
         {
             statusLabel.text = currentData.successMessage;
             statusLabel.AddToClassList("status-granted");
+            if (currentFpc != null &&
+                TaskManager.Instance != null &&
+                TaskManager.Instance.IsSpawned)
+            {
+                TaskManager.Instance.ReportTaskCompletedRpc("MissionComputer");
+            }
+            else
+            {
+                Debug.LogWarning(
+                    "[ComputerUI] Could not report MissionComputer completion: " +
+                    "local player or spawned TaskManager is missing.");
+            }
             StartCoroutine(CloseAfterDelay(1.5f));
         }
         else
@@ -542,6 +576,14 @@ public class ComputerUIManager : MonoBehaviour
             !completionCloseScheduled)
         {
             completionCloseScheduled = true;
+            if (!sabotageTaskReported &&
+                currentFpc != null &&
+                TaskManager.Instance != null &&
+                TaskManager.Instance.IsSpawned)
+            {
+                sabotageTaskReported = true;
+                TaskManager.Instance.ReportTaskCompletedRpc("MissionComputer");
+            }
             SetSabotageMode(true);
             StartCoroutine(CloseAfterDelay(1.5f));
         }

@@ -19,6 +19,12 @@ public class SecurityCameraTerminalInteractable : MonoBehaviour
             return;
         }
 
+        if (!GameplayInteractionGate.IsTaskInteractionPhaseOpen())
+        {
+            SetPrompt(false);
+            return;
+        }
+
         if (ui.IsOpen)
         {
             SetPrompt(false);

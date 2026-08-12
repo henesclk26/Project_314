@@ -18,6 +18,7 @@ public class PlayerSpawnCoordinator : MonoBehaviour
 
     private readonly List<Transform> spawnPoints = new();
     private readonly Dictionary<ulong, int> assignedSlots = new();
+    private readonly Dictionary<ulong, int> placedSlots = new();
     private bool shuffleInitialized;
     private bool callbacksRegistered;
 
@@ -47,7 +48,7 @@ public class PlayerSpawnCoordinator : MonoBehaviour
         UnregisterServerCallbacks();
     }
 
-    public void RequestDistribution()
+    public void RequestDistribution(bool repositionExistingPlayers = false)
     {
         TryRegisterServerCallbacks();
 
@@ -67,8 +68,24 @@ public class PlayerSpawnCoordinator : MonoBehaviour
             .ToList();
 
         RemoveDisconnectedAssignments(connectedClientIds);
+        var slotsToPlace = new HashSet<int>();
+        if (repositionExistingPlayers)
+        {
+            foreach (int slot in assignedSlots.Values)
+                slotsToPlace.Add(slot);
+        }
+
         AssignMissingClients(connectedClientIds);
-        PlaceAssignedPlayers(connectedClientIds);
+        foreach (ulong clientId in connectedClientIds)
+        {
+            if (!assignedSlots.TryGetValue(clientId, out int slot))
+                continue;
+
+            if (!placedSlots.TryGetValue(clientId, out int placedSlot) || placedSlot != slot)
+                slotsToPlace.Add(slot);
+        }
+
+        PlaceAssignedPlayers(connectedClientIds, slotsToPlace);
     }
 
     private void OnClientConnected(ulong clientId)
@@ -79,6 +96,7 @@ public class PlayerSpawnCoordinator : MonoBehaviour
     private void OnClientDisconnected(ulong clientId)
     {
         assignedSlots.Remove(clientId);
+        placedSlots.Remove(clientId);
         StartCoroutine(DistributeAfterDisconnect());
     }
 
@@ -172,6 +190,7 @@ public class PlayerSpawnCoordinator : MonoBehaviour
         foreach (ulong clientId in staleClientIds)
         {
             assignedSlots.Remove(clientId);
+            placedSlots.Remove(clientId);
         }
     }
 
@@ -201,7 +220,7 @@ public class PlayerSpawnCoordinator : MonoBehaviour
         }
     }
 
-    private void PlaceAssignedPlayers(List<ulong> connectedClientIds)
+    private void PlaceAssignedPlayers(List<ulong> connectedClientIds, HashSet<int> slotsToPlace)
     {
         var clientsBySlot = connectedClientIds
             .Where(clientId => assignedSlots.ContainsKey(clientId))
@@ -213,8 +232,15 @@ public class PlayerSpawnCoordinator : MonoBehaviour
             if (slot < 0 || slot >= spawnPoints.Count)
                 continue;
 
+            if (!slotsToPlace.Contains(slot))
+                continue;
+
             Transform spawnPoint = spawnPoints[slot];
-            var slotClientIds = slotGroup.OrderBy(clientId => clientId).ToList();
+            var slotClientIds = slotGroup
+                .Where(clientId => TryGetPlayer(clientId, out FirstPersonController player) &&
+                                   !player.isDead.Value)
+                .OrderBy(clientId => clientId)
+                .ToList();
 
             for (int i = 0; i < slotClientIds.Count; i++)
             {
@@ -224,6 +250,7 @@ public class PlayerSpawnCoordinator : MonoBehaviour
                 Vector3 position = GetSpawnPosition(spawnPoint, player);
                 position += spawnPoint.right * GetOffsetForSharedSlot(i, slotClientIds.Count);
                 TeleportPlayer(player, position, spawnPoint.rotation);
+                placedSlots[slotClientIds[i]] = slot;
             }
         }
     }

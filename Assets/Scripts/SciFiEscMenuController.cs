@@ -14,6 +14,7 @@ public class SciFiEscMenuController : MonoBehaviour
     // --- Dahili değişkenler ---
     private UIDocument uiDocument;
     private VisualElement escMenuRoot;
+    private SciFiMenuController menuController;
     private bool isMenuOpen = false;
 
     // =========================================================
@@ -43,6 +44,9 @@ public class SciFiEscMenuController : MonoBehaviour
         // Tüm butonlara, label'lara vs. buradan Q<T>() ile ulaşırız.
         // =========================================================
         if (uiDocument == null) return;
+
+        // Keep the pause menu above passive HUD documents and status overlays.
+        uiDocument.sortingOrder = 100;
 
         var root = uiDocument.rootVisualElement;
 
@@ -86,8 +90,21 @@ public class SciFiEscMenuController : MonoBehaviour
         SetMenuVisible(false);
     }
 
-private void Update()
+    private void Update()
     {
+        if (menuController == null)
+            menuController = FindFirstObjectByType<SciFiMenuController>();
+
+        if (menuController == null || !menuController.IsGameplayModeActive)
+        {
+            if (isMenuOpen)
+            {
+                isMenuOpen = false;
+                SetMenuVisible(false);
+            }
+            return;
+        }
+
         // A mission UI that owns ESC must consume it before the pause menu.
         if (ComputerUIManager.Instance != null &&
             (ComputerUIManager.Instance.IsComputerOpen || ComputerUIManager.Instance.WasClosedThisFrame))

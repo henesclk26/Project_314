@@ -42,7 +42,7 @@
                     <ui:Label name="playerCountLabel" text="8" class="player-count-value"/>
                     <ui:Label text="OYUNCU" class="player-count-suffix"/>
                 </ui:VisualElement>
-                <ui:SliderInt name="playerCountSlider" low-value="4" high-value="12" value="8" class="player-count-slider"/>
+                <ui:SliderInt name="playerCountSlider" low-value="3" high-value="8" value="8" class="player-count-slider"/>
                 <ui:VisualElement class="slider-range-row">
                     <ui:Label text="4" class="slider-range-label"/>
                     <ui:Label text="12" class="slider-range-label"/>

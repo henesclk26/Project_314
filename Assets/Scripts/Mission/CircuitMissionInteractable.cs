@@ -6,13 +6,8 @@ public class CircuitMissionInteractable : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private float interactionRange = 3f;
 
-    private bool completedLocally;
-
     private void Update()
     {
-        if (AreBothMissionsCompleted())
-            return;
-
         CircuitMissionUIManager ui = CircuitMissionUIManager.Instance;
         if (ui != null && ui.IsOpen)
             return;
@@ -31,26 +26,45 @@ public class CircuitMissionInteractable : MonoBehaviour
         if (hit.collider.gameObject != gameObject && !hit.collider.transform.IsChildOf(transform))
             return;
 
-        fpc.SetInteractionText("[F] Devre Panelini Ac");
+        if (UpgradeManager.Instance != null && UpgradeManager.Instance.IsSystemBlackoutBlocking(fpc.OwnerClientId))
+        {
+            fpc.SetInteractionText("SYSTEM OFFLINE");
+            return;
+        }
 
-        if (Input.GetKeyDown(KeyCode.F) && ui != null)
-            ui.Open(this, fpc);
+        if (TaskManager.Instance == null) return;
+
+        bool isAvailable = TaskManager.Instance.IsTerminalAvailable("CircuitMission", fpc.OwnerClientId);
+        var activeTask = TaskManager.Instance.GetActiveTaskForPlayer(fpc.OwnerClientId);
+        bool hasTask = activeTask.HasValue && activeTask.Value.TaskID.ToString() == "CircuitMission";
+        bool canUseRogueTask = TaskManager.Instance.CanUseRogueTask(fpc.OwnerClientId, "CircuitMission");
+        bool isHackPreparing = TaskManager.Instance.GetTerminalHackPhase("CircuitMission") == TerminalHackPhase.Preparing;
+        bool canUseNormalAlibi = TaskManager.Instance.CanUseAlibiTask(fpc.OwnerClientId, "CircuitMission");
+
+        if (!isAvailable)
+        {
+            fpc.SetInteractionText("SYSTEM BUSY / OFFLINE");
+            return;
+        }
+
+        if (!isHackPreparing && (canUseRogueTask || hasTask || canUseNormalAlibi))
+        {
+            fpc.SetInteractionText(canUseRogueTask ? "TERMINALI HACKLE" : "[F] Devre Panelini Ac");
+            if (Input.GetKeyDown(KeyCode.F) && ui != null)
+            {
+                if (canUseRogueTask || hasTask || canUseNormalAlibi)
+                    TaskManager.Instance.RequestStartTaskRpc("CircuitMission");
+                ui.Open(this, fpc);
+            }
+        }
+        else if (isHackPreparing)
+        {
+            fpc.SetInteractionText("TERMINAL HACK HAZIRLANIYOR");
+        }
     }
 
     public void MarkCompleted()
     {
-        completedLocally = true;
-    }
-
-    private bool AreBothMissionsCompleted()
-    {
-        if (MissionManager.Instance == null)
-            return false;
-
-        bool normalCompleted =
-            completedLocally || MissionManager.Instance.IsCircuitMissionCompleted.Value;
-        return normalCompleted &&
-               MissionManager.Instance.IsCircuitSabotageCompleted.Value;
     }
 
     private static FirstPersonController GetOwnerFpc()

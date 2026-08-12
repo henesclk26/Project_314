@@ -22,15 +22,48 @@ public class ComputerInteractable : MonoBehaviour
         if (distance <= interactionRange)
         {
             isInRange = true;
-            if (ComputerUIManager.Instance != null)
-                ComputerUIManager.Instance.SetPromptVisible(true);
-            
-            // Interaction logic
-            if (Input.GetKeyDown(KeyCode.F))
+            if (UpgradeManager.Instance != null && UpgradeManager.Instance.IsSystemBlackoutBlocking(ownerFpc.OwnerClientId))
             {
-                if (ComputerUIManager.Instance != null && !ComputerUIManager.Instance.IsComputerOpen)
+                ComputerUIManager.Instance?.SetPromptVisible(false);
+                ownerFpc.SetInteractionText("SYSTEM OFFLINE");
+                return;
+            }
+            if (TaskManager.Instance == null) return;
+            
+            bool isAvailable = TaskManager.Instance.IsTerminalAvailable("MissionComputer", ownerFpc.OwnerClientId);
+            var activeTask = TaskManager.Instance.GetActiveTaskForPlayer(ownerFpc.OwnerClientId);
+            bool hasTask = activeTask.HasValue && activeTask.Value.TaskID.ToString() == "MissionComputer";
+            bool canUseRogueTask = TaskManager.Instance.CanUseRogueTask(ownerFpc.OwnerClientId, "MissionComputer");
+            bool isHackPreparing = TaskManager.Instance.GetTerminalHackPhase("MissionComputer") == TerminalHackPhase.Preparing;
+            bool canUseNormalAlibi = TaskManager.Instance.CanUseAlibiTask(ownerFpc.OwnerClientId, "MissionComputer");
+
+            if (ComputerUIManager.Instance != null)
+            {
+                if (!isAvailable)
                 {
-                    ComputerUIManager.Instance.OpenComputer(data, ownerFpc, this);
+                    // For busy/offline, we could just hide the prompt or show busy. The existing prompt is a generic crosshair text or UI text?
+                    ComputerUIManager.Instance.SetPromptVisible(false);
+                    ownerFpc.SetInteractionText("SYSTEM BUSY / OFFLINE");
+                }
+                else if (!isHackPreparing && (canUseRogueTask || hasTask || canUseNormalAlibi))
+                {
+                    ComputerUIManager.Instance.SetPromptVisible(true);
+                    ownerFpc.SetInteractionText(canUseRogueTask ? "TERMINALI HACKLE" : "[F] BILGISAYARI AC");
+                    if (Input.GetKeyDown(KeyCode.F) && !ComputerUIManager.Instance.IsComputerOpen)
+                    {
+                        if (canUseRogueTask || hasTask || canUseNormalAlibi)
+                            TaskManager.Instance.RequestStartTaskRpc("MissionComputer");
+                        ComputerUIManager.Instance.OpenComputer(data, ownerFpc, this);
+                    }
+                }
+                else if (isHackPreparing)
+                {
+                    ComputerUIManager.Instance.SetPromptVisible(false);
+                    ownerFpc.SetInteractionText("TERMINAL HACK HAZIRLANIYOR");
+                }
+                else
+                {
+                    ComputerUIManager.Instance.SetPromptVisible(false);
                 }
             }
         }

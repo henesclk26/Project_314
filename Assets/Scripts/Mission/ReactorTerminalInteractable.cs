@@ -15,12 +15,6 @@ public class ReactorTerminalInteractable : MonoBehaviour
             return;
         }
 
-        if (mission != null && mission.IsMissionCompleted.Value)
-        {
-            ui?.SetPromptVisible(false);
-            return;
-        }
-
         FirstPersonController fpc = GetOwnerFpc();
         if (!CanPlayerInteract(fpc))
         {
@@ -29,12 +23,46 @@ public class ReactorTerminalInteractable : MonoBehaviour
         }
 
         bool inRange = Vector3.Distance(transform.position, fpc.transform.position) <= interactionRange;
-        ui?.SetPromptVisible(inRange);
-        if (!inRange || !Input.GetKeyDown(KeyCode.F) || ui == null)
-            return;
+        
+        if (inRange)
+        {
+            if (UpgradeManager.Instance != null && UpgradeManager.Instance.IsSystemBlackoutBlocking(fpc.OwnerClientId))
+            {
+                ui?.SetPromptVisible(false);
+                fpc.SetInteractionText("SYSTEM OFFLINE");
+                return;
+            }
 
-        mission?.ActivateMissionRpc();
-        ui.Open(fpc);
+            if (TaskManager.Instance == null) return;
+            
+            bool isAvailable = TaskManager.Instance.IsTerminalAvailable("ReactorTerminal", fpc.OwnerClientId);
+            var activeTask = TaskManager.Instance.GetActiveTaskForPlayer(fpc.OwnerClientId);
+            bool hasTask = activeTask.HasValue && activeTask.Value.TaskID.ToString() == "ReactorTerminal";
+
+            if (!isAvailable)
+            {
+                ui?.SetPromptVisible(false);
+                fpc.SetInteractionText("SYSTEM BUSY / OFFLINE");
+            }
+            else if (hasTask)
+            {
+                ui?.SetPromptVisible(true);
+                if (Input.GetKeyDown(KeyCode.F) && ui != null)
+                {
+                    TaskManager.Instance.RequestStartTaskRpc("ReactorTerminal");
+                    mission?.ActivateMissionRpc();
+                    ui.Open(fpc);
+                }
+            }
+            else
+            {
+                ui?.SetPromptVisible(false);
+            }
+        }
+        else
+        {
+            ui?.SetPromptVisible(false);
+        }
     }
 
     private void OnDisable()

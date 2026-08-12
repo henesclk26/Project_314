@@ -6,13 +6,8 @@ public class WaveFrequencyTerminalInteractable : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private float interactionRange = 3f;
 
-    private bool completedLocally;
-
     private void Update()
     {
-        if (AreBothMissionsCompleted())
-            return;
-
         WaveFrequencyUIManager ui = WaveFrequencyUIManager.Instance;
         if (ui != null && ui.IsOpen)
             return;
@@ -29,27 +24,47 @@ public class WaveFrequencyTerminalInteractable : MonoBehaviour
         if (hit.collider.gameObject != gameObject && !hit.collider.transform.IsChildOf(transform))
             return;
 
-        fpc.SetInteractionText("[F] Frekans Terminalini Aç");
+        if (UpgradeManager.Instance != null && UpgradeManager.Instance.IsSystemBlackoutBlocking(fpc.OwnerClientId))
+        {
+            fpc.SetInteractionText("SYSTEM OFFLINE");
+            return;
+        }
 
-        if (Input.GetKeyDown(KeyCode.F) && ui != null)
-            ui.Open(this, fpc);
+        if (TaskManager.Instance == null) return;
+
+        bool isAvailable = TaskManager.Instance.IsTerminalAvailable("WaveFrequency", fpc.OwnerClientId);
+        var activeTask = TaskManager.Instance.GetActiveTaskForPlayer(fpc.OwnerClientId);
+        bool hasTask = activeTask.HasValue && activeTask.Value.TaskID.ToString() == "WaveFrequency";
+        bool canUseRogueTask = TaskManager.Instance.CanUseRogueTask(fpc.OwnerClientId, "WaveFrequency");
+        bool isHackPreparing = TaskManager.Instance.GetTerminalHackPhase("WaveFrequency") == TerminalHackPhase.Preparing;
+        bool canUseNormalAlibi = TaskManager.Instance.CanUseAlibiTask(fpc.OwnerClientId, "WaveFrequency");
+
+        if (!isAvailable)
+        {
+            fpc.SetInteractionText("SYSTEM BUSY / OFFLINE");
+            return;
+        }
+
+        if (!isHackPreparing && (canUseRogueTask || hasTask || canUseNormalAlibi))
+        {
+            fpc.SetInteractionText("[F] Frekans Terminalini Aç");
+            if (canUseRogueTask)
+                fpc.SetInteractionText("TERMINALI HACKLE");
+            if (Input.GetKeyDown(KeyCode.F) && ui != null)
+            {
+                if (canUseRogueTask || hasTask || canUseNormalAlibi)
+                    TaskManager.Instance.RequestStartTaskRpc("WaveFrequency");
+                ui.Open(this, fpc);
+            }
+        }
+        else if (isHackPreparing)
+        {
+            fpc.SetInteractionText("TERMINAL HACK HAZIRLANIYOR");
+        }
     }
 
     public void MarkCompleted()
     {
-        completedLocally = true;
-    }
-
-    private bool AreBothMissionsCompleted()
-    {
-        if (MissionManager.Instance == null)
-            return false;
-
-        bool normalCompleted =
-            completedLocally ||
-            MissionManager.Instance.IsWaveFrequencyMissionCompleted.Value;
-        return normalCompleted &&
-               MissionManager.Instance.IsWaveSatelliteSabotageCompleted.Value;
     }
 
     private static FirstPersonController GetOwnerFpc()

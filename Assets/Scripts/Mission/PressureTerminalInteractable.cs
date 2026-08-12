@@ -14,12 +14,6 @@ public class PressureTerminalInteractable : MonoBehaviour
             return;
         }
 
-        if (MissionManager.Instance != null && MissionManager.Instance.IsPressureMissionCompleted.Value)
-        {
-            SetInRange(false, ui);
-            return;
-        }
-
         FirstPersonController fpc = GetOwnerFpc();
         if (fpc == null || fpc.isDead.Value ||
             (GameManager.Instance != null && GameManager.Instance.isGameOver))
@@ -29,14 +23,60 @@ public class PressureTerminalInteractable : MonoBehaviour
         }
 
         bool inRange = Vector3.Distance(transform.position, fpc.transform.position) <= interactionRange;
-        SetInRange(inRange, ui);
-        if (!inRange)
-            return;
-
-        if (Input.GetKeyDown(KeyCode.F) && ui != null)
+        
+        if (inRange)
         {
-            MissionManager.Instance?.ActivatePressureMissionRpc();
-            ui.Open(fpc);
+            if (UpgradeManager.Instance != null && UpgradeManager.Instance.IsSystemBlackoutBlocking(fpc.OwnerClientId))
+            {
+                SetInRange(false, ui);
+                fpc.SetInteractionText("SYSTEM OFFLINE");
+                return;
+            }
+            if (TaskManager.Instance == null) return;
+
+            MissionManager mission = MissionManager.Instance;
+            if (mission != null &&
+                mission.SharedValveSession.Value == SharedValveSessionState.ValveOverrideActive)
+            {
+                SetInRange(false, ui);
+                fpc.SetInteractionText("SYSTEM BUSY / OFFLINE");
+                return;
+            }
+            
+            bool isAvailable = TaskManager.Instance.IsTerminalAvailable("PressureTerminal", fpc.OwnerClientId);
+            var activeTask = TaskManager.Instance.GetActiveTaskForPlayer(fpc.OwnerClientId);
+            bool hasTask = activeTask.HasValue && activeTask.Value.TaskID.ToString() == "PressureTerminal";
+
+            if (!isAvailable)
+            {
+                SetInRange(false, ui);
+                fpc.SetInteractionText("SYSTEM BUSY / OFFLINE");
+            }
+            else if (hasTask)
+            {
+                if (!TaskManager.Instance.IsCooperativeRoleOwner(fpc.OwnerClientId, "PressureTerminal", 0))
+                {
+                    SetInRange(false, ui);
+                    fpc.SetInteractionText("ROLE SLOT REQUIRED");
+                    return;
+                }
+
+                SetInRange(true, ui);
+                if (Input.GetKeyDown(KeyCode.F) && ui != null)
+                {
+                    TaskManager.Instance.RequestStartTaskRpc("PressureTerminal");
+                    MissionManager.Instance?.ActivatePressureMissionRpc();
+                    ui.Open(fpc);
+                }
+            }
+            else
+            {
+                SetInRange(false, ui);
+            }
+        }
+        else
+        {
+            SetInRange(false, ui);
         }
     }
 

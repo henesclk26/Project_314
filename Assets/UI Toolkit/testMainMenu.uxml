@@ -18,33 +18,7 @@
             </ui:VisualElement>
             <ui:VisualElement class="menu-footer">
                 <ui:Label text="SYSTEM STATUS: ONLINE" class="footer-version"/>
-                <ui:Label text="v0.0.21" class="footer-credits" style="width: 72px; height: 44px; -unity-text-align: upper-center; font-size: 24px;"/>
-            </ui:VisualElement>
-        </ui:VisualElement>
-        <ui:VisualElement enabled="false" class="menu-right-panel">
-            <ui:Label text="MISSION OBJECTIVE" class="info-title"/>
-            <ui:VisualElement class="info-content">
-                <ui:Label text="A severe energy anomaly has been detected in Sector 7. Coordinate with your team to locate and power up the backup generators." class="info-text"/>
-                <ui:Label text="CAUTION: Space-time distortions are active. Watch out for unpredictable gravity flips, controls reversal, and spatial shifts." class="info-text"/>
-            </ui:VisualElement>
-            <ui:Label text="CONTROLS" class="info-title"/>
-            <ui:VisualElement class="controls-grid">
-                <ui:VisualElement class="control-row">
-                    <ui:Label text="MOVE" class="control-action"/>
-                    <ui:Label text="W / A / S / D" class="control-key-box"/>
-                </ui:VisualElement>
-                <ui:VisualElement class="control-row">
-                    <ui:Label text="INTERACT" class="control-action"/>
-                    <ui:Label text="F" class="control-key-box"/>
-                </ui:VisualElement>
-                <ui:VisualElement class="control-row">
-                    <ui:Label text="CAMERA VIEW" class="control-action"/>
-                    <ui:Label text="V" class="control-key-box"/>
-                </ui:VisualElement>
-                <ui:VisualElement class="control-row">
-                    <ui:Label text="ESC MENU" class="control-action"/>
-                    <ui:Label text="ESCAPE" class="control-key-box"/>
-                </ui:VisualElement>
+                <ui:Label text="v0.0.22" class="footer-credits" style="width: 72px; height: 44px; -unity-text-align: upper-center; font-size: 24px;"/>
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>

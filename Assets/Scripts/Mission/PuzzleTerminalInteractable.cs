@@ -7,6 +7,9 @@ public class PuzzleTerminalInteractable : MonoBehaviour
 
     private void Update()
     {
+        if (!GameplayInteractionGate.IsTaskInteractionPhaseOpen())
+            return;
+
         FirstPersonController fpc = GetOwnerFpc();
         if (fpc == null || fpc.isDead.Value || (GameManager.Instance && GameManager.Instance.isGameOver)) return;
 

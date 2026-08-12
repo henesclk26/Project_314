@@ -22,7 +22,9 @@ public class ReactorGasCanInteractable : MonoBehaviour
                        mission.IsMissionActive.Value &&
                        !mission.IsMissionCompleted.Value &&
                        mission.IsGasCanAvailable(gasCanId);
-        bool interactable = visible && mission.Phase.Value == ReactorMissionPhase.Fueling;
+        bool interactable = visible &&
+                             mission.Phase.Value == ReactorMissionPhase.Fueling &&
+                             GameplayInteractionGate.IsTaskInteractionPhaseOpen();
         SetVisualState(visible, interactable);
 
         if (!interactable)
