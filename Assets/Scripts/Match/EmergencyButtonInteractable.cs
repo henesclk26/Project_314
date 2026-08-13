@@ -14,26 +14,29 @@ public class EmergencyButtonInteractable : MonoBehaviour
             return;
         }
 
-        if (MatchFlowManager.Instance.CurrentPhase.Value != MatchPhase.Active)
+        float distance = Vector3.Distance(transform.position, ownerFpc.transform.position);
+        MatchPhase phase = MatchFlowManager.Instance.CurrentPhase.Value;
+        if (distance > interactionRange || phase == MatchPhase.Lobby || phase == MatchPhase.Ended)
         {
             SetInRange(false, ownerFpc);
             return;
         }
 
-        float distance = Vector3.Distance(transform.position, ownerFpc.transform.position);
-        if (distance <= interactionRange)
+        // Keep the lock feedback visible from the moment the match enters
+        // BootProtection. Once all locks expire, this becomes the normal F
+        // interaction without changing the button or its range.
+        if (phase != MatchPhase.Active)
         {
-            bool allowed = MatchFlowManager.Instance.IsEmergencyMeetingAllowed();
-            SetInRange(true, ownerFpc, allowed);
-
-            if (allowed && Input.GetKeyDown(KeyCode.F))
-            {
-                CallEmergencyMeetingServerRpc(ownerFpc.OwnerClientId);
-            }
+            SetInRange(true, ownerFpc, false);
+            return;
         }
-        else
+
+        bool allowed = MatchFlowManager.Instance.IsEmergencyMeetingAllowed();
+        SetInRange(true, ownerFpc, allowed);
+
+        if (allowed && Input.GetKeyDown(KeyCode.F))
         {
-            SetInRange(false, ownerFpc);
+            MeetingManager.Instance.RequestEmergencyMeetingServerRpc(ownerFpc.OwnerClientId);
         }
     }
 
@@ -58,13 +61,18 @@ public class EmergencyButtonInteractable : MonoBehaviour
         }
     }
 
-    [Unity.Netcode.ServerRpc(RequireOwnership = false)]
-    private void CallEmergencyMeetingServerRpc(ulong callerId)
+    public bool IsPlayerInRange(ulong clientId)
     {
-        if (MatchFlowManager.Instance.IsEmergencyMeetingAllowed())
+        foreach (FirstPersonController player in FindObjectsByType<FirstPersonController>(FindObjectsSortMode.None))
         {
-            MeetingManager.Instance.CallMeeting(callerId, 0);
+            if (player.OwnerClientId != clientId)
+                continue;
+
+            return !player.isDead.Value &&
+                   Vector3.Distance(transform.position, player.transform.position) <= interactionRange;
         }
+
+        return false;
     }
 
     private void OnDisable()

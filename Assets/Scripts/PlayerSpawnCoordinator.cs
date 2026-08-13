@@ -301,7 +301,7 @@ public class PlayerSpawnCoordinator : MonoBehaviour
         return capsule.center.y * scale.y - halfHeight;
     }
 
-    private static void TeleportPlayer(FirstPersonController player, Vector3 position, Quaternion rotation)
+    public static void TeleportPlayer(FirstPersonController player, Vector3 position, Quaternion rotation)
     {
         var rb = player.GetComponent<Rigidbody>();
         if (rb != null)
@@ -319,6 +319,9 @@ public class PlayerSpawnCoordinator : MonoBehaviour
             player.serverSpawnPosition.Value = position;
             player.serverSpawnRotation.Value = rotation;
             player.hasServerSpawnPosition.Value = true;
+            player.serverSpawnRevision.Value++;
+            if (player.IsSpawned)
+                player.TeleportClientRpc(position, rotation);
         }
     }
 

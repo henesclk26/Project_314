@@ -18,6 +18,12 @@ public class ComputerInteractable : MonoBehaviour
             return;
         }
 
+        if (!GameplayInteractionGate.IsTaskInteractionPhaseOpen())
+        {
+            ComputerUIManager.Instance?.SetPromptVisible(false);
+            return;
+        }
+
         float distance = Vector3.Distance(transform.position, ownerFpc.transform.position);
         if (distance <= interactionRange)
         {

@@ -18,18 +18,20 @@
     top: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(10, 12, 10, 0.95);
+    background-color: rgba(10, 12, 10, 0.98);
     align-items: center;
     justify-content: center;
 }
 
 .meeting-panel {
-    width: 800px;
-    height: 600px;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
     background-color: var(--hull);
     border-width: 2px;
     border-color: var(--phosphor);
-    padding: 20px;
+    padding: 36px 40px 32px 40px;
     flex-direction: column;
 }
 
@@ -67,19 +69,24 @@
     flex-grow: 1;
     flex-direction: row;
     flex-wrap: wrap;
-    justify-content: space-around;
+    justify-content: center;
+    align-content: flex-start;
+    align-items: flex-start;
+    padding: 12px 0;
 }
 
 .player-card {
-    width: 200px;
-    height: 80px;
-    margin: 10px;
+    width: 44%;
+    min-width: 320px;
+    height: 118px;
+    margin: 12px;
     background-color: var(--hull-raised);
     border-width: 1px;
     border-color: var(--hull-line);
     flex-direction: row;
     align-items: center;
-    padding: 10px;
+    padding: 16px;
+    flex-shrink: 0;
 }
 
 .player-card.dead {
@@ -94,38 +101,49 @@
 }
 
 .player-color-box {
-    width: 40px;
-    height: 40px;
-    margin-right: 10px;
+    width: 56px;
+    min-width: 56px;
+    height: 56px;
+    margin-right: 16px;
     border-width: 1px;
     border-color: var(--ivory);
+    flex-shrink: 0;
 }
 
 .player-info {
     flex-grow: 1;
+    min-width: 0;
     flex-direction: column;
+    justify-content: center;
+    margin-right: 16px;
 }
 
 .player-name {
     color: var(--ivory);
-    font-size: 14px;
+    font-size: 17px;
     -unity-font-style: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .player-status {
     color: var(--muted);
-    font-size: 10px;
+    font-size: 12px;
+    margin-top: 6px;
 }
 
 .vote-button {
-    width: 60px;
-    height: 40px;
+    width: 96px;
+    min-width: 96px;
+    height: 48px;
     background-color: var(--hull-deep);
     color: var(--phosphor);
     border-width: 1px;
     border-color: var(--phosphor);
-    font-size: 12px;
+    font-size: 13px;
     -unity-font-style: bold;
+    flex-shrink: 0;
 }
 
 .vote-button:hover {

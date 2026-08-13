@@ -19,6 +19,9 @@ public class CircuitMissionInteractable : MonoBehaviour
             return;
         }
 
+        if (!GameplayInteractionGate.IsTaskInteractionPhaseOpen())
+            return;
+
         Ray ray = new Ray(fpc.playerCamera.transform.position, fpc.playerCamera.transform.forward);
         if (!Physics.Raycast(ray, out RaycastHit hit, interactionRange))
             return;

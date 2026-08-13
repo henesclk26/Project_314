@@ -128,9 +128,10 @@ public class ReactorMissionManager : NetworkBehaviour
     }
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-    public void ActivateMissionRpc()
+    public void ActivateMissionRpc(RpcParams rpcParams = default)
     {
-        if (IsMissionActive.Value || IsMissionCompleted.Value)
+        if (!CanAcceptReactorInput(rpcParams.Receive.SenderClientId) ||
+            IsMissionActive.Value || IsMissionCompleted.Value)
             return;
 
         IsMissionActive.Value = true;
@@ -146,10 +147,10 @@ public class ReactorMissionManager : NetworkBehaviour
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     public void PickupGasCanRpc(int gasCanId, RpcParams rpcParams = default)
     {
-        if (!CanHandleFuel() || !IsValidGasCanId(gasCanId))
+        ulong clientId = rpcParams.Receive.SenderClientId;
+        if (!CanAcceptReactorInput(clientId) || !CanHandleFuel() || !IsValidGasCanId(gasCanId))
             return;
 
-        ulong clientId = rpcParams.Receive.SenderClientId;
         if (IsClientCarrying(clientId) || GetGasCanState(gasCanId) != AvailableCan)
             return;
 
@@ -159,10 +160,10 @@ public class ReactorMissionManager : NetworkBehaviour
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
     public void DepositGasCanRpc(RpcParams rpcParams = default)
     {
-        if (!CanHandleFuel())
+        ulong clientId = rpcParams.Receive.SenderClientId;
+        if (!CanAcceptReactorInput(clientId) || !CanHandleFuel())
             return;
 
-        ulong clientId = rpcParams.Receive.SenderClientId;
         int gasCanId = GetCarriedGasCanId(clientId);
         if (gasCanId < 0)
             return;
@@ -188,7 +189,8 @@ public class ReactorMissionManager : NetworkBehaviour
 
         int bit = 1 << leverId;
         ulong clientId = rpcParams.Receive.SenderClientId;
-        if ((LeverMask.Value & bit) != 0 || leverParticipants.Contains(clientId))
+        if (!CanAcceptReactorInput(clientId) ||
+            (LeverMask.Value & bit) != 0 || leverParticipants.Contains(clientId))
             return;
 
         if (LeverMask.Value == 0)
@@ -246,6 +248,19 @@ public class ReactorMissionManager : NetworkBehaviour
                !IsMissionCompleted.Value &&
                Phase.Value == ReactorMissionPhase.Fueling &&
                FuelPercent.Value < 100;
+    }
+
+    private bool CanAcceptReactorInput(ulong clientId)
+    {
+        if (!GameplayInteractionGate.IsTaskInteractionPhaseOpen())
+            return false;
+
+        if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
+            return true;
+
+        return IsServer &&
+               TaskManager.Instance != null &&
+               TaskManager.Instance.IsCooperativeTaskParticipant(clientId, "ReactorTerminal");
     }
 
     private void FailLeverSynchronization()

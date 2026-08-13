@@ -81,19 +81,8 @@ public class ComputerUIManager : MonoBehaviour
     {
         WasClosedThisFrame = false;
 
-#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
         if (IsComputerOpen && sabotageAvailable && !isSabotageMode)
             SetSabotageMode(true);
-#endif
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        if (IsComputerOpen &&
-            sabotageAvailable &&
-            Input.GetKeyDown(KeyCode.F1))
-        {
-            SetSabotageMode(!isSabotageMode);
-        }
-#endif
 
         RefreshSabotageUI();
 
@@ -192,10 +181,6 @@ public class ComputerUIManager : MonoBehaviour
             fpc != null &&
             TaskManager.Instance != null &&
             TaskManager.Instance.CanUseRogueTask(fpc.OwnerClientId, "MissionComputer");
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        // F1 remains an editor/development-only minigame preview path.
-        sabotageAvailable |= isMissionComputer;
-#endif
         completionCloseScheduled =
             MissionManager.Instance != null &&
             MissionManager.Instance.FileSabotageState.Value ==
@@ -210,11 +195,7 @@ public class ComputerUIManager : MonoBehaviour
 
         passwordField.value = "";
         statusLabel.AddToClassList("hidden");
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        SetSabotageMode(false);
-#else
         SetSabotageMode(sabotageAvailable);
-#endif
         overlay.RemoveFromClassList("hidden");
         StartCoroutine(AddOpenClassRoutine());
     }

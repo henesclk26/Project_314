@@ -646,6 +646,9 @@ direction is:
   an intentional demo-level killer advantage. Eligible repeatable solo tasks keep
   a task victory technically possible, but a reduced villager population should
   strongly favor a killer parity win.
+- The first economy guard is now server-enforced: Killer Sabotage Points have a
+  maximum demo balance of 2 and never grant a normal upgrade point. This keeps
+  the reserved resource bounded until a spending/activation loop is designed.
 
 ## Voice Chat (Deferred Implementation) `[TODO - DEFERRED]`
 
@@ -666,6 +669,8 @@ server-controlled proximity voice:
   meeting state, upgrades, tool ownership, Killer Sabotage Points, bodies, and
   win state server-authoritative.
 - Reconnecting players are not supported in the demo.
+- New client connections are rejected after the match starts; late joiners do
+  not enter the simulation without a role, task assignment, and reset state.
 - AFK players receive no automatic handling in the demo.
 - Host migration is deferred. If the host disconnects, end the match and return
   all players to the lobby cleanly.
@@ -785,9 +790,12 @@ replace working task implementations.
    - Done when tools cannot conflict with meetings, boot/post-meeting locks, or
      shared valve state, and every client sees the same result.
 
-8. **[IN PROGRESS] Production access and regression pass**
-   - Status: code-side access gates, RPC validation, phase gates, and repeatable
-     task fixes are complete; host/client/late-join regression is pending.
+8. **[DONE - ONLINE VERIFY] Production access and regression pass**
+   - Status: code-side access gates, RPC validation, phase gates, repeatable task
+     fixes, post-start late-join rejection, production build validation, and the
+     real host/client online gameplay regression are complete.
+     The latest pass also added server-side sender, alive-state, and distance
+     validation for emergency meetings, body reports, and meeting targets.
    - Retain F1 task switching only for Editor/Development testing. Production
      rogue-task access must be role and server-permission based.
    - Validate mission mutation RPCs on the server; direct client calls cannot
@@ -804,11 +812,61 @@ replace working task implementations.
      consumption for dead/ineligible owners, Uplink's protected open UI, anchor
      color exclusion, body visuals, meeting cleanup, exact restoration, and the
      normal-task-to-hack preparation window on each sabotage-capable terminal.
+   - Verification pass: the active scene validates cleanly, Quick Test starts
+     successfully in the Editor, and a Development-disabled Windows build was
+     produced successfully from the existing `sci-fi-map` scene. The stale
+     `MainMenu.unity` and `test_map.unity` Build Settings entries are disabled
+     because those scene files are no longer present; the menu and gameplay
+     flow are contained in `sci-fi-map`.
+   - Online regression result (2026-08-13): four real Unity Editor processes
+     connected through UGS Lobby + Relay (`0,4,5,6`). Host and clients matched on
+     `BootProtection`/`Active`, role distribution, six-task crew target, and
+     replicated task runs. The same-scene `StartGame` path was fixed so the
+     server starts the match after the minimum player count is present, and a
+     fourth client was rejected after a match had already started.
+   - The completed four-player matrix covered: host kill, replicated reportable
+     body, client-local ghost state, body report, meeting cleanup, tied vote,
+     post-meeting lock, ejection/parity win, and lobby reset. The missing body
+     prefab reference was repaired and registered in `DefaultNetworkPrefabs`.
+   - The cooperative matrix covered PressureTerminal role slots `0/1/2`, killer
+     activation rejection, valid operator activation, role-specific valve input,
+     real cooperative completion, and crew-progress award. Reactor assignments
+     were also observed with three living villagers.
+   - The upgrade/tool matrix covered 2-point passive and 4-point tool thresholds,
+     Priority Uplink bypass consumption, 15-second System Blackout and expiry,
+     Identity Scramble with Identity Anchor color exclusion and expiry, and
+     three-client Valve Override completion (`turned=3`, session returned to
+     `Idle`). No gameplay or compilation errors were recorded during the final
+     pass; the console only showed a transient MCP wire disconnect while the
+     temporary Editor clones were being stopped.
+   - General multiplayer QA pass (2026-08-13): removed the stale scene-level
+     `FirstPersonController` that duplicated the network player prefab. A clean
+     four-player session now reports four player objects and exactly one active
+     `AudioListener`; all four instances reached `Active` with the same crew
+     progress. Added a visible crew-progress fill bar and verified the real
+     `0/9 -> 1/9` update after a completed PressureTerminal cooperative task.
+   - Added a server snapshot guard so `MatchFlowManager` cannot resolve a false
+     Villager win before all connected players have both a role and a spawned
+     player object. The refreshed session remained `Active` with `Winner=None`
+     after startup. Final Windows build after QA changes succeeded with zero
+     build errors, and the built player stayed alive during an 8-second startup
+     smoke test.
 
-9. **[TODO] Deferred systems and balance**
-   - Status: not started; begins after Step 8 online verification.
-   - Add proximity voice chat only after the above gameplay loop is stable.
-   - Design the broader limited sabotage loop before implementing it.
+9. **[IN PROGRESS] Deferred systems and balance**
+   - Status: the server-side sabotage-point cap and reward separation are done;
+     the first balance-foundation pass is now complete; the broader loop,
+     voice integration, and social-balance pass remain pending.
+   - Balance foundation `[DONE - CODE]`: added the Resources-backed
+     `DemoBalanceConfig` asset as the single source for match phase durations,
+     meeting timing, kill/task cooldowns, terminal hack windows, killer-tool
+     durations, Threat Sensor range, crew-task scaling, and the bounded
+     sabotage-point cap. Runtime defaults preserve the existing demo values
+     when the asset is unavailable, so Quick Test and development scenes do
+     not depend on an editor-only asset reference.
+   - Add proximity voice chat only after the above gameplay loop is stable and a
+     supported voice provider/package is selected for the project.
+   - Design the broader limited sabotage loop before implementing its spending and
+     activation rules. The current demo only stores the bounded resource.
    - Playtest 4, 5, 6, 7, and 8 player matches; tune task target, kill cooldown,
      task cooldown, passive values, blackout duration, and meeting cooldown from
      observed results.

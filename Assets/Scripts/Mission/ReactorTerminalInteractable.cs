@@ -22,6 +22,12 @@ public class ReactorTerminalInteractable : MonoBehaviour
             return;
         }
 
+        if (!GameplayInteractionGate.IsTaskInteractionPhaseOpen())
+        {
+            ui?.SetPromptVisible(false);
+            return;
+        }
+
         bool inRange = Vector3.Distance(transform.position, fpc.transform.position) <= interactionRange;
         
         if (inRange)

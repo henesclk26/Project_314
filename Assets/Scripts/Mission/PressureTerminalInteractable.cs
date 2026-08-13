@@ -22,6 +22,12 @@ public class PressureTerminalInteractable : MonoBehaviour
             return;
         }
 
+        if (!GameplayInteractionGate.IsTaskInteractionPhaseOpen())
+        {
+            SetInRange(false, ui);
+            return;
+        }
+
         bool inRange = Vector3.Distance(transform.position, fpc.transform.position) <= interactionRange;
         
         if (inRange)
@@ -54,13 +60,10 @@ public class PressureTerminalInteractable : MonoBehaviour
             }
             else if (hasTask)
             {
-                if (!TaskManager.Instance.IsCooperativeRoleOwner(fpc.OwnerClientId, "PressureTerminal", 0))
-                {
-                    SetInRange(false, ui);
-                    fpc.SetInteractionText("ROLE SLOT REQUIRED");
-                    return;
-                }
-
+                // Every living participant assigned to the cooperative
+                // PressureTerminal task may open the shared computer and use
+                // the stabilization hold. The remote valves remain assigned
+                // to their existing cooperative role slots.
                 SetInRange(true, ui);
                 if (Input.GetKeyDown(KeyCode.F) && ui != null)
                 {

@@ -174,13 +174,11 @@ public class WaveFrequencyUIManager : MonoBehaviour
         selectedCableSatellite = -1;
         IsOpen = true;
 
-#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
         if (CanOpenRogueMode())
         {
             isSabotageMode = true;
             MissionManager.Instance?.RequestInitializeWaveSatelliteSabotage();
         }
-#endif
 
         if (!normalCompletedWhenOpened &&
             (!HasNormalPuzzleForCurrentTask()))
@@ -254,14 +252,12 @@ public class WaveFrequencyUIManager : MonoBehaviour
         if (!IsOpen)
             return;
 
-#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
         if (!isSabotageMode && CanOpenRogueMode())
         {
             isSabotageMode = true;
             MissionManager.Instance?.RequestInitializeWaveSatelliteSabotage();
             ApplyModePresentation();
         }
-#endif
 
         if (isSabotageMode)
         {
@@ -284,14 +280,6 @@ public class WaveFrequencyUIManager : MonoBehaviour
 
         if (completionStarted)
             return;
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        if (Input.GetKeyDown(KeyCode.F1))
-        {
-            SetSabotageMode(!isSabotageMode);
-            return;
-        }
-#endif
 
         if (Input.GetKeyDown(KeyCode.Escape))
         {
@@ -319,8 +307,7 @@ public class WaveFrequencyUIManager : MonoBehaviour
             return;
 
         if (sabotage &&
-            !CanOpenRogueMode() &&
-            !IsDevelopmentSabotagePreviewEnabled())
+            !CanOpenRogueMode())
         {
             return;
         }
@@ -341,15 +328,6 @@ public class WaveFrequencyUIManager : MonoBehaviour
                TaskManager.Instance.CanUseRogueTask(
                    currentFpc.OwnerClientId,
                    "WaveFrequency");
-    }
-
-    private static bool IsDevelopmentSabotagePreviewEnabled()
-    {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        return true;
-#else
-        return false;
-#endif
     }
 
     private void ApplyModePresentation()

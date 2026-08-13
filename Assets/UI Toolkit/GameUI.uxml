@@ -5,10 +5,14 @@
     </ui:VisualElement>
     <ui:VisualElement name="hud-top-left" style="position: absolute; top: 20px; left: 20px; background-color: rgba(6, 12, 22, 0.8); border-radius: 8px; padding: 10px; border-width: 2px; border-color: rgba(0, 240, 255, 0.5);">
         <ui:Label name="crew-progress-label" text="GÖREV İLERLEMESİ: 0 / 0" style="color: rgb(0, 255, 255); font-size: 18px; -unity-font-style: bold; margin-bottom: 8px;"/>
+        <ui:VisualElement name="crew-progress-track" style="height: 8px; width: 100%; margin-bottom: 8px; background-color: rgba(0, 255, 255, 0.18); border-radius: 4px; overflow: hidden;">
+            <ui:VisualElement name="crew-progress-fill" style="height: 100%; width: 0%; background-color: rgb(0, 255, 255); border-radius: 4px;"/>
+        </ui:VisualElement>
         <ui:Label name="current-task-label" text="AKTİF GÖREV: YOK" style="color: rgb(220, 220, 220); font-size: 16px; margin-bottom: 4px;"/>
         <ui:Label name="current-room-label" text="" style="color: rgb(150, 150, 150); font-size: 14px;"/>
+        <ui:Label name="kill-cooldown-label" text="" style="display: none; color: rgb(255, 132, 114); font-size: 14px; -unity-font-style: bold; margin-top: 8px;"/>
     </ui:VisualElement>
-    <ui:VisualElement name="killer-hack-panel" style="position: absolute; top: 154px; left: 20px; width: 342px; display: none; background-color: rgba(26, 7, 12, 0.9); border-left-width: 3px; border-left-color: rgb(224, 69, 63); border-top-width: 1px; border-top-color: rgba(255, 125, 110, 0.45); padding: 10px;">
+    <ui:VisualElement name="killer-hack-panel" style="position: absolute; top: 270px; left: 20px; width: 342px; display: none; background-color: rgba(26, 7, 12, 0.9); border-left-width: 3px; border-left-color: rgb(224, 69, 63); border-top-width: 1px; border-top-color: rgba(255, 125, 110, 0.45); padding: 10px;">
         <ui:Label text="ROGUE HACK STATIONS" style="color: rgb(255, 132, 114); font-size: 13px; -unity-font-style: bold; margin-bottom: 7px;"/>
         <ui:VisualElement style="flex-direction: row; justify-content: space-between; margin-bottom: 5px;">
             <ui:Label text="MISSION COMPUTER" style="color: rgb(228, 224, 222); font-size: 12px;"/>
@@ -31,6 +35,20 @@
         <ui:VisualElement class="prompt-box">
             <ui:Label text="F" class="prompt-key"/>
             <ui:Label name="game-prompt-text" text="Etkileşim" class="prompt-text"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+    <ui:VisualElement name="role-reveal-overlay" class="role-reveal-overlay hidden">
+        <ui:VisualElement name="role-reveal-frame" class="role-reveal-frame">
+            <ui:Label text="IDENTITY PROTOCOL // SECURE CHANNEL" class="role-reveal-kicker"/>
+            <ui:VisualElement class="role-reveal-rule"/>
+            <ui:Label name="role-reveal-title" text="KÖYLÜ" class="role-reveal-title"/>
+            <ui:Label name="role-reveal-subtitle" text="CREW MEMBER // GÖREVLERİNİ TAMAMLA" class="role-reveal-subtitle"/>
+            <ui:VisualElement class="role-reveal-spacer"/>
+            <ui:VisualElement class="role-reveal-progress-track">
+                <ui:VisualElement name="role-reveal-progress-fill" class="role-reveal-progress-fill"/>
+            </ui:VisualElement>
+            <ui:Label name="role-reveal-timer" text="2.0 SEC" class="role-reveal-timer"/>
+            <ui:Label name="role-reveal-status" text="MATCH INITIALIZING..." class="role-reveal-status"/>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

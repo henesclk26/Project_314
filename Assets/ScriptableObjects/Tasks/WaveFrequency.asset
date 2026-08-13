@@ -18,6 +18,6 @@ MonoBehaviour:
   IsCooperative: 0
   RequiredVillagers: 1
   MinLivingVillagersToOffer: 1
-  KillerCanReceive: 1
+  KillerCanReceive: 0
   IsSpecialMapSequence: 0
   SharedObjectSessionGroup: 

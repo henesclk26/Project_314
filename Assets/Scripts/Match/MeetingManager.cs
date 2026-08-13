@@ -31,9 +31,28 @@ public class MeetingManager : NetworkBehaviour
         Instance = this;
     }
 
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void RequestEmergencyMeetingServerRpc(ulong callerId, RpcParams rpcParams = default)
+    {
+        if (!IsServer || MatchFlowManager.Instance == null)
+            return;
+
+        ulong senderClientId = rpcParams.Receive.SenderClientId;
+        if (callerId != senderClientId)
+            return;
+
+        EmergencyButtonInteractable button = FindAnyObjectByType<EmergencyButtonInteractable>();
+        if (button == null || !button.IsPlayerInRange(senderClientId))
+            return;
+
+        if (MatchFlowManager.Instance.IsEmergencyMeetingAllowed())
+            CallMeeting(senderClientId, 0);
+    }
+
     public void CallMeeting(ulong reporterClientId, ulong deadBodyClientId = 0)
     {
         if (!IsServer || MatchFlowManager.Instance.CurrentPhase.Value != MatchPhase.Active) return;
+        if (!IsPlayerAlive(reporterClientId)) return;
 
         ReportedBodyAgeBand.Value = 0;
         if (deadBodyClientId != 0)
@@ -63,33 +82,35 @@ public class MeetingManager : NetworkBehaviour
         DeadBodyId.Value = deadBodyClientId;
         votes.Clear();
 
+        TeleportLivingPlayersToMeetingTable();
+
         MatchFlowManager.Instance.SetPhase(MatchPhase.Meeting);
         
-        SetState(MeetingState.Discussion, 15.0); // 15s discussion
+        SetState(MeetingState.Discussion, DemoBalanceConfig.MeetingDiscussionSeconds);
     }
 
     private void SetState(MeetingState newState, double duration)
     {
         State.Value = newState;
-        StateEndTime.Value = NetworkManager.Singleton.LocalTime.Time + duration;
+        StateEndTime.Value = NetworkManager.Singleton.ServerTime.Time + duration;
     }
 
     private void Update()
     {
         if (!IsServer || State.Value == MeetingState.None) return;
 
-        double currentTime = NetworkManager.Singleton.LocalTime.Time;
+        double currentTime = NetworkManager.Singleton.ServerTime.Time;
 
         if (currentTime >= StateEndTime.Value)
         {
             if (State.Value == MeetingState.Discussion)
             {
-                SetState(MeetingState.Voting, 35.0); // 35s voting
+                SetState(MeetingState.Voting, DemoBalanceConfig.MeetingVotingSeconds);
             }
             else if (State.Value == MeetingState.Voting)
             {
                 ResolveVoting();
-                SetState(MeetingState.Results, 10.0); // 10s result display
+                SetState(MeetingState.Results, DemoBalanceConfig.MeetingResultsSeconds);
             }
             else if (State.Value == MeetingState.Results)
             {
@@ -98,14 +119,15 @@ public class MeetingManager : NetworkBehaviour
         }
     }
 
-    [ServerRpc(RequireOwnership = false)]
-    public void CastVoteServerRpc(ulong votedId, ServerRpcParams rpcParams = default)
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void CastVoteServerRpc(ulong votedId, RpcParams rpcParams = default)
     {
         if (State.Value != MeetingState.Voting) return;
         ulong sender = rpcParams.Receive.SenderClientId;
         
         // Prevent dead players from voting
         if (IsPlayerDead(sender)) return;
+        if (votedId != ulong.MaxValue && IsPlayerDead(votedId)) return;
 
         if (!votes.ContainsKey(sender))
         {
@@ -121,7 +143,7 @@ public class MeetingManager : NetworkBehaviour
 
         if (votes.Count >= livingCount)
         {
-            StateEndTime.Value = NetworkManager.Singleton.LocalTime.Time; // Force resolve immediately
+            StateEndTime.Value = NetworkManager.Singleton.ServerTime.Time; // Force resolve immediately
         }
     }
 
@@ -132,6 +154,11 @@ public class MeetingManager : NetworkBehaviour
             if (fpc.OwnerClientId == clientId) return fpc.isDead.Value;
         }
         return true;
+    }
+
+    private bool IsPlayerAlive(ulong clientId)
+    {
+        return !IsPlayerDead(clientId);
     }
 
     private void ResolveVoting()
@@ -186,7 +213,7 @@ public class MeetingManager : NetworkBehaviour
             return;
 
         double now = NetworkManager.Singleton.ServerTime.Time;
-        flow.EmergencyCooldownEndTime.Value = now + 60.0;
+        flow.EmergencyCooldownEndTime.Value = now + DemoBalanceConfig.EmergencyCooldownSeconds;
 
         // An ejection can immediately satisfy the win condition. Do this
         // before respawning or applying the post-meeting lock.
@@ -199,11 +226,11 @@ public class MeetingManager : NetworkBehaviour
         {
             if (RoleManager.Instance.GetPlayerRole(fpc.OwnerClientId) == PlayerRole.Impostor)
             {
-                fpc.killCooldownEndTime.Value = NetworkManager.Singleton.LocalTime.Time + 30.0;
+                fpc.killCooldownEndTime.Value = NetworkManager.Singleton.ServerTime.Time + DemoBalanceConfig.BaseKillCooldownSeconds;
             }
         }
 
-        flow.BootProtectionEndTime.Value = now + 5.0;
+        flow.BootProtectionEndTime.Value = now + DemoBalanceConfig.PostMeetingLockSeconds;
         flow.SetPhase(MatchPhase.PostMeetingLock);
 
         // Respawn using PlayerSpawnCoordinator
@@ -214,5 +241,44 @@ public class MeetingManager : NetworkBehaviour
         }
         
         // After 5s lock, transition to Active will be handled by MatchFlowManager (need to implement in MatchFlowManager)
+    }
+
+    private void TeleportLivingPlayersToMeetingTable()
+    {
+        List<FirstPersonController> livingPlayers = new List<FirstPersonController>();
+        foreach (FirstPersonController player in FindObjectsByType<FirstPersonController>(FindObjectsSortMode.None))
+        {
+            if (player != null && player.IsSpawned && !player.isDead.Value)
+                livingPlayers.Add(player);
+        }
+
+        if (livingPlayers.Count == 0)
+            return;
+
+        livingPlayers.Sort((left, right) => left.OwnerClientId.CompareTo(right.OwnerClientId));
+
+        Transform table = GameObject.Find("MeetingTable")?.transform;
+        Vector3 center = table != null
+            ? table.position
+            : new Vector3(-49.3f, 0f, 4.71f);
+
+        const float meetingRadius = 4.2f;
+        for (int index = 0; index < livingPlayers.Count; index++)
+        {
+            FirstPersonController player = livingPlayers[index];
+            float angle = (Mathf.PI * 2f * index / livingPlayers.Count) + Mathf.PI * 0.5f;
+            Vector3 position = center + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * meetingRadius;
+            // Keep the player's existing height so the meeting move respects
+            // the character controller/capsule setup used by spawn placement.
+            position.y = player.transform.position.y;
+
+            Vector3 lookTarget = new Vector3(center.x, position.y, center.z);
+            Vector3 lookDirection = lookTarget - position;
+            Quaternion rotation = lookDirection.sqrMagnitude > 0.001f
+                ? Quaternion.LookRotation(lookDirection.normalized, Vector3.up)
+                : player.transform.rotation;
+
+            PlayerSpawnCoordinator.TeleportPlayer(player, position, rotation);
+        }
     }
 }

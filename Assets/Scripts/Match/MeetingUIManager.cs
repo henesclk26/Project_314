@@ -29,6 +29,23 @@ public class MeetingUIManager : MonoBehaviour
         uiDocument = GetComponent<UIDocument>();
         if (uiDocument != null)
         {
+            // MeetingManager is a scene NetworkObject and older scene data may
+            // not have serialized PanelSettings on its UIDocument. Reuse the
+            // gameplay panel so the screen is rendered as a real overlay.
+            if (uiDocument.panelSettings == null)
+            {
+                foreach (UIDocument candidate in FindObjectsByType<UIDocument>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                {
+                    if (candidate != null && candidate != uiDocument && candidate.panelSettings != null)
+                    {
+                        uiDocument.panelSettings = candidate.panelSettings;
+                        break;
+                    }
+                }
+            }
+
+            // Keep the meeting screen above the gameplay HUD and mission UI.
+            uiDocument.sortingOrder = 1000;
             root = uiDocument.rootVisualElement;
             meetingPanel = root.Q<VisualElement>(className: "meeting-panel");
             titleLabel = root.Q<Label>("TitleLabel");
@@ -39,7 +56,8 @@ public class MeetingUIManager : MonoBehaviour
             resultLabel = root.Q<Label>("ResultLabel");
             bodyIntelLabel = root.Q<Label>("BodyIntelLabel");
 
-            abstainButton.clicked += OnAbstainClicked;
+            if (abstainButton != null)
+                abstainButton.clicked += OnAbstainClicked;
             
             // Hide initially
             root.style.display = DisplayStyle.None;
@@ -107,7 +125,7 @@ public class MeetingUIManager : MonoBehaviour
 
     private void UpdateTimer()
     {
-        double remaining = MeetingManager.Instance.StateEndTime.Value - NetworkManager.Singleton.LocalTime.Time;
+        double remaining = MeetingManager.Instance.StateEndTime.Value - NetworkManager.Singleton.ServerTime.Time;
         if (remaining < 0) remaining = 0;
         timerLabel.text = Mathf.CeilToInt((float)remaining) + "s";
     }
@@ -151,8 +169,10 @@ public class MeetingUIManager : MonoBehaviour
 
             VisualElement colorBox = new VisualElement();
             colorBox.AddToClassList("player-color-box");
-            // Placeholder color logic
-            colorBox.style.backgroundColor = GetPlayerColor(fpc.playerColorIndex.Value);
+            int visualColorIndex = fpc.effectiveColorOverride.Value > 0
+                ? fpc.effectiveColorOverride.Value
+                : fpc.playerColorIndex.Value;
+            colorBox.style.backgroundColor = FirstPersonController.GetPlayerColor(visualColorIndex);
 
             VisualElement info = new VisualElement();
             info.AddToClassList("player-info");
@@ -183,13 +203,6 @@ public class MeetingUIManager : MonoBehaviour
 
             playerListContainer.Add(card);
         }
-    }
-
-    private Color GetPlayerColor(int index)
-    {
-        // Dummy colors for now
-        Color[] colors = { Color.red, Color.blue, Color.green, Color.yellow, Color.cyan, Color.magenta, Color.white, Color.gray };
-        return colors[index % colors.Length];
     }
 
     private void OnVoteClicked(ulong targetId)

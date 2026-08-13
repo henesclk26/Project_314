@@ -11,10 +11,10 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/SciFi_Warehouse.unity
     guid: d8347d5dc622f20428cdf90fc28696ce
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/MainMenu.unity
     guid: 825010272a85eb348ac9d24809eed2a6
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/test_map.unity
     guid: 2b12c10ce1825a242a1230c0476d2a8d
   - enabled: 1

@@ -41,11 +41,34 @@ public class GameManager : NetworkBehaviour
                 }
                 else
                 {
-                    var mfm = MatchFlowManager.Instance ?? FindAnyObjectByType<MatchFlowManager>();
-                    if (mfm != null) mfm.StartMatch();
+                    // MatchFlowManager can finish its NetworkObject spawn one
+                    // frame after GameManager. Defer the Quick Test start until
+                    // the authoritative phase owner is ready.
+                    StartCoroutine(StartQuickTestMatchWhenReady());
                 }
             }
         }
+    }
+
+    private System.Collections.IEnumerator StartQuickTestMatchWhenReady()
+    {
+        const float timeoutSeconds = 5f;
+        float remaining = timeoutSeconds;
+
+        while (remaining > 0f)
+        {
+            MatchFlowManager flow = MatchFlowManager.Instance ?? FindAnyObjectByType<MatchFlowManager>();
+            if (flow != null && flow.IsSpawned && flow.IsServer && NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+            {
+                flow.StartMatch();
+                yield break;
+            }
+
+            remaining -= Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        Debug.LogError("[GameManager] Quick Test maç başlangıcı için MatchFlowManager hazır olmadı.");
     }
 
     private System.Collections.IEnumerator WaitAndStartMatch()
@@ -75,8 +98,8 @@ public class GameManager : NetworkBehaviour
         isGameOver = value;
     }
 
-    [ServerRpc(RequireOwnership = false)]
-    public void CompleteMissionServerRpc(ulong clientId, string missionType)
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void CompleteMissionServerRpc(ulong clientId, string missionType, RpcParams rpcParams = default)
     {
         // Stub
     }

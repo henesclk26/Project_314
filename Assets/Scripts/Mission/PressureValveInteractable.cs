@@ -40,9 +40,8 @@ public class PressureValveInteractable : MonoBehaviour
             (GameManager.Instance != null && GameManager.Instance.isGameOver))
             return;
 
-        byte requiredRole = (byte)(valveId == 3 ? 1 : 2);
         if (TaskManager.Instance == null ||
-            !TaskManager.Instance.IsCooperativeRoleOwner(fpc.OwnerClientId, "PressureTerminal", requiredRole))
+            !TaskManager.Instance.IsCooperativeTaskParticipant(fpc.OwnerClientId, "PressureTerminal"))
             return;
 
         Ray ray = new Ray(fpc.playerCamera.transform.position, fpc.playerCamera.transform.forward);
@@ -53,6 +52,9 @@ public class PressureValveInteractable : MonoBehaviour
         if (!isLookingAtValve || isTurning || Time.time < inputLockedUntil)
             return;
 
+        // Every living participant may use either pressure valve. There is no
+        // per-player first-valve binding; the server validates each input
+        // against the shared cooperative task on every request.
         if (Input.GetKeyDown(KeyCode.E))
             RequestTurn(1);
         else if (Input.GetKeyDown(KeyCode.Q))

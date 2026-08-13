@@ -236,7 +236,7 @@ public class UpgradeManager : NetworkBehaviour
             return false;
 
         SystemBlackoutActive.Value = true;
-        SystemBlackoutEndTime.Value = NetworkManager.Singleton.ServerTime.Time + 15d;
+        SystemBlackoutEndTime.Value = NetworkManager.Singleton.ServerTime.Time + DemoBalanceConfig.SystemBlackoutSeconds;
         ArmPriorityUplinkBypasses(NetworkManager.Singleton.ServerTime.Time);
         CloseCrewTaskUIsClientRpc();
         return true;
@@ -250,7 +250,7 @@ public class UpgradeManager : NetworkBehaviour
             return false;
 
         IdentityScrambleActive.Value = true;
-        IdentityScrambleEndTime.Value = NetworkManager.Singleton.ServerTime.Time + 30d;
+        IdentityScrambleEndTime.Value = NetworkManager.Singleton.ServerTime.Time + DemoBalanceConfig.IdentityScrambleSeconds;
         IdentityScrambleColor.Value = Random.Range(1, 17);
         ArmIdentityAnchors();
         ApplyColorOverride(IdentityScrambleColor.Value);
@@ -485,12 +485,16 @@ public class UpgradeManager : NetworkBehaviour
 
     public double GetKillCooldown(ulong clientId)
     {
-        return HasPassive(clientId, PassiveUpgradeId.PursuitProtocol) ? 25d : 30d;
+        return HasPassive(clientId, PassiveUpgradeId.PursuitProtocol)
+            ? 25d
+            : DemoBalanceConfig.BaseKillCooldownSeconds;
     }
 
     public float GetKillRange(ulong clientId)
     {
-        return HasPassive(clientId, PassiveUpgradeId.AmbushProtocol) ? 4.75f : 4f;
+        return HasPassive(clientId, PassiveUpgradeId.AmbushProtocol)
+            ? 4.75f
+            : DemoBalanceConfig.BaseKillRangeMeters;
     }
 
     public void NotifySuccessfulKill(ulong killerClientId, ulong victimClientId)
@@ -516,7 +520,7 @@ public class UpgradeManager : NetworkBehaviour
 
             FirstPersonController sensorOwner = FindPlayer(state.ClientId);
             if (sensorOwner == null || sensorOwner.isDead.Value ||
-                Vector3.Distance(sensorOwner.transform.position, killerPlayer.transform.position) > 12f)
+                Vector3.Distance(sensorOwner.transform.position, killerPlayer.transform.position) > DemoBalanceConfig.ThreatSensorRangeMeters)
                 continue;
 
             ThreatSensorWarningClientRpc(new ClientRpcParams

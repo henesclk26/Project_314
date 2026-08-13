@@ -42,6 +42,14 @@ public class MatchFlowManager : NetworkBehaviour
         Instance = this;
     }
 
+    public override void OnDestroy()
+    {
+        if (Instance == this)
+            Instance = null;
+
+        base.OnDestroy();
+    }
+
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
@@ -124,8 +132,8 @@ public class MatchFlowManager : NetworkBehaviour
         }
 
         double currentTime = NetworkManager.Singleton.LocalTime.Time;
-        BootProtectionEndTime.Value = currentTime + 30.0;
-        FirstEmergencyLockEndTime.Value = currentTime + 60.0;
+        BootProtectionEndTime.Value = currentTime + DemoBalanceConfig.BootProtectionSeconds;
+        FirstEmergencyLockEndTime.Value = currentTime + DemoBalanceConfig.FirstEmergencyLockSeconds;
         EmergencyCooldownEndTime.Value = 0d;
         Winner.Value = MatchWinner.None;
         
@@ -189,6 +197,13 @@ public class MatchFlowManager : NetworkBehaviour
         if (!IsServer || CurrentPhase.Value == MatchPhase.Ended) return;
         if (!allowDuringTransition && CurrentPhase.Value != MatchPhase.Active) return;
 
+        // A match can enter Active on the same network tick that the last
+        // player object/role snapshot arrives. Do not interpret that short
+        // initialization window as a Villager win just because the killer
+        // object has not been observed by the server yet.
+        if (!HasCompletePlayerSnapshot())
+            return;
+
         int livingKillers = 0;
         int livingVillagers = 0;
         foreach (FirstPersonController player in FindObjectsByType<FirstPersonController>(FindObjectsSortMode.None))
@@ -214,6 +229,37 @@ public class MatchFlowManager : NetworkBehaviour
         {
             EndMatch(MatchWinner.Killer);
         }
+    }
+
+    private bool HasCompletePlayerSnapshot()
+    {
+        if (NetworkManager.Singleton == null || RoleManager.Instance == null)
+            return false;
+
+        if (NetworkManager.Singleton.ConnectedClientsIds.Count < 3)
+            return false;
+
+        FirstPersonController[] players = FindObjectsByType<FirstPersonController>(FindObjectsSortMode.None);
+        foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
+        {
+            if (RoleManager.Instance.GetPlayerRole(clientId) == PlayerRole.None)
+                return false;
+
+            bool hasSpawnedPlayer = false;
+            foreach (FirstPersonController player in players)
+            {
+                if (player != null && player.IsSpawned && player.OwnerClientId == clientId)
+                {
+                    hasSpawnedPlayer = true;
+                    break;
+                }
+            }
+
+            if (!hasSpawnedPlayer)
+                return false;
+        }
+
+        return true;
     }
 
     public void EndMatch(MatchWinner winner)

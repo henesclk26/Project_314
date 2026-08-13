@@ -29,18 +29,35 @@ public class ReportableBody : NetworkBehaviour
         }
     }
 
-    [ServerRpc(RequireOwnership = false)]
-    private void ReportBodyServerRpc(ServerRpcParams rpcParams = default)
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    private void ReportBodyServerRpc(RpcParams rpcParams = default)
     {
         if (MatchFlowManager.Instance == null ||
             MatchFlowManager.Instance.CurrentPhase.Value != MatchPhase.Active)
             return;
 
-        Debug.Log($"[ReportableBody] Body reported by {rpcParams.Receive.SenderClientId}");
+        ulong reporterClientId = rpcParams.Receive.SenderClientId;
+        FirstPersonController reporter = FindPlayer(reporterClientId);
+        if (reporter == null || reporter.isDead.Value ||
+            Vector3.Distance(transform.position, reporter.transform.position) > reportRange)
+            return;
+
+        Debug.Log($"[ReportableBody] Body reported by {reporterClientId}");
         if (MeetingManager.Instance != null)
         {
-            MeetingManager.Instance.CallMeeting(rpcParams.Receive.SenderClientId, VictimClientId.Value);
+            MeetingManager.Instance.CallMeeting(reporterClientId, VictimClientId.Value);
         }
+    }
+
+    private FirstPersonController FindPlayer(ulong clientId)
+    {
+        foreach (FirstPersonController player in FindObjectsByType<FirstPersonController>(FindObjectsSortMode.None))
+        {
+            if (player.OwnerClientId == clientId)
+                return player;
+        }
+
+        return null;
     }
 
     private FirstPersonController GetLocalFpc()

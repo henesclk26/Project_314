@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -42,16 +43,20 @@ public class MultiplayerManager : MonoBehaviour
     private Lobby currentLobby;
     private CancellationTokenSource heartbeatToken;
     private bool _isLeavingIntentionally;
+    private NetworkManager clientAdmissionNetworkManager;
+    private bool matchStartRequested;
 
     void Awake()
     {
         if (Instance != null) { Destroy(gameObject); return; }
         Instance = this;
         DontDestroyOnLoad(gameObject);
+        TryRegisterClientAdmissionCallback();
     }
 
-async void Start()
+    async void Start()
     {
+        TryRegisterClientAdmissionCallback();
         try
         {
             var options = new InitializationOptions();
@@ -291,13 +296,24 @@ async void Start()
         currentLobby = null;
         CurrentJoinCode = "";
         IsGameInProgress = false;
+        matchStartRequested = false;
         _isLeavingIntentionally = false;
         OnLobbyPlayersChanged?.Invoke();
     }
 
     public async void StartGame(string sceneName)
     {
-        if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer) return;
+        if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer ||
+            IsGameInProgress || matchStartRequested)
+            return;
+
+        if (NetworkManager.Singleton.ConnectedClientsIds.Count < DemoMinimumPlayers)
+        {
+            Debug.LogWarning($"[MultiplayerManager] Match start rejected: at least {DemoMinimumPlayers} connected players are required.");
+            return;
+        }
+
+        matchStartRequested = true;
 
         if (currentLobby != null)
         {
@@ -313,7 +329,35 @@ async void Start()
         }
 
         IsGameInProgress = true;
-        NetworkManager.Singleton.SceneManager.LoadScene(sceneName, UnityEngine.SceneManagement.LoadSceneMode.Single);
+
+        // The demo keeps the lobby UI and the gameplay map in the same scene.
+        // Loading that already-active scene does not respawn the networked scene
+        // objects, so the normal GameManager.OnNetworkSpawn start hook is not
+        // reached. Start the server-authoritative match explicitly instead.
+        if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == sceneName)
+        {
+            if (GameManager.Instance != null)
+                GameManager.Instance.isGameStarted.Value = true;
+
+            StartCoroutine(StartMatchInCurrentScene());
+        }
+        else
+        {
+            NetworkManager.Singleton.SceneManager.LoadScene(sceneName, UnityEngine.SceneManagement.LoadSceneMode.Single);
+        }
+    }
+
+    private IEnumerator StartMatchInCurrentScene()
+    {
+        while (NetworkManager.Singleton == null ||
+               !NetworkManager.Singleton.IsServer ||
+               NetworkManager.Singleton.ConnectedClientsIds.Count < DemoMinimumPlayers)
+        {
+            yield return new WaitForSeconds(1f);
+        }
+
+        var matchFlow = MatchFlowManager.Instance ?? FindAnyObjectByType<MatchFlowManager>();
+        matchFlow?.StartMatch();
     }
 
     private static Player CreateLocalPlayerData()
@@ -393,6 +437,30 @@ async void Start()
             NetworkManager.Singleton.OnClientStopped -= OnClientStopped;
     }
 
+    private void TryRegisterClientAdmissionCallback()
+    {
+        NetworkManager networkManager = NetworkManager.Singleton;
+        if (networkManager == null || clientAdmissionNetworkManager == networkManager)
+            return;
+
+        if (clientAdmissionNetworkManager != null)
+            clientAdmissionNetworkManager.OnClientConnectedCallback -= HandleClientAdmission;
+
+        clientAdmissionNetworkManager = networkManager;
+        clientAdmissionNetworkManager.OnClientConnectedCallback += HandleClientAdmission;
+    }
+
+    private void HandleClientAdmission(ulong clientId)
+    {
+        NetworkManager networkManager = NetworkManager.Singleton;
+        if (networkManager == null || !networkManager.IsServer ||
+            clientId == networkManager.LocalClientId || !IsGameInProgress)
+            return;
+
+        Debug.LogWarning($"[MultiplayerManager] Client {clientId} rejected: match already started.");
+        networkManager.DisconnectClient(clientId, "This demo match has already started.");
+    }
+
     private void OnClientStopped(bool isHost)
     {
         // Only handle unexpected disconnects (host left while we were a client)
@@ -405,6 +473,7 @@ async void Start()
         currentLobby = null;
         CurrentJoinCode = "";
         IsGameInProgress = false;
+        matchStartRequested = false;
 
         OnDisconnectedByHost?.Invoke();
     }
@@ -419,6 +488,11 @@ async void Start()
     void OnDestroy()
     {
         heartbeatToken?.Cancel();
+        if (clientAdmissionNetworkManager != null)
+        {
+            clientAdmissionNetworkManager.OnClientConnectedCallback -= HandleClientAdmission;
+            clientAdmissionNetworkManager = null;
+        }
         if (!_isQuitting)
             UnsubscribeFromNetworkShutdown();
     }

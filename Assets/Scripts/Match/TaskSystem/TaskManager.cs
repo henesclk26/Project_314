@@ -24,15 +24,9 @@ public class TaskManager : NetworkBehaviour
         "WaveFrequency"
     };
 
-    private static readonly string[] KillerAlibiTaskIds =
-    {
-        "MissionComputer",
-        "CircuitMission",
-        "WaveFrequency"
-    };
-
-    private const double HackPreparationDuration = 15d;
-    private const double HackCooldownDuration = 60d;
+    // Sabotage points are reserved for the later limited-sabotage loop. Keep
+    // their economy bounded even before spending rules are introduced.
+    public static int MaxKillerSabotagePoints => DemoBalanceConfig.MaxKillerSabotagePoints;
     private int nextCooperativeSessionId = 1;
     private float nextTaskCleanupTime;
     private readonly Dictionary<ulong, Queue<string>> recentNormalTaskIds = new Dictionary<ulong, Queue<string>>();
@@ -336,7 +330,7 @@ public class TaskManager : NetworkBehaviour
             if (RoleManager.Instance.GetPlayerRole(clientId) == PlayerRole.Villager)
                 startingVillagers++;
         }
-        CrewTaskTarget.Value = startingVillagers * 3;
+        CrewTaskTarget.Value = startingVillagers * DemoBalanceConfig.CrewTaskRunsPerVillager;
     }
 
     private void AssignInitialTasks()
@@ -598,32 +592,8 @@ public class TaskManager : NetworkBehaviour
 
     public bool CanUseAlibiTask(ulong clientId, string taskID)
     {
-        if (!IsTaskPhaseOpen() ||
-            RoleManager.Instance == null ||
-            RoleManager.Instance.GetPlayerRole(clientId) != PlayerRole.Impostor ||
-            !IsTaskOwnerAliveAndConnected(clientId) ||
-            !IsKillerAlibiTask(taskID))
-        {
-            return false;
-        }
-
-        // Once a terminal has been prepared for a hack, the neutral
-        // preparation prompt must be the only interaction shown there.
-        return GetTerminalHackPhase(taskID) == TerminalHackPhase.Idle &&
-               IsTerminalAvailable(taskID, clientId);
-    }
-
-    private static bool IsKillerAlibiTask(string taskID)
-    {
-        if (string.IsNullOrWhiteSpace(taskID))
-            return false;
-
-        for (int i = 0; i < KillerAlibiTaskIds.Length; i++)
-        {
-            if (string.Equals(KillerAlibiTaskIds[i], taskID.Trim(), StringComparison.Ordinal))
-                return true;
-        }
-
+        // Role separation is strict: killers do not receive or perform
+        // villager tasks, including the former alibi-task path.
         return false;
     }
 
@@ -669,10 +639,10 @@ public class TaskManager : NetworkBehaviour
             return;
 
         hack.Phase = TerminalHackPhase.Preparing;
-        hack.ServerTime = NetworkManager.Singleton.ServerTime.Time + HackPreparationDuration;
+        hack.ServerTime = NetworkManager.Singleton.ServerTime.Time + DemoBalanceConfig.TerminalHackPreparationSeconds;
         hack.Revision++;
         TerminalHackStates[index] = hack;
-        Debug.Log($"[TaskManager] Hack preparation started for {taskID}; available in {HackPreparationDuration:0}s.");
+        Debug.Log($"[TaskManager] Hack preparation started for {taskID}; available in {DemoBalanceConfig.TerminalHackPreparationSeconds:0}s.");
     }
 
     private void StartHack(string taskID)
@@ -700,7 +670,7 @@ public class TaskManager : NetworkBehaviour
 
         TerminalHackState hack = TerminalHackStates[index];
         hack.Phase = TerminalHackPhase.Cooldown;
-        hack.ServerTime = NetworkManager.Singleton.ServerTime.Time + HackCooldownDuration;
+        hack.ServerTime = NetworkManager.Singleton.ServerTime.Time + DemoBalanceConfig.TerminalHackCooldownSeconds;
         hack.Revision++;
         TerminalHackStates[index] = hack;
     }
@@ -910,9 +880,7 @@ public class TaskManager : NetworkBehaviour
                  GetTerminalHackPhase(taskID) != TerminalHackPhase.Active))
                 return;
 
-            if (run.Kind == TaskRunKind.Alibi &&
-                (RoleManager.Instance.GetPlayerRole(senderClientId) != PlayerRole.Impostor ||
-                 !IsKillerAlibiTask(taskID)))
+            if (run.Kind == TaskRunKind.Alibi)
                 return;
 
             Debug.Log($"[TaskManager] Current state: {run.State}");
@@ -932,8 +900,7 @@ public class TaskManager : NetworkBehaviour
 
                 if (run.Kind == TaskRunKind.Rogue)
                 {
-                    KillerSabotagePoints.Value++;
-                    UpgradeManager.Instance?.AwardTaskPoint(senderClientId);
+                    AwardKillerSabotagePoint(senderClientId);
                     CompleteHack(taskID);
                     CompletedRogueHackMask.Value = (byte)(CompletedRogueHackMask.Value | GetRogueHackBit(taskID));
                     Debug.Log($"[TaskManager] Rogue task completed by killer {senderClientId}; sabotage points: {KillerSabotagePoints.Value}");
@@ -1023,13 +990,20 @@ public class TaskManager : NetworkBehaviour
             NetworkManager.Singleton.ServerTime.Time < cooldownEndTime)
             return false;
 
+        bool hasCooperativeRun = false;
+        bool requestedClientIsCooperativeParticipant = false;
         for (int i = 0; i < ActiveTaskRuns.Count; i++)
         {
             if (TaskIdsEqual(ActiveTaskRuns[i].TaskID, taskID))
             {
-                if (ActiveTaskRuns[i].CooperativeSessionId > 0 &&
-                    ActiveTaskRuns[i].OwnerClientId == requestedClientId)
+                if (ActiveTaskRuns[i].CooperativeSessionId > 0)
+                {
+                    hasCooperativeRun = true;
+                    if (ActiveTaskRuns[i].OwnerClientId == requestedClientId)
+                        requestedClientIsCooperativeParticipant = true;
                     continue;
+                }
+
                 if (ActiveTaskRuns[i].OwnerClientId != requestedClientId && 
                     (ActiveTaskRuns[i].State == TaskRunState.InProgress || ActiveTaskRuns[i].State == TaskRunState.Reserved))
                 {
@@ -1037,17 +1011,31 @@ public class TaskManager : NetworkBehaviour
                 }
             }
         }
+
+        // A cooperative terminal is a shared workstation. Every assigned,
+        // living participant may open it even after another participant has
+        // started the shared run; their own run state remains authoritative.
+        if (hasCooperativeRun)
+            return requestedClientIsCooperativeParticipant;
+
         return true;
     }
 
     public bool IsCooperativeRoleOwner(ulong clientId, string taskID, byte requiredRoleIndex)
     {
         TaskRun? run = GetActiveTaskForPlayer(clientId);
+        return IsCooperativeTaskParticipant(clientId, taskID) &&
+               run.HasValue &&
+               run.Value.CooperativeRoleIndex == requiredRoleIndex;
+    }
+
+    public bool IsCooperativeTaskParticipant(ulong clientId, string taskID)
+    {
+        TaskRun? run = GetActiveTaskForPlayer(clientId);
         return run.HasValue &&
                run.Value.Kind == TaskRunKind.Normal &&
                run.Value.CooperativeSessionId > 0 &&
                TaskIdsEqual(run.Value.TaskID, taskID) &&
-               run.Value.CooperativeRoleIndex == requiredRoleIndex &&
                RoleManager.Instance != null &&
                RoleManager.Instance.GetPlayerRole(clientId) == PlayerRole.Villager &&
                IsTaskOwnerAliveAndConnected(clientId);
@@ -1064,8 +1052,13 @@ public class TaskManager : NetworkBehaviour
             RoleManager.Instance.GetPlayerRole(killerClientId) != PlayerRole.Impostor)
             return;
 
+        if (KillerSabotagePoints.Value >= MaxKillerSabotagePoints)
+        {
+            Debug.Log($"[TaskManager] Sabotage point rejected for killer {killerClientId}; cap reached ({MaxKillerSabotagePoints}).");
+            return;
+        }
+
         KillerSabotagePoints.Value++;
-        UpgradeManager.Instance?.AwardTaskPoint(killerClientId);
     }
 
     private void RecordNormalTaskCompletion(ulong clientId, string taskId)
@@ -1081,7 +1074,7 @@ public class TaskManager : NetworkBehaviour
             recentTasks.Dequeue();
 
         if (NetworkManager.Singleton != null)
-            terminalCooldownEndTimes[taskId] = NetworkManager.Singleton.ServerTime.Time + UnityEngine.Random.Range(45f, 75f);
+            terminalCooldownEndTimes[taskId] = NetworkManager.Singleton.ServerTime.Time + DemoBalanceConfig.GetNormalTerminalCooldownSeconds();
     }
 
     private int GetTaskRunIndex(ulong clientId, string taskID)

@@ -1,5 +1,6 @@
 using System.Collections;
 using Unity.Netcode;
+using Unity.Netcode.Transports.UTP;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -153,7 +154,7 @@ public class SciFiMenuController : MonoBehaviour
         SetupMainMenuButtons();
     }
 
-    private void SetupMainMenuButtons()
+private void SetupMainMenuButtons()
     {
         var uiDoc = menuObject != null ? menuObject.GetComponent<UIDocument>() : null;
         if (uiDoc == null)
@@ -166,7 +167,18 @@ public class SciFiMenuController : MonoBehaviour
         BindMenuButton(root.Q<Button>("btn-private-game"), OnPrivateGameButtonClicked);
         BindMenuButton(root.Q<Button>("btn-public-game"), OnPublicGameButtonClicked);
         BindMenuButton(root.Q<Button>("btn-quit-game"), OnQuitGameButtonClicked);
-        BindMenuButton(root.Q<Button>("btn-quick-test"), OnQuickTestButtonClicked);
+        BindQuickTestButton(root.Q<Button>("btn-quick-test"));
+    }
+
+private void BindQuickTestButton(Button button)
+    {
+        if (button == null) return;
+
+        // Button.clicked is the direct UI Toolkit action and remains reliable for runtime menus.
+        // when the visual tree is swapped at runtime (F1 alternate menu,
+        // returning from a lobby, or a domain reload in the Editor).
+        button.clicked -= OnQuickTestClicked;
+        button.clicked += OnQuickTestClicked;
     }
 
     private static void BindMenuButton(Button button, EventCallback<ClickEvent> callback)
@@ -346,7 +358,24 @@ public class SciFiMenuController : MonoBehaviour
             MultiplayerManager.Instance.IsGameInProgress = true;
         }
 
-        NetworkManager.Singleton.StartHost();
+        // A previous public/private lobby may have left Relay data on the
+        // shared UnityTransport. Quick Test is a local host flow, so restore
+        // the loopback transport before starting it. Port 0 lets the OS pick
+        // a free UDP port, avoiding stale sockets after a failed Play Mode
+        // shutdown or repeated Quick Test runs in the same Editor process.
+        var transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
+        if (transport != null)
+            transport.SetConnectionData("127.0.0.1", 0, "0.0.0.0");
+
+        bool hostStarted = NetworkManager.Singleton.StartHost();
+        if (!hostStarted)
+        {
+            Debug.LogError("[QuickTest] Host başlatılamadı; NetworkTransport hazır değil.");
+            if (MultiplayerManager.Instance != null)
+                MultiplayerManager.Instance.IsGameInProgress = false;
+            return;
+        }
+
         EnterGameplayMode(hideMenusOnly: false);
         StartCoroutine(TeleportPlayerToSpawn());
         Debug.Log("[QuickTest] Host başlatıldı, oyuna girildi.");

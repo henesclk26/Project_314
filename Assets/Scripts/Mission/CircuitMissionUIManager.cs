@@ -161,13 +161,11 @@ public class CircuitMissionUIManager : MonoBehaviour
         sabotageCompletedWhenOpened = false;
         IsOpen = true;
 
-#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
         if (CanOpenRogueMode())
         {
             isSabotageMode = true;
             MissionManager.Instance?.RequestInitializeCircuitSabotage();
         }
-#endif
 
         if (!normalPuzzleReady ||
             (MissionManager.Instance != null &&
@@ -256,14 +254,12 @@ public class CircuitMissionUIManager : MonoBehaviour
         if (!IsOpen)
             return;
 
-#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
         if (!isSabotageMode && CanOpenRogueMode())
         {
             isSabotageMode = true;
             MissionManager.Instance?.RequestInitializeCircuitSabotage();
             ApplyModePresentation();
         }
-#endif
 
         if (isSabotageMode)
         {
@@ -286,14 +282,6 @@ public class CircuitMissionUIManager : MonoBehaviour
 
         if (completionStarted)
             return;
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        if (Input.GetKeyDown(KeyCode.F1))
-        {
-            ToggleSabotageMode();
-            return;
-        }
-#endif
 
         if (Input.GetKeyDown(KeyCode.Escape))
         {
@@ -338,7 +326,7 @@ public class CircuitMissionUIManager : MonoBehaviour
         }
         else
         {
-            if (!CanOpenRogueMode() && !IsDevelopmentSabotagePreviewEnabled())
+            if (!CanOpenRogueMode())
             {
                 return;
             }
@@ -360,15 +348,6 @@ public class CircuitMissionUIManager : MonoBehaviour
                TaskManager.Instance.CanUseRogueTask(
                    currentFpc.OwnerClientId,
                    "CircuitMission");
-    }
-
-    private static bool IsDevelopmentSabotagePreviewEnabled()
-    {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        return true;
-#else
-        return false;
-#endif
     }
 
     private void ApplyModePresentation()

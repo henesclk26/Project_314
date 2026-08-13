@@ -519,13 +519,23 @@ public class UIToolkitLobbyBridge : MonoBehaviour
         return row;
     }
 
-    private static void UpdateStartButton(VisualElement root)
+    private void UpdateStartButton(VisualElement root)
     {
         var startBtn = root.Q<Button>("startBtn");
         if (startBtn == null) return;
 
         bool isHost = NetworkManager.Singleton != null && NetworkManager.Singleton.IsServer;
         startBtn.style.display = isHost ? DisplayStyle.Flex : DisplayStyle.None;
+
+        int connectedPlayers = NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening
+            ? NetworkManager.Singleton.ConnectedClientsIds.Count
+            : Network?.GetLobbyPlayers().Count ?? 0;
+        bool hasMinimumPlayers = connectedPlayers >= 3;
+        bool canStart = isHost && hasMinimumPlayers && Network != null && !Network.IsGameInProgress;
+        startBtn.text = isHost && !hasMinimumPlayers
+            ? $"OYUNU BAŞLAT ({connectedPlayers}/3 OYUNCU)"
+            : "OYUNU BAŞLAT";
+        startBtn.SetEnabled(canStart);
     }
 
     private void StartLobbyRefresh()

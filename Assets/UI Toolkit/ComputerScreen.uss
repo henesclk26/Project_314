@@ -683,3 +683,117 @@
 .role-badge.impostor .role-badge-label {
     color: rgb(255, 80, 80);
 }
+
+/* ── Full-screen role reveal ── */
+.role-reveal-overlay {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(5, 12, 22, 0.98);
+}
+
+.role-reveal-frame {
+    width: 720px;
+    min-height: 420px;
+    padding: 42px 56px 34px 56px;
+    align-items: center;
+    justify-content: center;
+    border-width: 2px;
+    border-color: rgba(0, 240, 255, 0.78);
+    background-color: rgba(6, 18, 32, 0.96);
+}
+
+.role-reveal-frame.impostor {
+    border-color: rgba(255, 80, 80, 0.86);
+    background-color: rgba(31, 9, 17, 0.97);
+}
+
+.role-reveal-kicker {
+    color: rgba(204, 229, 245, 0.7);
+    font-size: 13px;
+    -unity-font-style: bold;
+    letter-spacing: 3px;
+    -unity-text-align: middle-center;
+}
+
+.role-reveal-rule {
+    width: 100%;
+    height: 1px;
+    margin-top: 22px;
+    margin-bottom: 30px;
+    background-color: rgba(0, 240, 255, 0.34);
+}
+
+.role-reveal-frame.impostor .role-reveal-rule {
+    background-color: rgba(255, 80, 80, 0.4);
+}
+
+.role-reveal-title {
+    color: rgb(0, 240, 255);
+    font-size: 76px;
+    -unity-font-style: bold;
+    letter-spacing: 8px;
+    -unity-text-align: middle-center;
+}
+
+.role-reveal-frame.impostor .role-reveal-title {
+    color: rgb(255, 80, 80);
+}
+
+.role-reveal-subtitle {
+    margin-top: 16px;
+    color: rgb(224, 240, 255);
+    font-size: 15px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    -unity-text-align: middle-center;
+}
+
+.role-reveal-spacer {
+    flex-grow: 1;
+    min-height: 58px;
+}
+
+.role-reveal-progress-track {
+    width: 100%;
+    height: 6px;
+    background-color: rgba(0, 240, 255, 0.14);
+}
+
+.role-reveal-progress-fill {
+    width: 100%;
+    height: 100%;
+    background-color: rgb(0, 240, 255);
+}
+
+.role-reveal-frame.impostor .role-reveal-progress-track {
+    background-color: rgba(255, 80, 80, 0.14);
+}
+
+.role-reveal-frame.impostor .role-reveal-progress-fill {
+    background-color: rgb(255, 80, 80);
+}
+
+.role-reveal-timer {
+    margin-top: 14px;
+    color: rgb(0, 240, 255);
+    font-size: 16px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+}
+
+.role-reveal-frame.impostor .role-reveal-timer {
+    color: rgb(255, 80, 80);
+}
+
+.role-reveal-status {
+    margin-top: 9px;
+    color: rgba(204, 229, 245, 0.58);
+    font-size: 11px;
+    letter-spacing: 2px;
+    -unity-text-align: middle-center;
+}

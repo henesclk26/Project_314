@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "com.community.netcode.transport.facepunch": {
-      "version": "https://github.com/Unity-Technologies/multiplayer-community-contributions.git?path=/Transports/com.community.netcode.transport.facepunch",
+      "version": "https://github.com/Unity-Technologies/multiplayer-community-contributions.git?path=/Transports/com.community.netcode.transport.facepunch#5cea8f048cc16f3575fabcf03af3ebafbc390499",
       "depth": 0,
       "source": "git",
       "dependencies": {
@@ -24,7 +24,7 @@
         "com.unity.nuget.newtonsoft-json": "3.0.2",
         "com.unity.test-framework": "1.1.31"
       },
-      "hash": "11836003a5e2ffcb7715ecec7e1fbb9d9cdb5bb8"
+      "hash": "4ce7dd3cc54e37e2ed6dc59cb5a047f3dccb3f50"
     },
     "com.unity.2d.sprite": {
       "version": "1.0.0",
@@ -347,6 +347,18 @@
         "com.unity.nuget.newtonsoft-json": "3.0.2",
         "com.unity.modules.unitywebrequest": "1.0.0",
         "com.unity.services.authentication": "3.5.2"
+      },
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.services.vivox": {
+      "version": "16.11.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.modules.audio": "1.0.0",
+        "com.unity.services.core": "1.15.1",
+        "com.unity.settings-manager": "1.0.3",
+        "com.unity.nuget.newtonsoft-json": "3.0.2"
       },
       "url": "https://packages.unity.com"
     },

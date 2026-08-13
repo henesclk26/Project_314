@@ -697,13 +697,10 @@ public class MissionManager : NetworkBehaviour
         if (!CanAcceptGameplayRpc(clientId))
             return false;
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        // Development builds intentionally retain the F1 preview path.
-        return true;
-#else
+        // Rogue mission input is always role-gated, including the Unity
+        // Editor and Development builds used for local testing.
         return TaskManager.Instance != null &&
                TaskManager.Instance.CanUseRogueTask(clientId, taskID);
-#endif
     }
 
     private bool CanAcceptLegacyNormalCompletion(ulong clientId)
@@ -789,7 +786,7 @@ public class MissionManager : NetworkBehaviour
         IsValveMissionActive.Value = true;
         ValvesTurned.Value = 0;
         ValveOverrideOwnerId.Value = clientId;
-        ValveOverrideRemainingSeconds.Value = 30f;
+        ValveOverrideRemainingSeconds.Value = DemoBalanceConfig.ValveOverrideSeconds;
         ValveOverrideParticipants.Clear();
         ValveOverrideTurnedParticipants.Clear();
         for (int i = 0; i < 3; i++)
@@ -870,7 +867,7 @@ public class MissionManager : NetworkBehaviour
         ulong senderClientId = rpcParams.Receive.SenderClientId;
         if (!CanAcceptGameplayRpc(senderClientId) ||
             TaskManager.Instance == null ||
-            !TaskManager.Instance.IsCooperativeRoleOwner(senderClientId, "PressureTerminal", 0))
+            !TaskManager.Instance.IsCooperativeTaskParticipant(senderClientId, "PressureTerminal"))
             return;
 
         if (SharedValveSession.Value != SharedValveSessionState.Idle)
@@ -990,9 +987,8 @@ public class MissionManager : NetworkBehaviour
         if (!CanAcceptGameplayRpc(senderClientId))
             return;
 
-        byte requiredRole = (byte)(valveId == 3 ? 1 : 2);
         if (TaskManager.Instance == null ||
-            !TaskManager.Instance.IsCooperativeRoleOwner(senderClientId, "PressureTerminal", requiredRole))
+            !TaskManager.Instance.IsCooperativeTaskParticipant(senderClientId, "PressureTerminal"))
             return;
 
         direction = direction > 0 ? 1 : -1;
@@ -1048,7 +1044,7 @@ public class MissionManager : NetworkBehaviour
         ulong senderClientId = rpcParams.Receive.SenderClientId;
         if (!CanAcceptGameplayRpc(senderClientId) ||
             TaskManager.Instance == null ||
-            !TaskManager.Instance.IsCooperativeRoleOwner(senderClientId, "PressureTerminal", 0))
+            !TaskManager.Instance.IsCooperativeTaskParticipant(senderClientId, "PressureTerminal"))
             return;
 
         if (!IsPressureMissionActive.Value || IsPressureMissionCompleted.Value)
@@ -1067,7 +1063,7 @@ public class MissionManager : NetworkBehaviour
         ulong senderClientId = rpcParams.Receive.SenderClientId;
         if (!CanAcceptGameplayRpc(senderClientId) ||
             TaskManager.Instance == null ||
-            !TaskManager.Instance.IsCooperativeRoleOwner(senderClientId, "PressureTerminal", 0))
+            !TaskManager.Instance.IsCooperativeTaskParticipant(senderClientId, "PressureTerminal"))
             return;
 
         if (!IsPressureMissionActive.Value || IsPressureMissionCompleted.Value)

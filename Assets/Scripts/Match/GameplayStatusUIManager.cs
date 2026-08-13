@@ -10,6 +10,7 @@ public class GameplayStatusUIManager : MonoBehaviour
     private VisualElement alert;
     private Label alertTitle;
     private Label alertDetail;
+    private VisualElement loadout;
     private Label passive;
     private Label tool;
     private string localAlertTitle;
@@ -58,6 +59,7 @@ public class GameplayStatusUIManager : MonoBehaviour
         alert = root.Q<VisualElement>("gameplay-alert");
         alertTitle = root.Q<Label>("gameplay-alert-title");
         alertDetail = root.Q<Label>("gameplay-alert-detail");
+        loadout = root.Q<VisualElement>("gameplay-loadout");
         passive = root.Q<Label>("gameplay-passive");
         tool = root.Q<Label>("gameplay-tool");
     }
@@ -87,6 +89,14 @@ public class GameplayStatusUIManager : MonoBehaviour
             ? string.Empty : $"PASSIVE // {state.Value.Passive}";
         tool.text = !state.HasValue || state.Value.Tool == ActiveToolId.None
             ? string.Empty : $"TOOL // {state.Value.Tool} // {(state.Value.ToolConsumed ? "EXPENDED" : "ARMED")}";
+
+        if (loadout != null)
+        {
+            bool hasLoadout = !string.IsNullOrEmpty(passive.text) || !string.IsNullOrEmpty(tool.text);
+            loadout.style.display = hasLoadout
+                ? DisplayStyle.Flex
+                : DisplayStyle.None;
+        }
     }
 
     private void UpdateAlert()
