@@ -10,13 +10,15 @@
 }
 .upgrade-root.hidden { display: none; }
 .upgrade-root.open { display: flex; }
+.upgrade-root.villager { background-color: rgba(2, 12, 24, 0.82); }
+.upgrade-root.killer { background-color: rgba(28, 4, 10, 0.84); }
 .upgrade-panel {
     width: 1060px;
-    min-height: 390px;
+    min-height: 468px;
     padding: 32px;
     background-color: rgba(7, 17, 28, 0.98);
     border-left-width: 3px;
-    border-left-color: rgb(0, 223, 232);
+    border-left-color: #00DFE8;
     border-right-width: 1px;
     border-right-color: rgba(0, 223, 232, 0.45);
     border-top-width: 1px;
@@ -24,15 +26,24 @@
     border-bottom-width: 1px;
     border-bottom-color: rgba(255, 255, 255, 0.25);
 }
+.upgrade-root.villager .upgrade-panel { border-left-color: #00DFE8; border-right-color: rgba(0, 223, 232, 0.45); }
+.upgrade-root.killer .upgrade-panel { border-left-color: #FF4C52; border-right-color: rgba(255, 76, 82, 0.45); }
 .upgrade-header { margin-bottom: 24px; }
-.upgrade-eyebrow { color: rgb(0, 223, 232); font-size: 14px; -unity-font-style: bold; letter-spacing: 1px; }
-.upgrade-title { color: rgb(242, 247, 242); font-size: 30px; -unity-font-style: bold; margin-top: 6px; }
-.upgrade-detail { color: rgb(148, 177, 184); font-size: 13px; margin-top: 7px; }
-.upgrade-cards { flex-direction: row; gap: 16px; }
-.upgrade-card { flex-grow: 1; min-height: 220px; padding: 18px; background-color: rgba(13, 32, 45, 0.96); border-top-width: 2px; border-top-color: rgba(0, 223, 232, 0.8); }
-.upgrade-card:hover { background-color: rgba(19, 48, 62, 1); border-top-color: rgb(255, 174, 51); }
-.upgrade-card-index { color: rgb(255, 174, 51); font-size: 14px; -unity-font-style: bold; }
-.upgrade-card-title { color: rgb(242, 247, 242); font-size: 19px; -unity-font-style: bold; margin-top: 18px; }
-.upgrade-card-description { color: rgb(169, 193, 196); font-size: 13px; white-space: normal; margin-top: 12px; flex-grow: 1; }
-.upgrade-card-button { height: 34px; margin-top: 18px; color: rgb(242, 247, 242); background-color: rgba(0, 170, 183, 0.22); border-width: 1px; border-color: rgb(0, 223, 232); }
-.upgrade-close { align-self: flex-end; margin-top: 20px; color: rgb(145, 162, 166); background-color: rgba(0, 0, 0, 0); border-width: 0; font-size: 12px; }
+.upgrade-eyebrow { color: #00DFE8; font-size: 14px; -unity-font-style: bold; letter-spacing: 1px; }
+.upgrade-root.killer .upgrade-eyebrow { color: #FF7070; }
+.upgrade-title { color: #F2F7F2; font-size: 30px; -unity-font-style: bold; margin-top: 6px; }
+.upgrade-detail { color: #94B1B8; font-size: 13px; margin-top: 7px; }
+.upgrade-cards { width: 100%; flex-direction: row; gap: 18px; margin-top: 12px; }
+.upgrade-card { width: 0; flex-grow: 1; min-height: 246px; padding: 20px; background-color: rgba(13, 32, 45, 0.96); border-left-width: 1px; border-left-color: rgba(0, 223, 232, 0.35); border-right-width: 1px; border-right-color: rgba(0, 223, 232, 0.35); border-top-width: 3px; border-top-color: rgba(0, 223, 232, 0.8); border-bottom-width: 1px; border-bottom-color: rgba(255, 255, 255, 0.12); }
+.upgrade-root.killer .upgrade-card { background-color: rgba(48, 12, 20, 0.96); border-top-color: rgba(255, 76, 82, 0.9); }
+.upgrade-card:hover { background-color: rgba(19, 48, 62, 1); border-top-color: #FFAE33; }
+.upgrade-root.killer .upgrade-card:hover { background-color: rgba(74, 18, 28, 1); border-top-color: #FFAE33; }
+.upgrade-card-index { color: #FFAE33; font-size: 14px; -unity-font-style: bold; }
+.upgrade-card-title { color: #F2F7F2; font-size: 19px; -unity-font-style: bold; margin-top: 20px; white-space: normal; }
+.upgrade-card-description { color: #A9C1C4; font-size: 13px; white-space: normal; margin-top: 14px; flex-grow: 1; }
+.upgrade-card-button { align-self: flex-start; height: 36px; min-width: 112px; margin-top: 18px; color: #F2F7F2; background-color: rgba(0, 170, 183, 0.22); border-width: 1px; border-color: #00DFE8; }
+.upgrade-root.killer .upgrade-card-button { background-color: rgba(195, 28, 42, 0.28); border-color: #FF4C52; }
+.upgrade-card-empty { background-color: rgba(255, 255, 255, 0.025); border-left-color: rgba(255, 255, 255, 0.08); border-right-color: rgba(255, 255, 255, 0.08); border-top-color: rgba(255, 255, 255, 0.10); opacity: 0.75; }
+.upgrade-card-empty .upgrade-card-button { display: none; }
+.upgrade-card-empty-selectable { }
+.upgrade-card-empty-selectable:hover { background-color: rgba(255, 255, 255, 0.08); border-top-color: rgba(255, 255, 255, 0.30); }

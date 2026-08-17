@@ -37,10 +37,14 @@ public class ComputerInteractable : MonoBehaviour
             if (TaskManager.Instance == null) return;
             
             bool isAvailable = TaskManager.Instance.IsTerminalAvailable("MissionComputer", ownerFpc.OwnerClientId);
+            bool isKiller = RoleManager.Instance != null &&
+                            RoleManager.Instance.GetPlayerRole(ownerFpc.OwnerClientId) == PlayerRole.Impostor;
             var activeTask = TaskManager.Instance.GetActiveTaskForPlayer(ownerFpc.OwnerClientId);
             bool hasTask = activeTask.HasValue && activeTask.Value.TaskID.ToString() == "MissionComputer";
-            bool canUseRogueTask = TaskManager.Instance.CanUseRogueTask(ownerFpc.OwnerClientId, "MissionComputer");
-            bool isHackPreparing = TaskManager.Instance.GetTerminalHackPhase("MissionComputer") == TerminalHackPhase.Preparing;
+            bool canUseRogueTask = isKiller &&
+                                   TaskManager.Instance.CanUseRogueTask(ownerFpc.OwnerClientId, "MissionComputer");
+            bool isHackPreparing = isKiller &&
+                                   TaskManager.Instance.GetTerminalHackPhase("MissionComputer") == TerminalHackPhase.Preparing;
             bool canUseNormalAlibi = TaskManager.Instance.CanUseAlibiTask(ownerFpc.OwnerClientId, "MissionComputer");
 
             if (ComputerUIManager.Instance != null)
@@ -51,13 +55,18 @@ public class ComputerInteractable : MonoBehaviour
                     ComputerUIManager.Instance.SetPromptVisible(false);
                     ownerFpc.SetInteractionText("SYSTEM BUSY / OFFLINE");
                 }
-                else if (!isHackPreparing && (canUseRogueTask || hasTask || canUseNormalAlibi))
+                else if (hasTask || canUseNormalAlibi ||
+                         (canUseRogueTask && !isHackPreparing))
                 {
-                    ComputerUIManager.Instance.SetPromptVisible(true);
-                    ownerFpc.SetInteractionText(canUseRogueTask ? "TERMINALI HACKLE" : "[F] BILGISAYARI AC");
+                    bool showKillerPrompt = canUseRogueTask && !isHackPreparing;
+                    ComputerUIManager.Instance.SetPromptVisible(!showKillerPrompt);
+                    ownerFpc.SetInteractionText(showKillerPrompt
+                        ? "[F] TERMINALI HACKLE"
+                        : string.Empty);
                     if (Input.GetKeyDown(KeyCode.F) && !ComputerUIManager.Instance.IsComputerOpen)
                     {
-                        if (canUseRogueTask || hasTask || canUseNormalAlibi)
+                        if (hasTask || canUseNormalAlibi ||
+                            (canUseRogueTask && !isHackPreparing))
                             TaskManager.Instance.RequestStartTaskRpc("MissionComputer");
                         ComputerUIManager.Instance.OpenComputer(data, ownerFpc, this);
                     }
@@ -70,6 +79,7 @@ public class ComputerInteractable : MonoBehaviour
                 else
                 {
                     ComputerUIManager.Instance.SetPromptVisible(false);
+                    ownerFpc.SetInteractionText(string.Empty);
                 }
             }
         }

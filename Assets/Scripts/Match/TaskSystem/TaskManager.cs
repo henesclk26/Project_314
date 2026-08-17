@@ -30,7 +30,6 @@ public class TaskManager : NetworkBehaviour
     private int nextCooperativeSessionId = 1;
     private float nextTaskCleanupTime;
     private readonly Dictionary<ulong, Queue<string>> recentNormalTaskIds = new Dictionary<ulong, Queue<string>>();
-    private readonly Dictionary<string, double> terminalCooldownEndTimes = new Dictionary<string, double>();
 
     private void Awake()
     {
@@ -318,7 +317,6 @@ public class TaskManager : NetworkBehaviour
             if (MissionManager.Instance != null)
                 MissionManager.Instance.IsValveOverrideUnlocked.Value = false;
             recentNormalTaskIds.Clear();
-            terminalCooldownEndTimes.Clear();
         }
     }
 
@@ -455,7 +453,10 @@ public class TaskManager : NetworkBehaviour
         {
             if (NetworkManager.Singleton.ConnectedClientsIds.Contains(participant) &&
                 RoleManager.Instance.GetPlayerRole(participant) == PlayerRole.Villager)
-                    RestoreOrAssignNormalTask(participant);
+            {
+                UpgradeManager.Instance?.AwardTaskPoint(participant);
+                RestoreOrAssignNormalTask(participant);
+            }
         }
 
         TryAssignCooperativeOverlay();
@@ -497,10 +498,8 @@ public class TaskManager : NetworkBehaviour
             .ToList();
 
         recentNormalTaskIds.TryGetValue(clientId, out Queue<string> recentTasks);
-        double now = NetworkManager.Singleton != null ? NetworkManager.Singleton.ServerTime.Time : 0d;
         List<TaskDefinition> preferredTasks = validTasks
-            .Where(task => (recentTasks == null || !recentTasks.Contains(task.TaskID)) &&
-                           (!terminalCooldownEndTimes.TryGetValue(task.TaskID, out double endTime) || now >= endTime))
+            .Where(task => recentTasks == null || !recentTasks.Contains(task.TaskID))
             .ToList();
         if (preferredTasks.Count > 0)
             validTasks = preferredTasks;
@@ -903,7 +902,12 @@ public class TaskManager : NetworkBehaviour
                     AwardKillerSabotagePoint(senderClientId);
                     CompleteHack(taskID);
                     CompletedRogueHackMask.Value = (byte)(CompletedRogueHackMask.Value | GetRogueHackBit(taskID));
-                    Debug.Log($"[TaskManager] Rogue task completed by killer {senderClientId}; sabotage points: {KillerSabotagePoints.Value}");
+                    // Rogue tasks never advance crew progress, but they are
+                    // the killer's personal task loop and therefore award
+                    // personal upgrade points at the same even thresholds as
+                    // villager tasks.
+                    UpgradeManager.Instance?.AwardTaskPoint(senderClientId);
+                    Debug.Log($"[TaskManager] Rogue task completed by killer {senderClientId}; sabotage points: {KillerSabotagePoints.Value}, personal upgrade points awarded.");
                 }
                 else if (run.Kind == TaskRunKind.Normal)
                 {
@@ -984,11 +988,6 @@ public class TaskManager : NetworkBehaviour
         {
             return false;
         }
-
-        if (terminalCooldownEndTimes.TryGetValue(taskID, out double cooldownEndTime) &&
-            NetworkManager.Singleton != null &&
-            NetworkManager.Singleton.ServerTime.Time < cooldownEndTime)
-            return false;
 
         bool hasCooperativeRun = false;
         bool requestedClientIsCooperativeParticipant = false;
@@ -1073,8 +1072,6 @@ public class TaskManager : NetworkBehaviour
         while (recentTasks.Count > 2)
             recentTasks.Dequeue();
 
-        if (NetworkManager.Singleton != null)
-            terminalCooldownEndTimes[taskId] = NetworkManager.Singleton.ServerTime.Time + DemoBalanceConfig.GetNormalTerminalCooldownSeconds();
     }
 
     private int GetTaskRunIndex(ulong clientId, string taskID)

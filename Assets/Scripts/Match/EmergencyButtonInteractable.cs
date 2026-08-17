@@ -52,13 +52,32 @@ public class EmergencyButtonInteractable : MonoBehaviour
             if (allowed)
                 fpc.SetInteractionText("[F] EMERGENCY MEETING");
             else
-                fpc.SetInteractionText("COOLDOWN ACTIVE");
+                fpc.SetInteractionText(GetCooldownPrompt());
         }
         else if (!isInRange && fpc != null)
         {
             // FirstPersonController handles clearing the text on its own when not looking at an interactable or timer expires,
             // but we can manually clear it here if needed.
         }
+    }
+
+    private string GetCooldownPrompt()
+    {
+        MatchFlowManager flow = MatchFlowManager.Instance;
+        if (flow == null || Unity.Netcode.NetworkManager.Singleton == null)
+            return "COOLDOWN ACTIVE";
+
+        double now = Unity.Netcode.NetworkManager.Singleton.LocalTime.Time;
+        double nextMeetingTime = System.Math.Max(
+            flow.FirstEmergencyLockEndTime.Value,
+            flow.EmergencyCooldownEndTime.Value);
+        int remainingSeconds = Mathf.Max(
+            0,
+            Mathf.CeilToInt((float)(nextMeetingTime - now)));
+
+        return remainingSeconds > 0
+            ? $"COOLDOWN ACTIVE\nREADY IN {remainingSeconds:00}s"
+            : "COOLDOWN ACTIVE";
     }
 
     public bool IsPlayerInRange(ulong clientId)

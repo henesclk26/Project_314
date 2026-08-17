@@ -497,6 +497,7 @@ public class FirstPersonController : NetworkBehaviour
         if (IsOwner)
             RefreshLocalCameraState();
 
+        EnsureFirstKillCooldownInitialized();
         ApplyPassiveMovementStats();
         if (IsLocalPlayerControlled() && hasServerSpawnPosition.Value &&
             (lastAppliedSpawnRevision != serverSpawnRevision.Value || !hasConsumedSpawnPosition))
@@ -576,6 +577,17 @@ public class FirstPersonController : NetworkBehaviour
                 crosshairObject.gameObject.SetActive(false);
             }
             return; 
+        }
+        else if (IsGameplayScreenOpen())
+        {
+            // A mission or upgrade screen owns the local input while it is
+            // visible. Keep this enforced here as well as in each UI manager
+            // so another UI's cleanup cannot re-enable movement mid-task.
+            playerCanMove = false;
+            cameraCanMove = false;
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            cursorLockedForGame = false;
         }
         // EĞER OYUN SAHNESİNE GEÇTİYSEK VE FARE HENÜZ KİLİTLENMEDİYSE: Kilitle!
         else if (!cursorLockedForGame && lockCursor)
@@ -1127,8 +1139,22 @@ public class FirstPersonController : NetworkBehaviour
         if (Time.time < interactionTextTimer && !string.IsNullOrEmpty(interactionText))
             return;
 
-        if (GetKillTarget() != null)
-            SetInteractionText("[Q] KILL UNIT");
+        double now = NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening
+            ? NetworkManager.Singleton.ServerTime.Time
+            : Time.timeAsDouble;
+        double cooldownEndTime = killCooldownEndTime.Value;
+        if (cooldownEndTime <= 0d && flow.FirstKillLockEndTime.Value > now)
+            cooldownEndTime = flow.FirstKillLockEndTime.Value;
+
+        // The Q prompt must never advertise a kill while the authoritative
+        // cooldown is still running. The HUD countdown remains visible, but
+        // the target prompt only appears once the server can accept Q.
+        if (cooldownEndTime <= now + 0.05d)
+        {
+            if (GetKillTarget() != null)
+                SetInteractionText("[Q] KILL UNIT");
+        }
+
     }
 
     private FirstPersonController GetKillTarget()
@@ -1178,7 +1204,10 @@ public class FirstPersonController : NetworkBehaviour
         MatchFlowManager flow = MatchFlowManager.Instance;
         if (flow == null || flow.CurrentPhase.Value != MatchPhase.Active) return;
         if (isDead.Value || RoleManager.Instance.GetPlayerRole(OwnerClientId) != PlayerRole.Impostor) return;
-        if (NetworkManager.Singleton.ServerTime.Time < killCooldownEndTime.Value) return;
+        double currentTime = NetworkManager.Singleton.ServerTime.Time;
+        if (killCooldownEndTime.Value <= 0d && flow.FirstKillLockEndTime.Value > currentTime)
+            killCooldownEndTime.Value = flow.FirstKillLockEndTime.Value;
+        if (currentTime < killCooldownEndTime.Value) return;
 
         FirstPersonController target = null;
         foreach (var fpc in FindObjectsByType<FirstPersonController>(FindObjectsSortMode.None))
@@ -1232,25 +1261,49 @@ public class FirstPersonController : NetworkBehaviour
         if (!visible)
             return;
 
-        MatchPhase phase = MatchFlowManager.Instance != null
-            ? MatchFlowManager.Instance.CurrentPhase.Value
-            : MatchPhase.Lobby;
-
-        if (phase != MatchPhase.Active)
-        {
-            killCooldownLabel.text = phase == MatchPhase.BootProtection
-                ? "KILL LOCKED // BOOT"
-                : "KILL LOCKED";
-            return;
-        }
+        MatchFlowManager flow = MatchFlowManager.Instance;
+        MatchPhase phase = flow != null ? flow.CurrentPhase.Value : MatchPhase.Lobby;
 
         double now = NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening
             ? NetworkManager.Singleton.ServerTime.Time
             : Time.timeAsDouble;
-        double remaining = killCooldownEndTime.Value - now;
+        double cooldownEndTime = killCooldownEndTime.Value;
+        if (cooldownEndTime <= 0d && flow != null && flow.FirstKillLockEndTime.Value > now)
+            cooldownEndTime = flow.FirstKillLockEndTime.Value;
+        double remaining = cooldownEndTime - now;
+
+        if (phase != MatchPhase.Active)
+        {
+            killCooldownLabel.text = phase == MatchPhase.BootProtection && remaining > 0.05d
+                ? $"KILL LOCKED // {Mathf.CeilToInt((float)remaining):00} SEC"
+                : "KILL LOCKED";
+            return;
+        }
+
         killCooldownLabel.text = remaining > 0.05d
             ? $"KILL COOLDOWN // {Mathf.CeilToInt((float)remaining):00} SEC"
-            : "KILL READY // [Q]";
+            : cooldownEndTime > 0d
+                ? "KILL READY // [Q]"
+                : "KILL LOCKED";
+    }
+
+    private void EnsureFirstKillCooldownInitialized()
+    {
+        if (!IsServer || !IsSpawned || NetworkManager.Singleton == null ||
+            RoleManager.Instance == null ||
+            RoleManager.Instance.GetPlayerRole(OwnerClientId) != PlayerRole.Impostor)
+            return;
+
+        MatchFlowManager flow = MatchFlowManager.Instance;
+        if (flow == null ||
+            (flow.CurrentPhase.Value != MatchPhase.BootProtection &&
+             flow.CurrentPhase.Value != MatchPhase.Active) ||
+            killCooldownEndTime.Value > 0d)
+            return;
+
+        double currentTime = NetworkManager.Singleton.ServerTime.Time;
+        if (flow.FirstKillLockEndTime.Value > currentTime)
+            killCooldownEndTime.Value = flow.FirstKillLockEndTime.Value;
     }
 
     private void UpdateKillerHackList()
@@ -1398,6 +1451,20 @@ public class FirstPersonController : NetworkBehaviour
             return;
         }
 
+        if (IsGameplayScreenOpen())
+        {
+            // Stop any velocity already accumulated before the UI opened.
+            // This makes the player remain physically stationary, not just
+            // unable to add new input-driven movement.
+            playerCanMove = false;
+            cameraCanMove = false;
+            if (rb != null)
+                rb.linearVelocity = new Vector3(0f, rb.linearVelocity.y, 0f);
+            isWalking = false;
+            isSprinting = false;
+            return;
+        }
+
         #region Movement
 
         if (playerCanMove)
@@ -1479,6 +1546,25 @@ public class FirstPersonController : NetworkBehaviour
         }
 
         #endregion
+    }
+
+    private static bool IsGameplayScreenOpen()
+    {
+        return (ComputerUIManager.Instance != null &&
+                ComputerUIManager.Instance.IsComputerOpen) ||
+               (CircuitMissionUIManager.Instance != null &&
+                CircuitMissionUIManager.Instance.IsOpen) ||
+               (WaveFrequencyUIManager.Instance != null &&
+                WaveFrequencyUIManager.Instance.IsOpen) ||
+               (PressureMissionUIManager.Instance != null &&
+                PressureMissionUIManager.Instance.IsOpen) ||
+               (ReactorMissionUIManager.Instance != null &&
+                ReactorMissionUIManager.Instance.IsOpen) ||
+               (SecurityCameraUIManager.Instance != null &&
+                SecurityCameraUIManager.Instance.IsOpen) ||
+               (PuzzleUIManager.Instance != null &&
+                PuzzleUIManager.Instance.IsPuzzleOpen) ||
+               UpgradeUIManager.IsSelectionOpen;
     }
 
     // Sets isGrounded based on a raycast sent straigth down from the player object

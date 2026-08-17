@@ -226,7 +226,10 @@ public class MeetingManager : NetworkBehaviour
         {
             if (RoleManager.Instance.GetPlayerRole(fpc.OwnerClientId) == PlayerRole.Impostor)
             {
-                fpc.killCooldownEndTime.Value = NetworkManager.Singleton.ServerTime.Time + DemoBalanceConfig.BaseKillCooldownSeconds;
+                double cooldown = UpgradeManager.Instance != null
+                    ? UpgradeManager.Instance.GetKillCooldown(fpc.OwnerClientId)
+                    : DemoBalanceConfig.BaseKillCooldownSeconds;
+                fpc.killCooldownEndTime.Value = NetworkManager.Singleton.ServerTime.Time + cooldown;
             }
         }
 

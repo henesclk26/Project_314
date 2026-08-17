@@ -270,14 +270,6 @@ public class WaveFrequencyUIManager : MonoBehaviour
                 return;
             }
         }
-        else if (!completionStarted &&
-                 !normalCompletedWhenOpened &&
-                 IsNormalMissionCompleted())
-        {
-            CompleteNormalMission(false);
-            return;
-        }
-
         if (completionStarted)
             return;
 
@@ -287,7 +279,7 @@ public class WaveFrequencyUIManager : MonoBehaviour
             return;
         }
 
-        if (isSabotageMode || IsNormalMissionCompleted())
+        if (isSabotageMode)
             return;
 
         if (Input.GetKeyDown(KeyCode.E))
@@ -357,8 +349,6 @@ public class WaveFrequencyUIManager : MonoBehaviour
             connectionLabel.text = "LINK ACTIVE";
             completeSubtitle.text = "SIGNAL LOCK CONFIRMED";
             UpdateVisuals();
-            if (IsNormalMissionCompleted())
-                ShowCompletedState(false);
         }
     }
 

@@ -13,13 +13,16 @@ MonoBehaviour:
   m_Name: DemoBalanceConfig
   m_EditorClassIdentifier: Assembly-CSharp::DemoBalanceConfig
   bootProtectionSeconds: 30
-  firstEmergencyLockSeconds: 60
+  firstEmergencyLockSeconds: 40
   postMeetingLockSeconds: 5
   meetingDiscussionSeconds: 15
   meetingVotingSeconds: 35
   meetingResultsSeconds: 10
-  emergencyCooldownSeconds: 60
-  baseKillCooldownSeconds: 30
+  emergencyCooldownSeconds: 40
+  firstKillLockSeconds: 60
+  baseKillCooldownSeconds: 60
+  killCooldownReductionPerUpgradeSeconds: 10
+  minimumKillCooldownSeconds: 40
   baseKillRangeMeters: 4
   crewTaskRunsPerVillager: 3
   terminalHackPreparationSeconds: 15

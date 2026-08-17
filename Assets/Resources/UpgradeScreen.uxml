@@ -3,12 +3,30 @@
     <ui:VisualElement name="upgrade-root" class="upgrade-root">
         <ui:VisualElement name="upgrade-panel" class="upgrade-panel">
             <ui:VisualElement class="upgrade-header">
-                <ui:Label name="upgrade-eyebrow" class="upgrade-eyebrow" text="SYSTEM EVOLUTION / PASSIVE" />
-                <ui:Label name="upgrade-title" class="upgrade-title" text="SELECT PASSIVE PROTOCOL" />
-                <ui:Label name="upgrade-detail" class="upgrade-detail" text="ONE PASSIVE WILL REMAIN ACTIVE FOR THIS UNIT." />
+                <ui:Label name="upgrade-eyebrow" class="upgrade-eyebrow" text="" />
+                <ui:Label name="upgrade-title" class="upgrade-title" text="" />
+                <ui:Label name="upgrade-detail" class="upgrade-detail" text="" />
             </ui:VisualElement>
-            <ui:VisualElement name="upgrade-cards" class="upgrade-cards" />
-            <ui:Button name="upgrade-close" class="upgrade-close" text="CLOSE WITHOUT REWARD" />
+            <ui:VisualElement name="upgrade-cards" class="upgrade-cards">
+                <ui:VisualElement name="upgrade-card-0" class="upgrade-card upgrade-card-empty">
+                    <ui:Label name="upgrade-card-index-0" class="upgrade-card-index" text="01" />
+                    <ui:Label name="upgrade-card-title-0" class="upgrade-card-title" text="" />
+                    <ui:Label name="upgrade-card-description-0" class="upgrade-card-description" text="" />
+                    <ui:Button name="upgrade-card-select-0" class="upgrade-card-button" text="INSTALL" />
+                </ui:VisualElement>
+                <ui:VisualElement name="upgrade-card-1" class="upgrade-card upgrade-card-empty">
+                    <ui:Label name="upgrade-card-index-1" class="upgrade-card-index" text="02" />
+                    <ui:Label name="upgrade-card-title-1" class="upgrade-card-title" text="" />
+                    <ui:Label name="upgrade-card-description-1" class="upgrade-card-description" text="" />
+                    <ui:Button name="upgrade-card-select-1" class="upgrade-card-button" text="INSTALL" />
+                </ui:VisualElement>
+                <ui:VisualElement name="upgrade-card-2" class="upgrade-card upgrade-card-empty">
+                    <ui:Label name="upgrade-card-index-2" class="upgrade-card-index" text="03" />
+                    <ui:Label name="upgrade-card-title-2" class="upgrade-card-title" text="" />
+                    <ui:Label name="upgrade-card-description-2" class="upgrade-card-description" text="" />
+                    <ui:Button name="upgrade-card-select-2" class="upgrade-card-button" text="INSTALL" />
+                </ui:VisualElement>
+            </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

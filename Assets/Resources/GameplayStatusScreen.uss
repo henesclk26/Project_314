@@ -3,5 +3,19 @@
 .gameplay-alert.is-hidden { display: none; }
 .gameplay-alert-title { color: rgb(255, 128, 110); font-size: 14px; -unity-font-style: bold; letter-spacing: 0; }
 .gameplay-alert-detail { margin-top: 3px; color: rgb(219, 224, 224); font-size: 11px; }
+.gameplay-alert.match-result { top: 0; right: 0; bottom: 0; left: 0; width: auto; margin-left: 0; padding: 24px; background-color: rgba(3, 10, 18, 0.97); border-left-width: 0; border-top-width: 0; border-right-width: 0; border-bottom-width: 0; align-items: center; justify-content: center; }
+.gameplay-alert.match-result .gameplay-alert-title { color: rgb(0, 240, 255); font-size: 64px; -unity-font-style: bold; -unity-text-align: middle-center; white-space: normal; }
+.gameplay-alert.match-result .gameplay-alert-detail { margin-top: 16px; color: rgb(190, 214, 220); font-size: 18px; -unity-text-align: middle-center; }
+.gameplay-alert.match-result.result-crew .gameplay-alert-title { color: rgb(0, 240, 255); }
+.gameplay-alert.match-result.result-rogue .gameplay-alert-title { color: rgb(255, 92, 82); }
 .gameplay-loadout { position: absolute; right: 22px; bottom: 22px; width: 250px; padding: 9px 11px; background-color: rgba(5, 19, 25, 0.86); border-left-width: 2px; border-left-color: rgb(56, 202, 203); }
 .gameplay-loadout-line { color: rgb(186, 213, 217); font-size: 11px; margin-bottom: 3px; }
+.gameplay-voice-status { position: absolute; top: 70px; right: 22px; width: 215px; padding: 7px 10px; background-color: rgba(5, 19, 25, 0.88); border-left-width: 2px; border-left-color: rgb(0, 218, 232); }
+.gameplay-voice-status.is-hidden { display: none; }
+.gameplay-voice-status.voice-meeting { border-left-color: rgb(255, 184, 73); }
+.gameplay-voice-status.voice-ghost { border-left-color: rgb(174, 125, 255); }
+.gameplay-voice-status.voice-speaking { background-color: rgba(8, 34, 40, 0.94); }
+.gameplay-voice-mode { color: rgb(0, 235, 245); font-size: 10px; -unity-font-style: bold; letter-spacing: 1px; }
+.gameplay-voice-status.voice-meeting .gameplay-voice-mode { color: rgb(255, 194, 90); }
+.gameplay-voice-status.voice-ghost .gameplay-voice-mode { color: rgb(194, 158, 255); }
+.gameplay-voice-detail { margin-top: 3px; color: rgb(186, 213, 217); font-size: 9px; }

@@ -38,10 +38,14 @@ public class CircuitMissionInteractable : MonoBehaviour
         if (TaskManager.Instance == null) return;
 
         bool isAvailable = TaskManager.Instance.IsTerminalAvailable("CircuitMission", fpc.OwnerClientId);
+        bool isKiller = RoleManager.Instance != null &&
+                        RoleManager.Instance.GetPlayerRole(fpc.OwnerClientId) == PlayerRole.Impostor;
         var activeTask = TaskManager.Instance.GetActiveTaskForPlayer(fpc.OwnerClientId);
         bool hasTask = activeTask.HasValue && activeTask.Value.TaskID.ToString() == "CircuitMission";
-        bool canUseRogueTask = TaskManager.Instance.CanUseRogueTask(fpc.OwnerClientId, "CircuitMission");
-        bool isHackPreparing = TaskManager.Instance.GetTerminalHackPhase("CircuitMission") == TerminalHackPhase.Preparing;
+        bool canUseRogueTask = isKiller &&
+                               TaskManager.Instance.CanUseRogueTask(fpc.OwnerClientId, "CircuitMission");
+        bool isHackPreparing = isKiller &&
+                               TaskManager.Instance.GetTerminalHackPhase("CircuitMission") == TerminalHackPhase.Preparing;
         bool canUseNormalAlibi = TaskManager.Instance.CanUseAlibiTask(fpc.OwnerClientId, "CircuitMission");
 
         if (!isAvailable)
@@ -50,12 +54,16 @@ public class CircuitMissionInteractable : MonoBehaviour
             return;
         }
 
-        if (!isHackPreparing && (canUseRogueTask || hasTask || canUseNormalAlibi))
+        bool canUseAssignedTask = hasTask || canUseNormalAlibi ||
+                                  (canUseRogueTask && !isHackPreparing);
+        if (canUseAssignedTask)
         {
-            fpc.SetInteractionText(canUseRogueTask ? "TERMINALI HACKLE" : "[F] Devre Panelini Ac");
+            fpc.SetInteractionText(canUseRogueTask && !isHackPreparing
+                ? "[F] TERMINALI HACKLE"
+                : "[F] Devre Panelini Ac");
             if (Input.GetKeyDown(KeyCode.F) && ui != null)
             {
-                if (canUseRogueTask || hasTask || canUseNormalAlibi)
+                if (canUseAssignedTask)
                     TaskManager.Instance.RequestStartTaskRpc("CircuitMission");
                 ui.Open(this, fpc);
             }
@@ -63,6 +71,10 @@ public class CircuitMissionInteractable : MonoBehaviour
         else if (isHackPreparing)
         {
             fpc.SetInteractionText("TERMINAL HACK HAZIRLANIYOR");
+        }
+        else
+        {
+            fpc.SetInteractionText(string.Empty);
         }
     }
 

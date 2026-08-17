@@ -135,10 +135,11 @@ public class MeetingUIManager : MonoBehaviour
         if (bodyIntelLabel == null || MeetingManager.Instance == null || NetworkManager.Singleton == null)
             return;
 
-        bool eligible = UpgradeManager.Instance != null &&
-            UpgradeManager.Instance.HasPassive(NetworkManager.Singleton.LocalClientId, PassiveUpgradeId.ForensicCache);
+        byte forensicCount = UpgradeManager.Instance != null
+            ? UpgradeManager.Instance.GetPassiveCount(NetworkManager.Singleton.LocalClientId, PassiveUpgradeId.ForensicCache)
+            : (byte)0;
         byte band = MeetingManager.Instance.ReportedBodyAgeBand.Value;
-        if (!eligible || band == 0)
+        if (forensicCount == 0 || band == 0)
         {
             bodyIntelLabel.style.display = DisplayStyle.None;
             return;
@@ -146,9 +147,9 @@ public class MeetingUIManager : MonoBehaviour
 
         bodyIntelLabel.style.display = DisplayStyle.Flex;
         bodyIntelLabel.text = band == 1
-            ? "FORENSIC CACHE // DEATH AGE: 0-10 SEC"
-            : band == 2 ? "FORENSIC CACHE // DEATH AGE: 10-25 SEC" :
-            "FORENSIC CACHE // DEATH AGE: 25+ SEC";
+            ? $"FORENSIC CACHE x{forensicCount} // DEATH AGE: 0-10 SEC"
+            : band == 2 ? $"FORENSIC CACHE x{forensicCount} // DEATH AGE: 10-25 SEC" :
+            $"FORENSIC CACHE x{forensicCount} // DEATH AGE: 25+ SEC";
     }
 
     private void RefreshPlayerCards()

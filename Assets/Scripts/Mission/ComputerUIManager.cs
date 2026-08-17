@@ -73,8 +73,15 @@ public class ComputerUIManager : MonoBehaviour
 
         Instance = this;
         uiDocument = GetComponent<UIDocument>();
-        if (uiDocument != null && uiDocument.rootVisualElement != null)
-            InitializeUI(uiDocument.rootVisualElement);
+        if (uiDocument != null)
+        {
+            // Keep the computer mission above the passive GameUI HUD while
+            // remaining below the global meeting and pause overlays. The
+            // other mission screens use the same dedicated overlay band.
+            uiDocument.sortingOrder = 19;
+            if (uiDocument.rootVisualElement != null)
+                InitializeUI(uiDocument.rootVisualElement);
+        }
     }
 
     private void Update()
@@ -151,6 +158,9 @@ public class ComputerUIManager : MonoBehaviour
 
     public void SetPromptVisible(bool visible)
     {
+        if (promptContainer == null)
+            return;
+
         if (IsComputerOpen)
             visible = false;
 

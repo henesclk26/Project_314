@@ -8,5 +8,9 @@
             <ui:Label name="gameplay-passive" class="gameplay-loadout-line" />
             <ui:Label name="gameplay-tool" class="gameplay-loadout-line" />
         </ui:VisualElement>
+        <ui:VisualElement name="gameplay-voice-status" class="gameplay-voice-status is-hidden">
+            <ui:Label name="gameplay-voice-mode" class="gameplay-voice-mode" />
+            <ui:Label name="gameplay-voice-detail" class="gameplay-voice-detail" />
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

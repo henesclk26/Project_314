@@ -28,6 +28,7 @@ public class MatchFlowManager : NetworkBehaviour
     
     // Using NetworkVariables to sync end times, relative to NetworkManager.ServerTime.Time
     public NetworkVariable<double> BootProtectionEndTime = new NetworkVariable<double>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    public NetworkVariable<double> FirstKillLockEndTime = new NetworkVariable<double>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     public NetworkVariable<double> FirstEmergencyLockEndTime = new NetworkVariable<double>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     public NetworkVariable<double> EmergencyCooldownEndTime = new NetworkVariable<double>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     public NetworkVariable<MatchWinner> Winner = new NetworkVariable<MatchWinner>(MatchWinner.None, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
@@ -132,7 +133,17 @@ public class MatchFlowManager : NetworkBehaviour
         }
 
         double currentTime = NetworkManager.Singleton.LocalTime.Time;
+        foreach (FirstPersonController player in FindObjectsByType<FirstPersonController>(FindObjectsSortMode.None))
+        {
+            if (RoleManager.Instance != null &&
+                RoleManager.Instance.GetPlayerRole(player.OwnerClientId) == PlayerRole.Impostor)
+            {
+                player.killCooldownEndTime.Value = currentTime + DemoBalanceConfig.FirstKillLockSeconds;
+            }
+        }
+
         BootProtectionEndTime.Value = currentTime + DemoBalanceConfig.BootProtectionSeconds;
+        FirstKillLockEndTime.Value = currentTime + DemoBalanceConfig.FirstKillLockSeconds;
         FirstEmergencyLockEndTime.Value = currentTime + DemoBalanceConfig.FirstEmergencyLockSeconds;
         EmergencyCooldownEndTime.Value = 0d;
         Winner.Value = MatchWinner.None;
@@ -164,6 +175,7 @@ public class MatchFlowManager : NetworkBehaviour
         }
 
         SetPhase(MatchPhase.Lobby);
+        FirstKillLockEndTime.Value = 0d;
         EmergencyCooldownEndTime.Value = 0d;
         Winner.Value = MatchWinner.None;
         if (GameManager.Instance != null)
@@ -282,11 +294,13 @@ public class MatchFlowManager : NetworkBehaviour
         if (!IsServer || CurrentPhase.Value != MatchPhase.Ended)
             yield break;
 
-        ReturnToLobbyClientRpc();
-
         if (GameManager.Instance != null)
             GameManager.Instance.isGameStarted.Value = false;
+        if (MultiplayerManager.Instance != null)
+            MultiplayerManager.Instance.ReopenLobbyAfterMatch();
+
         ResetMatch();
+        ReturnToLobbyClientRpc();
     }
 
     [ClientRpc]
@@ -294,7 +308,7 @@ public class MatchFlowManager : NetworkBehaviour
     {
         SciFiMenuController menuController = FindAnyObjectByType<SciFiMenuController>();
         if (menuController != null)
-            menuController.ShowMainMenu();
+            menuController.ShowLobbyAfterMatch();
     }
 
     [ClientRpc]

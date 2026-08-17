@@ -78,7 +78,7 @@ listed as a blocking screen.
 | Emergency meeting prompt | Hold-to-call indicator, global cooldown countdown, unavailable state during locks | At the emergency meeting object | Communicates unlimited use with a shared cooldown and prevents accidental calls. |
 | Meeting screen | Reporter label, alive/dead player cards, discussion timer, voting timer, vote buttons, abstain state, vote result | On body report or emergency call | Provides the social-deduction decision phase. It must hide roles, disable gameplay input, and support a total duration of at most 60 seconds. |
 | Ejection result overlay | Ejected player name/card, no role reveal, tie/no-ejection result when applicable, short return countdown | After voting | Clearly resolves the vote without revealing faction information. |
-| Upgrade choice screen | At 2 points: three passive cards. At 4 points: every currently eligible active-tool card from that role's pool. Include card name, clear effect description, selected card confirmation, and movement-lock state. | Immediately after a task completion crosses the 2 or 4 point threshold | Turns task contribution into a meaningful build choice. This is a blocking and vulnerable screen; it closes without reward on death, ejection, or meeting. |
+| Upgrade choice screen | At every even personal point total, show three distinct random cards from the player's role pool; use blank slots when fewer than three eligible cards remain, and an all-blank selection is a valid no-op. Include card name, current stacked effect description, selected card confirmation, role theme, and movement-lock state. | Immediately after a task completion crosses 2, 4, 6, 8... personal points | Turns task contribution into a meaningful private build choice. Only the earning player sees it; the screen closes after a card or blank choice, and pending offers are cancelled on death, ejection, or meeting. |
 | Passive/tool HUD | Small selected passive icon plus an armed, triggered, or expended tool icon/state; unavailable state during meeting | During normal play after upgrade selection | Gives the player reliable awareness of their current build without cluttering the task HUD. |
 | Threat Sensor alert | `WARNING // NEARBY UNIT OFFLINE`, red/amber pulse, 2.5-second display | A living Threat Sensor owner is within 12 meters of a kill | Gives nearby-event awareness without direction, victim, corpse, distance, or killer identity. |
 | Valve Override emergency alert | Valve emergency title, 30-second server timer, brief instruction to reach the three valves | When the killer selects Valve Override | Creates coordinated villager response pressure. It does not reveal the killer or show the killer's location. |
@@ -367,23 +367,37 @@ validate actual role input before awarding either reward.
 
 ## Upgrade Economy `[DONE - CODE / ONLINE VERIFY]`
 
-- Players earn upgrade points by completing assigned tasks, not by merely opening
-  a task UI.
-- Killer sabotage tasks earn killer-only upgrade/sabotage progress and never add
-  to crew task progress.
-- Upgrade thresholds: first selection at 2 upgrade points; second selection at 4
-  upgrade points.
-- The first selection offers all three passive upgrades. The player chooses one.
-- The second selection shows every currently eligible active-tool card from that
-  role's pool and grants exactly one selected tool. Do not show locked cards or
-  add passive-enhancement fallbacks because each player may own only one passive
-  in this demo.
-- Maximum two upgrade selections per player per match.
+- Villagers earn one personal upgrade point for each valid assigned normal task
+  completion. Each eligible villager participant in a completed cooperative
+  task receives one personal point.
+- Killers earn one personal upgrade point for each valid completed rogue task.
+  This personal reward never adds to crew task progress and is separate from
+  Killer Sabotage Points; rogue completion is the killer's own repeatable task
+  loop for reaching the same 2, 4, 6... upgrade thresholds.
+- A personal selection opens at every even point threshold: 2, 4, 6, 8, 10,
+  12, and so on without a lifetime cap. The next threshold is calculated from
+  the player's completed selections, so a delayed selection cannot silently
+  skip a later offer.
+- Every offer contains three server-selected cards with equal probability and no
+  duplicate card inside the same offer. Each card can be selected at most twice
+  by the same player; after its second selection it is removed from that player's
+  future pool.
+- Villagers receive only the five villager cards in the demo pool and killers
+  receive only the six killer cards. The server validates role, ownership,
+  eligibility, and card count before applying any selection.
+- The selected card and its effect are stored only in the earning player's
+  networked state. The offer UI is sent only to that player; other clients never
+  see it and cannot select it.
+- If fewer than three eligible cards remain, unused slots are rendered as blank
+  cards. When all three slots are blank, any blank card is a valid no-op choice;
+  it still completes that selection and closes the screen so the match continues.
 - When a task completion crosses a threshold, show the upgrade selection UI
   immediately after that task closes. The selecting player is movement-locked and
-  vulnerable while choosing.
-- The selection screen closes and the pending reward is lost if the player dies,
-  is ejected, or a meeting begins.
+  vulnerable while choosing; the player must choose a card, rather than manually
+  dismissing the screen.
+- Upgrade effects stack up to the two-copy limit. For example, Pursuit Protocol
+  changes the killer cooldown from 30 to 25 seconds on the first copy and to 20
+  seconds on the second. The card text shows the next total effect.
 - Tool use is disabled during meetings. Active disruption effects are cleared when
   a meeting starts; untriggered automatic villager defenses remain armed.
 - All player-owned placed effects and passive effects disappear when their owner
@@ -391,8 +405,8 @@ validate actual role input before awarding either reward.
 
 ## Passive Upgrade Pool (Demo) `[DONE - CODE / ONLINE VERIFY]`
 
-Each player can select one passive. Passive effects do not stack. Keep all values
-centralized/configurable for playtests.
+Each card can be selected up to two times by its owner. Passive effects stack per
+copy, and all values remain centralized/configurable for playtests.
 
 ### Villager Passives
 
@@ -433,22 +447,23 @@ Implement two active tools for villagers and three for the killer after the core
 match loop works. Do not implement tool effects before deciding their exact
 counterplay, cooldown, charges, UI, world feedback, and interaction with meetings.
 
-The second upgrade choice presents every currently eligible card and grants
-exactly one tool. For the killer, show all eligible cards from the Valve Override,
-System Blackout, and Identity Scramble pool at once. Valve Override is simply
-omitted when its pressure-task, shared-valve, or living-villager conditions are
-not met. Never show a locked tool card or grant a second tool in the demo.
+Every upgrade choice presents three distinct, currently eligible cards from the
+player's role pool. For the killer, the pool includes the Valve Override, System
+Blackout, and Identity Scramble cards in addition to the killer passives. Valve
+Override is omitted when its pressure-task, shared-valve, or living-villager
+conditions are not met. A card may be selected twice to stack its effect; after
+the second copy it is removed from future offers.
 
-For villagers, show both Priority Uplink and Identity Anchor cards. The selected
-tool becomes an armed one-use automatic defense, not a manually activated HUD
-button. Its HUD icon must clearly display `ARMED`, then animate when it triggers
-and remain marked `EXPENDED` for the rest of the match.
+For villagers, Priority Uplink and Identity Anchor remain automatic defenses, not
+manually activated HUD buttons. Each selected copy grants one charge. Its HUD
+icon must clearly display `ARMED`, then animate when a charge triggers and remain
+marked `EXPENDED` only after all charges are spent for the rest of the match.
 
 ### Villager Tool 1: PRIORITY UPLINK `[DONE - CODE / ONLINE VERIFY]`
 
-- This is a one-use automatic defense. When the killer starts System Blackout,
-  every living owner automatically consumes Priority Uplink; no key press or
-  confirmation is required.
+- Each selected copy is one automatic-defense charge. When the killer starts
+  System Blackout, every living owner with a charge automatically consumes one;
+  no key press or confirmation is required.
 - The server grants the owner an 8-second local blackout bypass for only their
   currently assigned, otherwise eligible task interaction. The global blackout
   remains active for everyone else and no other terminal is restored.
@@ -469,9 +484,9 @@ and remain marked `EXPENDED` for the rest of the match.
 
 ### Villager Tool 2: IDENTITY ANCHOR `[DONE - CODE / ONLINE VERIFY]`
 
-- This is a one-use automatic defense. When the killer starts Identity Scramble,
-  every living owner automatically consumes Identity Anchor; no key press or
-  confirmation is required.
+- Each selected copy is one automatic-defense charge. When the killer starts
+  Identity Scramble, every living owner with a charge automatically consumes one;
+  no key press or confirmation is required.
 - For the full scramble duration, the owner keeps their true networked player
   color while all non-anchored robot visuals use the common scramble color. Add
   a small stable cyan identity ring/glyph above the owner's world model so the
@@ -528,9 +543,8 @@ and remain marked `EXPENDED` for the rest of the match.
 - If villagers do not complete the three-valve mission before the timer expires,
   end the emergency and award the killer +1 Killer Sabotage Point. This is a
   separate server-owned resource for the later sabotage system; it is not an
-  upgrade point and does not unlock a third upgrade choice in this demo. Do not
-  add crew task progress and do not apply an additional instant-win or permanent
-  penalty in the demo.
+  upgrade point and does not add crew task progress. Do not apply an additional
+  instant-win or permanent penalty in the demo.
 - The tool cannot be selected/triggered while the normal two-valve pressure
   calibration, another Valve Override emergency, a meeting, the boot protection
   phase, or the post-meeting lock is active.
@@ -594,9 +608,9 @@ and remain marked `EXPENDED` for the rest of the match.
 
 ### Killer Tool 3: IDENTITY SCRAMBLE `[DONE - CODE / ONLINE VERIFY]`
 
-- This is an immediate-use, single-use tool card. Selecting it from the killer's
-  upgrade choice immediately starts a 30-second global color scramble; it is not
-  stored for later manual activation.
+- Each selected copy is an immediate-use activation. Selecting it from the
+  killer's upgrade choice immediately starts a 30-second global color scramble;
+  it is not stored for later manual activation.
 - The server chooses one random valid robot color index for the activation and
   writes it with a server-authoritative `IdentityScrambleEndServerTime` (or
   equivalent active/until state). Every client calculates the remaining time from
@@ -650,18 +664,29 @@ direction is:
   maximum demo balance of 2 and never grant a normal upgrade point. This keeps
   the reserved resource bounded until a spending/activation loop is designed.
 
-## Voice Chat (Deferred Implementation) `[TODO - DEFERRED]`
+## Voice Chat `[IN PROGRESS - CODE / PROVIDER SETUP PENDING]`
 
 Do not block core gameplay implementation on voice chat. Use external voice chat
 for early technical tests if necessary. Before social-balance playtests, implement
 server-controlled proximity voice:
 
-- Free-roam living players use proximity voice, initial distance approximately
-  12 meters.
+- Free-roam living players use proximity voice with a 24-meter maximum range:
+  0-12 meters is clear/full-volume voice, 12-24 meters fades by distance, and
+  voice is inaudible beyond 24 meters.
 - Meeting changes living players to a global meeting voice channel.
 - Dead/ejected players use a separate ghost channel and can hear/talk only to
   ghosts.
 - Wall occlusion is not required for the first voice-chat version.
+- Code-side implementation is now present in `VoiceChatManager`: it routes
+  living players through a 24-meter positional channel with a 12-meter clear
+  conversational range, switches living
+  players to a global meeting channel, and routes dead/ejected players to a
+  separate ghost channel using the server-replicated match phase and alive
+  state.
+- The gameplay HUD now exposes voice mode, remote speaking state, and local
+  microphone mute state (`M` toggle). Vivox project configuration in the Unity
+  Dashboard/Project Settings and host/client online verification remain
+  pending before this section can be marked done.
 
 ## Technical Match Management `[PARTIAL - DEMO LIMITS APPLY]`
 
@@ -757,16 +782,20 @@ replace working task implementations.
      run, and simultaneous requests cannot make a valve usable by both systems.
 
 6. **[DONE - CODE / ONLINE VERIFY] Upgrade economy and passives**
-   - Status: `[DONE - CODE]`; threshold timing, selection loss, passive effects,
-     and Threat Sensor behavior need online/manual verification.
-   - Add per-player server-owned contribution points, 2/4 point thresholds,
-     selection state, and close-without-reward behavior on death/ejection/meeting.
-   - Build the UI Toolkit card selection screen and passive/tool HUD.
+   - Status: `[DONE - CODE]`; multi-client reward timing, role isolation, random
+     offers, blank-card continuation, and stacked effects need online/manual
+     verification.
+   - Add per-player server-owned contribution points and an unbounded 2,4,6,8...
+     threshold sequence with a private selection state.
+   - Build the UI Toolkit card selection screen with villager blue and killer red
+     themes, three distinct equal-probability offers, and blank-card fallback.
+   - Limit each card to two copies per player, stack numeric/passive effects, and
+     validate the selected card and its role on the server.
    - Implement and test the three villager and three killer passive effects,
      including Threat Sensor's non-directional `WARNING // NEARBY UNIT OFFLINE`
      event.
-   - Done when each player can receive only one passive and one tool choice, and
-     all effects are validated on the server where applicable.
+   - Done when each player sees only their own offer, can select a card or an
+     all-blank no-op, and all effects are validated on the server where applicable.
 
 7. **[DONE - CODE / ONLINE VERIFY] Killer active tools**
    - Status: `[DONE - CODE]`; Valve Override, Blackout, Identity Scramble,
@@ -784,9 +813,10 @@ replace working task implementations.
      Sabotage Point on successful rogue completion.
    - Implement the automatic villager defenses: Priority Uplink's scoped
      blackout bypass and Identity Anchor's protected effective-color rendering.
-   - Keep all three killer tools immediate-use and single-use in the demo; keep
-     both villager tools one-use and automatically triggered by their matching
-     killer tool.
+   - Keep killer tools immediate-use, with one activation per selected copy; a
+     repeated card is allowed only while its server-side eligibility is valid.
+     Villager tools grant one automatic-defense charge per selected copy and are
+     triggered only by their matching killer tool.
    - Done when tools cannot conflict with meetings, boot/post-meeting locks, or
      shared valve state, and every client sees the same result.
 
@@ -854,8 +884,9 @@ replace working task implementations.
 
 9. **[IN PROGRESS] Deferred systems and balance**
    - Status: the server-side sabotage-point cap and reward separation are done;
-     the first balance-foundation pass is now complete; the broader loop,
-     voice integration, and social-balance pass remain pending.
+     the first balance-foundation pass and voice code integration are now
+     complete; Vivox provider setup, online voice verification, and the social-
+     balance pass remain pending.
    - Balance foundation `[DONE - CODE]`: added the Resources-backed
      `DemoBalanceConfig` asset as the single source for match phase durations,
      meeting timing, kill/task cooldowns, terminal hack windows, killer-tool
@@ -863,8 +894,9 @@ replace working task implementations.
      sabotage-point cap. Runtime defaults preserve the existing demo values
      when the asset is unavailable, so Quick Test and development scenes do
      not depend on an editor-only asset reference.
-   - Add proximity voice chat only after the above gameplay loop is stable and a
-     supported voice provider/package is selected for the project.
+   - Finish Vivox project/provider setup and run host/client voice regression:
+     24-meter proximity with a 12-meter clear range, meeting-wide living voice, ghost-only voice after
+     death/ejection, lobby/ended cleanup, microphone mute, and speaking UI.
    - Design the broader limited sabotage loop before implementing its spending and
      activation rules. The current demo only stores the bounded resource.
    - Playtest 4, 5, 6, 7, and 8 player matches; tune task target, kill cooldown,

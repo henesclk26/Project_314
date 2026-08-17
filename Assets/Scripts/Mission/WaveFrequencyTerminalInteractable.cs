@@ -36,10 +36,14 @@ public class WaveFrequencyTerminalInteractable : MonoBehaviour
         if (TaskManager.Instance == null) return;
 
         bool isAvailable = TaskManager.Instance.IsTerminalAvailable("WaveFrequency", fpc.OwnerClientId);
+        bool isKiller = RoleManager.Instance != null &&
+                        RoleManager.Instance.GetPlayerRole(fpc.OwnerClientId) == PlayerRole.Impostor;
         var activeTask = TaskManager.Instance.GetActiveTaskForPlayer(fpc.OwnerClientId);
         bool hasTask = activeTask.HasValue && activeTask.Value.TaskID.ToString() == "WaveFrequency";
-        bool canUseRogueTask = TaskManager.Instance.CanUseRogueTask(fpc.OwnerClientId, "WaveFrequency");
-        bool isHackPreparing = TaskManager.Instance.GetTerminalHackPhase("WaveFrequency") == TerminalHackPhase.Preparing;
+        bool canUseRogueTask = isKiller &&
+                               TaskManager.Instance.CanUseRogueTask(fpc.OwnerClientId, "WaveFrequency");
+        bool isHackPreparing = isKiller &&
+                               TaskManager.Instance.GetTerminalHackPhase("WaveFrequency") == TerminalHackPhase.Preparing;
         bool canUseNormalAlibi = TaskManager.Instance.CanUseAlibiTask(fpc.OwnerClientId, "WaveFrequency");
 
         if (!isAvailable)
@@ -48,14 +52,16 @@ public class WaveFrequencyTerminalInteractable : MonoBehaviour
             return;
         }
 
-        if (!isHackPreparing && (canUseRogueTask || hasTask || canUseNormalAlibi))
+        bool canUseAssignedTask = hasTask || canUseNormalAlibi ||
+                                  (canUseRogueTask && !isHackPreparing);
+        if (canUseAssignedTask)
         {
             fpc.SetInteractionText("[F] Frekans Terminalini Aç");
-            if (canUseRogueTask)
-                fpc.SetInteractionText("TERMINALI HACKLE");
+            if (canUseRogueTask && !isHackPreparing)
+                fpc.SetInteractionText("[F] TERMINALI HACKLE");
             if (Input.GetKeyDown(KeyCode.F) && ui != null)
             {
-                if (canUseRogueTask || hasTask || canUseNormalAlibi)
+                if (canUseAssignedTask)
                     TaskManager.Instance.RequestStartTaskRpc("WaveFrequency");
                 ui.Open(this, fpc);
             }
@@ -63,6 +69,10 @@ public class WaveFrequencyTerminalInteractable : MonoBehaviour
         else if (isHackPreparing)
         {
             fpc.SetInteractionText("TERMINAL HACK HAZIRLANIYOR");
+        }
+        else
+        {
+            fpc.SetInteractionText(string.Empty);
         }
     }
 

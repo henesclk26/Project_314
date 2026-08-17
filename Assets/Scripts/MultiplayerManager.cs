@@ -62,7 +62,9 @@ public class MultiplayerManager : MonoBehaviour
             var options = new InitializationOptions();
             options.SetProfile("Player_" + UnityEngine.Random.Range(0, 100000).ToString());
 
-            // Vivox kurulu ama kullanılmıyor; otomatik init hatasını önlemek için devre dışı bırak
+            // Vivox is initialized explicitly by VoiceChatManager after UGS
+            // authentication so a missing dashboard configuration cannot
+            // break the core lobby/game flow.
             options.SetOption("com.unity.services.vivox", false);
 
             await UnityServices.InitializeAsync(options);
@@ -358,6 +360,29 @@ public class MultiplayerManager : MonoBehaviour
 
         var matchFlow = MatchFlowManager.Instance ?? FindAnyObjectByType<MatchFlowManager>();
         matchFlow?.StartMatch();
+    }
+
+    public async void ReopenLobbyAfterMatch()
+    {
+        IsGameInProgress = false;
+        matchStartRequested = false;
+
+        if (currentLobby == null || NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer)
+            return;
+
+        try
+        {
+            currentLobby = await LobbyService.Instance.UpdateLobbyAsync(
+                currentLobby.Id,
+                new UpdateLobbyOptions { IsLocked = false });
+            Debug.Log("Maç bitti; lobi yeni oyun için yeniden açıldı.");
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning("Lobi yeniden açılırken hata: " + e.Message);
+        }
+
+        OnLobbyPlayersChanged?.Invoke();
     }
 
     private static Player CreateLocalPlayerData()

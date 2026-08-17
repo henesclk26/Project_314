@@ -116,11 +116,30 @@ public class SciFiMenuController : MonoBehaviour
     }
 
     private bool _gameplayModeEntered = false;
+    // Match-end RPCs can arrive before the isGameStarted NetworkVariable has
+    // replicated to a client. Keep that client in the lobby until a new match
+    // explicitly enters gameplay instead of allowing Update() to re-enter the
+    // map during that one-frame transition window.
+    private bool _returningToLobbyAfterMatch;
     public bool IsGameplayModeActive => _gameplayModeEntered;
 
     private void Update()
     {
-        if (!_gameplayModeEntered && IsInActiveNetworkSession() && GameManager.Instance != null && GameManager.Instance.isGameStarted.Value)
+        // The result RPC and the isGameStarted NetworkVariable may arrive in
+        // different frames. Keep the lobby guard until this client has
+        // actually observed the authoritative lobby state, then allow the
+        // next match to enter gameplay normally.
+        if (_returningToLobbyAfterMatch &&
+            (GameManager.Instance == null || !GameManager.Instance.isGameStarted.Value))
+        {
+            _returningToLobbyAfterMatch = false;
+        }
+
+        if (!_returningToLobbyAfterMatch &&
+            !_gameplayModeEntered &&
+            IsInActiveNetworkSession() &&
+            GameManager.Instance != null &&
+            GameManager.Instance.isGameStarted.Value)
         {
             _gameplayModeEntered = true;
             EnterGameplayMode(hideMenusOnly: false);
@@ -262,6 +281,7 @@ private void BindQuickTestButton(Button button)
 
     private void EnterGameplayMode(bool hideMenusOnly)
     {
+        _returningToLobbyAfterMatch = false;
         _gameplayModeEntered = true;
         HideMenuFpcObject();
 
@@ -325,6 +345,32 @@ private void BindQuickTestButton(Button button)
     {
         if (fpc != null)
             fpc.gameObject.SetActive(false);
+    }
+
+    public void ShowLobbyAfterMatch()
+    {
+        _returningToLobbyAfterMatch = true;
+        _gameplayModeEntered = false;
+
+        if (MultiplayerManager.Instance != null)
+            MultiplayerManager.Instance.IsGameInProgress = false;
+
+        UnityEngine.Cursor.lockState = CursorLockMode.None;
+        UnityEngine.Cursor.visible = true;
+        DisableMenuFpc();
+
+        if (MultiplayerManager.Instance != null && MultiplayerManager.Instance.HasActiveLobby)
+        {
+            if (MultiplayerManager.Instance.CurrentLobbyIsPrivate)
+                OpenActivePrivateLobby();
+            else
+                OpenActivePublicLobby();
+            return;
+        }
+
+        // Quick Test has no Unity Lobby object; keep its safe fallback in the
+        // main menu while online matches return to their active lobby panel.
+        ReturnToMainMenuUi();
     }
 
     private static bool IsInActiveNetworkSession()
@@ -437,6 +483,7 @@ private void BindQuickTestButton(Button button)
 
     public async void ShowMainMenu()
     {
+        _returningToLobbyAfterMatch = false;
         _gameplayModeEntered = false;
         
         if (MultiplayerManager.Instance != null)

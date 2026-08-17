@@ -13,6 +13,9 @@ public class GameplayStatusUIManager : MonoBehaviour
     private VisualElement loadout;
     private Label passive;
     private Label tool;
+    private VisualElement voiceStatus;
+    private Label voiceMode;
+    private Label voiceDetail;
     private string localAlertTitle;
     private string localAlertDetail;
     private float localAlertEndTime;
@@ -62,6 +65,9 @@ public class GameplayStatusUIManager : MonoBehaviour
         loadout = root.Q<VisualElement>("gameplay-loadout");
         passive = root.Q<Label>("gameplay-passive");
         tool = root.Q<Label>("gameplay-tool");
+        voiceStatus = root.Q<VisualElement>("gameplay-voice-status");
+        voiceMode = root.Q<Label>("gameplay-voice-mode");
+        voiceDetail = root.Q<Label>("gameplay-voice-detail");
     }
 
     private static void SetPickingModeRecursive(VisualElement element, PickingMode pickingMode)
@@ -80,15 +86,47 @@ public class GameplayStatusUIManager : MonoBehaviour
 
         UpdateLoadout();
         UpdateAlert();
+        UpdateVoiceStatus();
+    }
+
+    private void UpdateVoiceStatus()
+    {
+        if (voiceStatus == null || voiceMode == null || voiceDetail == null)
+            return;
+
+        VoiceChatManager voice = VoiceChatManager.Instance;
+        bool visible = voice != null && voice.IsVoiceReady && voice.CurrentMode != VoiceChatManager.VoiceChannelMode.None;
+        voiceStatus.EnableInClassList("is-hidden", !visible);
+        if (!visible)
+            return;
+
+        voiceStatus.EnableInClassList("voice-meeting", voice.CurrentMode == VoiceChatManager.VoiceChannelMode.Meeting);
+        voiceStatus.EnableInClassList("voice-ghost", voice.CurrentMode == VoiceChatManager.VoiceChannelMode.Ghost);
+
+        string speakingSummary = voice.GetSpeakingSummary();
+        bool remoteSpeaking = !string.IsNullOrEmpty(speakingSummary);
+        voiceStatus.EnableInClassList("voice-speaking", remoteSpeaking);
+        voiceMode.text = voice.GetModeLabel();
+        voiceDetail.text = remoteSpeaking
+            ? "SPEAKING // " + speakingSummary
+            : (voice.IsMicrophoneMuted ? "MIC MUTED // [M]" : "MIC ACTIVE // [M]");
     }
 
     private void UpdateLoadout()
     {
+        if (MatchFlowManager.Instance != null &&
+            MatchFlowManager.Instance.CurrentPhase.Value == MatchPhase.Ended)
+        {
+            if (loadout != null)
+                loadout.style.display = DisplayStyle.None;
+            return;
+        }
+
         PlayerUpgradeState? state = UpgradeManager.Instance?.GetState(NetworkManager.Singleton.LocalClientId);
         passive.text = !state.HasValue || state.Value.Passive == PassiveUpgradeId.None
-            ? string.Empty : $"PASSIVE // {state.Value.Passive}";
+            ? string.Empty : $"PASSIVE // {state.Value.Passive} x{UpgradeManager.Instance.GetPassiveCount(NetworkManager.Singleton.LocalClientId, state.Value.Passive)}";
         tool.text = !state.HasValue || state.Value.Tool == ActiveToolId.None
-            ? string.Empty : $"TOOL // {state.Value.Tool} // {(state.Value.ToolConsumed ? "EXPENDED" : "ARMED")}";
+            ? string.Empty : $"TOOL // {state.Value.Tool} x{UpgradeManager.Instance.GetToolCount(NetworkManager.Singleton.LocalClientId, state.Value.Tool)} // {(state.Value.ToolConsumed ? "EXPENDED" : "ARMED")}";
 
         if (loadout != null)
         {
@@ -104,8 +142,19 @@ public class GameplayStatusUIManager : MonoBehaviour
         string title = null;
         string detail = null;
         double now = NetworkManager.Singleton.ServerTime.Time;
+        MatchFlowManager flow = MatchFlowManager.Instance;
+        bool matchEnded = flow != null && flow.CurrentPhase.Value == MatchPhase.Ended;
 
-        if (Time.unscaledTime < localAlertEndTime)
+        alert.EnableInClassList("match-result", matchEnded);
+        alert.EnableInClassList("result-crew", matchEnded && flow.Winner.Value == MatchWinner.Villagers);
+        alert.EnableInClassList("result-rogue", matchEnded && flow.Winner.Value == MatchWinner.Killer);
+
+        if (matchEnded)
+        {
+            title = flow.Winner.Value == MatchWinner.Villagers ? "CREW VICTORY" : "ROGUE VICTORY";
+            detail = "MATCH COMPLETE // RETURNING TO LOBBY";
+        }
+        else if (Time.unscaledTime < localAlertEndTime)
         {
             title = localAlertTitle;
             detail = localAlertDetail;
@@ -126,12 +175,6 @@ public class GameplayStatusUIManager : MonoBehaviour
             title = "IDENTITY SIGNAL DESYNC";
             detail = $"VISUAL IDENTITY COMPROMISED // {Mathf.CeilToInt((float)(UpgradeManager.Instance.IdentityScrambleEndTime.Value - now)):00} SEC";
         }
-        else if (title == null && MatchFlowManager.Instance != null && MatchFlowManager.Instance.CurrentPhase.Value == MatchPhase.Ended)
-        {
-            title = MatchFlowManager.Instance.Winner.Value == MatchWinner.Villagers ? "CREW VICTORY" : "ROGUE VICTORY";
-            detail = "MATCH COMPLETE";
-        }
-
         bool visible = !string.IsNullOrEmpty(title);
         alert.EnableInClassList("is-hidden", !visible);
         if (visible)

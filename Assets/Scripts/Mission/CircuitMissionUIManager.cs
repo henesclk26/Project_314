@@ -88,7 +88,6 @@ public class CircuitMissionUIManager : MonoBehaviour
     private bool normalPuzzleReady;
     private int normalTaskRevision = -1;
     private bool isSabotageMode;
-    private bool normalCompletedWhenOpened;
     private bool sabotageCompletedWhenOpened;
 
     private CircuitTileState[] ActiveTiles => isSabotageMode ? sabotageTiles : normalTiles;
@@ -157,7 +156,6 @@ public class CircuitMissionUIManager : MonoBehaviour
         isSabotageMode = false;
         // Repeatable TaskRuns own completion. MissionManager flags are reset by
         // TaskManager when the current normal/rogue run starts.
-        normalCompletedWhenOpened = false;
         sabotageCompletedWhenOpened = false;
         IsOpen = true;
 
@@ -272,14 +270,6 @@ public class CircuitMissionUIManager : MonoBehaviour
                 return;
             }
         }
-        else if (!completionStarted &&
-                 !normalCompletedWhenOpened &&
-                 IsNormalMissionCompleted())
-        {
-            CompleteNormalMission(false);
-            return;
-        }
-
         if (completionStarted)
             return;
 
@@ -289,10 +279,7 @@ public class CircuitMissionUIManager : MonoBehaviour
             return;
         }
 
-        bool activeMissionCompleted = isSabotageMode
-            ? IsSabotageMissionCompleted()
-            : IsNormalMissionCompleted();
-        if (activeMissionCompleted)
+        if (isSabotageMode && IsSabotageMissionCompleted())
             return;
 
         if (Input.GetKeyDown(KeyCode.R))
@@ -387,8 +374,6 @@ public class CircuitMissionUIManager : MonoBehaviour
             selectedIndex = normalSelectedIndex;
             RenderBoard(normalTiles);
             UpdateNormalPowerFlow(false);
-            if (IsNormalMissionCompleted())
-                ShowCompletedState(false);
         }
     }
 
@@ -600,7 +585,7 @@ public class CircuitMissionUIManager : MonoBehaviour
             return;
         }
 
-        if (!normalPuzzleReady || IsNormalMissionCompleted())
+        if (!normalPuzzleReady)
             return;
 
         foreach (int index in activeRouteIndices)
