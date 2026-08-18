@@ -24,6 +24,15 @@ public class TaskManager : NetworkBehaviour
         "WaveFrequency"
     };
 
+    private static readonly string[] QuickTestNormalTaskIds =
+    {
+        "MissionComputer",
+        "CircuitMission",
+        "WaveFrequency",
+        "PressureTerminal",
+        "ReactorTerminal"
+    };
+
     // Sabotage points are reserved for the later limited-sabotage loop. Keep
     // their economy bounded even before spending rules are introduced.
     public static int MaxKillerSabotagePoints => DemoBalanceConfig.MaxKillerSabotagePoints;
@@ -102,6 +111,8 @@ public class TaskManager : NetworkBehaviour
         int cooperativeSessionId = GetActiveCooperativeSessionId();
         if (cooperativeSessionId > 0 && IsCooperativeMissionCompleted(cooperativeSessionId))
             CompleteCooperativeTask(cooperativeSessionId);
+
+        CompleteQuickTestCooperativeTaskIfReady();
     }
 
     private void HandleRolesDistributed()
@@ -575,6 +586,14 @@ public class TaskManager : NetworkBehaviour
 
     public bool CanUseRogueTask(ulong clientId, string taskID)
     {
+        if (GameplayInteractionGate.IsQuickTestMode)
+        {
+            return GameplayInteractionGate.IsQuickTestRogueTaskMode &&
+                   IsQuickTestRogueTaskId(taskID) &&
+                   IsTaskPhaseOpen() &&
+                   IsTaskOwnerAliveAndConnected(clientId);
+        }
+
         if (MatchFlowManager.Instance == null ||
             MatchFlowManager.Instance.CurrentPhase.Value != MatchPhase.Active ||
             RoleManager.Instance == null ||
@@ -591,9 +610,29 @@ public class TaskManager : NetworkBehaviour
 
     public bool CanUseAlibiTask(ulong clientId, string taskID)
     {
-        // Role separation is strict: killers do not receive or perform
-        // villager tasks, including the former alibi-task path.
-        return false;
+        // The alibi path is intentionally available only in the explicit
+        // local Quick Test normal-task mode. Production villagers/killers
+        // retain the normal role-separated rules.
+        return GameplayInteractionGate.IsQuickTestNormalTaskMode &&
+               IsQuickTestTaskId(taskID) &&
+               IsTaskPhaseOpen() &&
+               IsTaskOwnerAliveAndConnected(clientId);
+    }
+
+    private static bool IsQuickTestTaskId(string taskID)
+    {
+        if (string.IsNullOrWhiteSpace(taskID))
+            return false;
+
+        return QuickTestNormalTaskIds.Contains(taskID.Trim(), StringComparer.Ordinal);
+    }
+
+    private static bool IsQuickTestRogueTaskId(string taskID)
+    {
+        if (string.IsNullOrWhiteSpace(taskID))
+            return false;
+
+        return KillerHackSequence.Contains(taskID.Trim(), StringComparer.Ordinal);
     }
 
     private bool IsTaskPhaseOpen()
@@ -706,6 +745,22 @@ public class TaskManager : NetworkBehaviour
             return;
 
         int runIndex = GetTaskRunIndex(senderClientId, taskID);
+        if (GameplayInteractionGate.IsQuickTestMode && runIndex >= 0)
+        {
+            TaskRun existingRun = ActiveTaskRuns[runIndex];
+            bool modeMatches = GameplayInteractionGate.IsQuickTestRogueTaskMode
+                ? existingRun.Kind == TaskRunKind.Rogue
+                : existingRun.Kind == TaskRunKind.Normal;
+            if (!modeMatches)
+            {
+                // The same physical terminal is shared by both Quick Test
+                // task sets. Discard only the stale local test run when F1
+                // changes modes; this branch is never reachable in a lobby
+                // match because Quick Test mode is explicitly disabled there.
+                ActiveTaskRuns.RemoveAt(runIndex);
+                runIndex = -1;
+            }
+        }
         Debug.Log($"[TaskManager] runIndex = {runIndex}");
         if (runIndex >= 0)
         {
@@ -713,7 +768,8 @@ public class TaskManager : NetworkBehaviour
             if (!IsTaskOwnerAliveAndConnected(senderClientId))
                 return;
 
-            if (run.Kind == TaskRunKind.Normal &&
+            if (!GameplayInteractionGate.IsQuickTestMode &&
+                run.Kind == TaskRunKind.Normal &&
                 RoleManager.Instance.GetPlayerRole(senderClientId) != PlayerRole.Villager)
                 return;
 
@@ -763,16 +819,34 @@ public class TaskManager : NetworkBehaviour
                     ActiveTaskRuns[runIndex] = run;
                 }
                 if (run.Kind == TaskRunKind.Rogue)
-                    StartHack(taskID);
+                {
+                    if (GameplayInteractionGate.IsQuickTestMode)
+                    {
+                        // Quick Test skips the production terminal unlock
+                        // sequence so every rogue UI can be exercised on
+                        // demand. The production path still starts the
+                        // terminal-owned HackActive state here.
+                        MissionManager.Instance?.ResetRogueTaskState(taskID);
+                    }
+                    else
+                    {
+                        StartHack(taskID);
+                    }
+                }
                 Debug.Log($"[TaskManager] State changed to InProgress");
             }
         }
         else
         {
             if (CanUseRogueTask(senderClientId, taskID) &&
-                GetTerminalHackPhase(taskID) == TerminalHackPhase.Available)
+                (GameplayInteractionGate.IsQuickTestMode ||
+                 GetTerminalHackPhase(taskID) == TerminalHackPhase.Available))
             {
-                StartHack(taskID);
+                if (GameplayInteractionGate.IsQuickTestMode)
+                    MissionManager.Instance?.ResetRogueTaskState(taskID);
+                else
+                    StartHack(taskID);
+
                 ActiveTaskRuns.Add(new TaskRun
                 {
                     OwnerClientId = senderClientId,
@@ -791,18 +865,25 @@ public class TaskManager : NetworkBehaviour
             if (CanUseAlibiTask(senderClientId, taskID))
             {
                 MissionManager.Instance?.ResetNormalTaskState(taskID);
+                if (taskID == "ReactorTerminal")
+                    ReactorMissionManager.Instance?.ResetForTaskAssignment();
+
                 ActiveTaskRuns.Add(new TaskRun
                 {
                     OwnerClientId = senderClientId,
                     TaskID = taskID,
-                    Kind = TaskRunKind.Alibi,
+                    Kind = GameplayInteractionGate.IsQuickTestMode
+                        ? TaskRunKind.Normal
+                        : TaskRunKind.Alibi,
                     SequenceIndex = -1,
                     CooperativeSessionId = 0,
                     CooperativeRoleIndex = 0,
                     State = TaskRunState.InProgress,
                     Progress = 0f
                 });
-                Debug.Log($"[TaskManager] Killer {senderClientId} started alibi task '{taskID}'.");
+                Debug.Log(GameplayInteractionGate.IsQuickTestMode
+                    ? $"[TaskManager] Quick Test started normal task '{taskID}'."
+                    : $"[TaskManager] Killer {senderClientId} started alibi task '{taskID}'.");
                 return;
             }
 
@@ -869,17 +950,19 @@ public class TaskManager : NetworkBehaviour
                 return;
             }
 
-            if (run.Kind == TaskRunKind.Normal &&
+            if (!GameplayInteractionGate.IsQuickTestMode &&
+                run.Kind == TaskRunKind.Normal &&
                 RoleManager.Instance.GetPlayerRole(senderClientId) != PlayerRole.Villager)
                 return;
 
             if (run.Kind == TaskRunKind.Rogue &&
-                (RoleManager.Instance.GetPlayerRole(senderClientId) != PlayerRole.Impostor ||
-                 MatchFlowManager.Instance.CurrentPhase.Value != MatchPhase.Active ||
-                 GetTerminalHackPhase(taskID) != TerminalHackPhase.Active))
+                (!GameplayInteractionGate.IsQuickTestMode &&
+                 (RoleManager.Instance.GetPlayerRole(senderClientId) != PlayerRole.Impostor ||
+                  MatchFlowManager.Instance.CurrentPhase.Value != MatchPhase.Active ||
+                  GetTerminalHackPhase(taskID) != TerminalHackPhase.Active)))
                 return;
 
-            if (run.Kind == TaskRunKind.Alibi)
+            if (run.Kind == TaskRunKind.Alibi && !GameplayInteractionGate.IsQuickTestMode)
                 return;
 
             Debug.Log($"[TaskManager] Current state: {run.State}");
@@ -917,7 +1000,8 @@ public class TaskManager : NetworkBehaviour
                     BeginHackPreparation(taskID);
                     RecordNormalTaskCompletion(senderClientId, taskID);
                     Debug.Log($"[TaskManager] Normal task completed by villager {senderClientId}; crew progress incremented to {CrewTaskProgress.Value}");
-                    CheckWinCondition();
+                    if (!GameplayInteractionGate.IsQuickTestMode)
+                        CheckWinCondition();
                 }
                 else
                 {
@@ -967,6 +1051,11 @@ public class TaskManager : NetworkBehaviour
         {
             TaskRun run = ActiveTaskRuns[i];
             if (run.OwnerClientId != clientId || run.State == TaskRunState.Completed || run.State == TaskRunState.Cancelled)
+                continue;
+
+            if (GameplayInteractionGate.IsQuickTestMode &&
+                ((GameplayInteractionGate.IsQuickTestRogueTaskMode && run.Kind != TaskRunKind.Rogue) ||
+                 (GameplayInteractionGate.IsQuickTestNormalTaskMode && run.Kind == TaskRunKind.Rogue)))
                 continue;
 
             // A cooperative assignment is a priority overlay over the paused
@@ -1036,8 +1125,50 @@ public class TaskManager : NetworkBehaviour
                run.Value.CooperativeSessionId > 0 &&
                TaskIdsEqual(run.Value.TaskID, taskID) &&
                RoleManager.Instance != null &&
-               RoleManager.Instance.GetPlayerRole(clientId) == PlayerRole.Villager &&
+               (GameplayInteractionGate.IsQuickTestMode ||
+                RoleManager.Instance.GetPlayerRole(clientId) == PlayerRole.Villager) &&
                IsTaskOwnerAliveAndConnected(clientId);
+    }
+
+    private void CompleteQuickTestCooperativeTaskIfReady()
+    {
+        if (!GameplayInteractionGate.IsQuickTestMode ||
+            NetworkManager.Singleton == null ||
+            !NetworkManager.Singleton.IsServer)
+            return;
+
+        ulong clientId = NetworkManager.Singleton.LocalClientId;
+        TaskRun? activeRun = GetActiveTaskForPlayer(clientId);
+        if (!activeRun.HasValue || activeRun.Value.State == TaskRunState.Completed ||
+            activeRun.Value.State == TaskRunState.Cancelled)
+            return;
+
+        string taskID = activeRun.Value.TaskID.ToString().Trim();
+        bool completed = taskID == "PressureTerminal" &&
+                         MissionManager.Instance != null &&
+                         MissionManager.Instance.IsPressureMissionCompleted.Value;
+        if (!completed && taskID == "ReactorTerminal")
+        {
+            completed = ReactorMissionManager.Instance != null &&
+                        ReactorMissionManager.Instance.IsMissionCompleted.Value;
+        }
+
+        if (!completed)
+            return;
+
+        int runIndex = GetTaskRunIndex(clientId, taskID);
+        if (runIndex < 0)
+            return;
+
+        TaskRun run = ActiveTaskRuns[runIndex];
+        run.State = TaskRunState.Completed;
+        ActiveTaskRuns[runIndex] = run;
+        CrewTaskProgress.Value++;
+        UpgradeManager.Instance?.AwardTaskPoint(clientId);
+        RecordNormalTaskCompletion(clientId, taskID);
+        ActiveTaskRuns.RemoveAt(runIndex);
+        AssignNormalTask(clientId);
+        Debug.Log($"[TaskManager] Quick Test cooperative task '{taskID}' completed by {clientId}.");
     }
 
     public List<ulong> GetEligibleVillagerIds()

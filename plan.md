@@ -826,8 +826,11 @@ replace working task implementations.
      real host/client online gameplay regression are complete.
      The latest pass also added server-side sender, alive-state, and distance
      validation for emergency meetings, body reports, and meeting targets.
-   - Retain F1 task switching only for Editor/Development testing. Production
-     rogue-task access must be role and server-permission based.
+   - Retain F1 task switching only for Editor/Development Quick Test. Quick
+     Test starts in villager-task mode, allows the complete normal task pool,
+     and F1 switches to the complete killer-hack pool. Private/Public lobby
+     matches never enable this bypass; production rogue-task access remains
+     role and server-permission based.
    - Validate mission mutation RPCs on the server; direct client calls cannot
      complete normal tasks, alter sabotage state, or operate pressure/fuel
      systems without a living player, valid phase, and matching task role.

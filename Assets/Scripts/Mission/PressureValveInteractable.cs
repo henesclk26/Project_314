@@ -41,7 +41,11 @@ public class PressureValveInteractable : MonoBehaviour
             return;
 
         if (TaskManager.Instance == null ||
-            !TaskManager.Instance.IsCooperativeTaskParticipant(fpc.OwnerClientId, "PressureTerminal"))
+            (!GameplayInteractionGate.IsQuickTestMode &&
+             !TaskManager.Instance.IsCooperativeTaskParticipant(fpc.OwnerClientId, "PressureTerminal")) ||
+            (GameplayInteractionGate.IsQuickTestMode &&
+             !TaskManager.Instance.CanUseAlibiTask(fpc.OwnerClientId, "PressureTerminal") &&
+             !TaskManager.Instance.IsCooperativeTaskParticipant(fpc.OwnerClientId, "PressureTerminal")))
             return;
 
         Ray ray = new Ray(fpc.playerCamera.transform.position, fpc.playerCamera.transform.forward);

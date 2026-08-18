@@ -36,8 +36,9 @@ public class WaveFrequencyTerminalInteractable : MonoBehaviour
         if (TaskManager.Instance == null) return;
 
         bool isAvailable = TaskManager.Instance.IsTerminalAvailable("WaveFrequency", fpc.OwnerClientId);
-        bool isKiller = RoleManager.Instance != null &&
-                        RoleManager.Instance.GetPlayerRole(fpc.OwnerClientId) == PlayerRole.Impostor;
+        bool isKiller = GameplayInteractionGate.IsQuickTestMode ||
+                        (RoleManager.Instance != null &&
+                         RoleManager.Instance.GetPlayerRole(fpc.OwnerClientId) == PlayerRole.Impostor);
         var activeTask = TaskManager.Instance.GetActiveTaskForPlayer(fpc.OwnerClientId);
         bool hasTask = activeTask.HasValue && activeTask.Value.TaskID.ToString() == "WaveFrequency";
         bool canUseRogueTask = isKiller &&

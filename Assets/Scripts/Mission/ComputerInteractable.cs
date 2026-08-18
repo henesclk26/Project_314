@@ -37,8 +37,9 @@ public class ComputerInteractable : MonoBehaviour
             if (TaskManager.Instance == null) return;
             
             bool isAvailable = TaskManager.Instance.IsTerminalAvailable("MissionComputer", ownerFpc.OwnerClientId);
-            bool isKiller = RoleManager.Instance != null &&
-                            RoleManager.Instance.GetPlayerRole(ownerFpc.OwnerClientId) == PlayerRole.Impostor;
+            bool isKiller = GameplayInteractionGate.IsQuickTestMode ||
+                            (RoleManager.Instance != null &&
+                             RoleManager.Instance.GetPlayerRole(ownerFpc.OwnerClientId) == PlayerRole.Impostor);
             var activeTask = TaskManager.Instance.GetActiveTaskForPlayer(ownerFpc.OwnerClientId);
             bool hasTask = activeTask.HasValue && activeTask.Value.TaskID.ToString() == "MissionComputer";
             bool canUseRogueTask = isKiller &&

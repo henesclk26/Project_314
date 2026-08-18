@@ -44,13 +44,15 @@ public class ReactorTerminalInteractable : MonoBehaviour
             bool isAvailable = TaskManager.Instance.IsTerminalAvailable("ReactorTerminal", fpc.OwnerClientId);
             var activeTask = TaskManager.Instance.GetActiveTaskForPlayer(fpc.OwnerClientId);
             bool hasTask = activeTask.HasValue && activeTask.Value.TaskID.ToString() == "ReactorTerminal";
+            bool canUseQuickTestTask =
+                TaskManager.Instance.CanUseAlibiTask(fpc.OwnerClientId, "ReactorTerminal");
 
             if (!isAvailable)
             {
                 ui?.SetPromptVisible(false);
                 fpc.SetInteractionText("SYSTEM BUSY / OFFLINE");
             }
-            else if (hasTask)
+            else if (hasTask || canUseQuickTestTask)
             {
                 ui?.SetPromptVisible(true);
                 if (Input.GetKeyDown(KeyCode.F) && ui != null)

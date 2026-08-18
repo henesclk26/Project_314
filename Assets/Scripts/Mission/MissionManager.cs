@@ -865,9 +865,15 @@ public class MissionManager : NetworkBehaviour
     public void ActivatePressureMissionRpc(RpcParams rpcParams = default)
     {
         ulong senderClientId = rpcParams.Receive.SenderClientId;
+        bool quickTestTask = GameplayInteractionGate.IsQuickTestMode &&
+                             TaskManager.Instance != null &&
+                             TaskManager.Instance.CanUseAlibiTask(
+                                 senderClientId,
+                                 "PressureTerminal");
         if (!CanAcceptGameplayRpc(senderClientId) ||
             TaskManager.Instance == null ||
-            !TaskManager.Instance.IsCooperativeTaskParticipant(senderClientId, "PressureTerminal"))
+            (!quickTestTask &&
+             !TaskManager.Instance.IsCooperativeTaskParticipant(senderClientId, "PressureTerminal")))
             return;
 
         if (SharedValveSession.Value != SharedValveSessionState.Idle)
@@ -988,7 +994,11 @@ public class MissionManager : NetworkBehaviour
             return;
 
         if (TaskManager.Instance == null ||
-            !TaskManager.Instance.IsCooperativeTaskParticipant(senderClientId, "PressureTerminal"))
+            (!GameplayInteractionGate.IsQuickTestMode &&
+             !TaskManager.Instance.IsCooperativeTaskParticipant(senderClientId, "PressureTerminal")) ||
+            (GameplayInteractionGate.IsQuickTestMode &&
+             !TaskManager.Instance.CanUseAlibiTask(senderClientId, "PressureTerminal") &&
+             !TaskManager.Instance.IsCooperativeTaskParticipant(senderClientId, "PressureTerminal")))
             return;
 
         direction = direction > 0 ? 1 : -1;
@@ -1044,7 +1054,11 @@ public class MissionManager : NetworkBehaviour
         ulong senderClientId = rpcParams.Receive.SenderClientId;
         if (!CanAcceptGameplayRpc(senderClientId) ||
             TaskManager.Instance == null ||
-            !TaskManager.Instance.IsCooperativeTaskParticipant(senderClientId, "PressureTerminal"))
+            (!GameplayInteractionGate.IsQuickTestMode &&
+             !TaskManager.Instance.IsCooperativeTaskParticipant(senderClientId, "PressureTerminal")) ||
+            (GameplayInteractionGate.IsQuickTestMode &&
+             !TaskManager.Instance.CanUseAlibiTask(senderClientId, "PressureTerminal") &&
+             !TaskManager.Instance.IsCooperativeTaskParticipant(senderClientId, "PressureTerminal")))
             return;
 
         if (!IsPressureMissionActive.Value || IsPressureMissionCompleted.Value)
@@ -1063,7 +1077,11 @@ public class MissionManager : NetworkBehaviour
         ulong senderClientId = rpcParams.Receive.SenderClientId;
         if (!CanAcceptGameplayRpc(senderClientId) ||
             TaskManager.Instance == null ||
-            !TaskManager.Instance.IsCooperativeTaskParticipant(senderClientId, "PressureTerminal"))
+            (!GameplayInteractionGate.IsQuickTestMode &&
+             !TaskManager.Instance.IsCooperativeTaskParticipant(senderClientId, "PressureTerminal")) ||
+            (GameplayInteractionGate.IsQuickTestMode &&
+             !TaskManager.Instance.CanUseAlibiTask(senderClientId, "PressureTerminal") &&
+             !TaskManager.Instance.IsCooperativeTaskParticipant(senderClientId, "PressureTerminal")))
             return;
 
         if (!IsPressureMissionActive.Value || IsPressureMissionCompleted.Value)

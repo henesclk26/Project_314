@@ -24,8 +24,8 @@ public class GameManager : NetworkBehaviour
         {
             bool hasOnlineLobby = MultiplayerManager.Instance != null &&
                                   MultiplayerManager.Instance.HasActiveLobby;
-            bool isQuickTest = !hasOnlineLobby;
-            bool onlineMatchRequested = hasOnlineLobby &&
+            bool isQuickTest = GameplayInteractionGate.IsQuickTestMode;
+            bool onlineMatchRequested = !isQuickTest && hasOnlineLobby &&
                                          MultiplayerManager.Instance.IsGameInProgress;
             isGameStarted.Value = isQuickTest || onlineMatchRequested;
             

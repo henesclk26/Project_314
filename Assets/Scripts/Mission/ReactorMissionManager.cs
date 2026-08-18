@@ -190,7 +190,8 @@ public class ReactorMissionManager : NetworkBehaviour
         int bit = 1 << leverId;
         ulong clientId = rpcParams.Receive.SenderClientId;
         if (!CanAcceptReactorInput(clientId) ||
-            (LeverMask.Value & bit) != 0 || leverParticipants.Contains(clientId))
+            (LeverMask.Value & bit) != 0 ||
+            (!GameplayInteractionGate.IsQuickTestMode && leverParticipants.Contains(clientId)))
             return;
 
         if (LeverMask.Value == 0)
@@ -258,8 +259,11 @@ public class ReactorMissionManager : NetworkBehaviour
         if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
             return true;
 
-        return IsServer &&
-               TaskManager.Instance != null &&
+        if (!IsServer || TaskManager.Instance == null)
+            return false;
+
+        return (GameplayInteractionGate.IsQuickTestMode &&
+                TaskManager.Instance.CanUseAlibiTask(clientId, "ReactorTerminal")) ||
                TaskManager.Instance.IsCooperativeTaskParticipant(clientId, "ReactorTerminal");
     }
 

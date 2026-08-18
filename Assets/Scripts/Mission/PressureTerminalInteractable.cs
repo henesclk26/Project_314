@@ -52,13 +52,15 @@ public class PressureTerminalInteractable : MonoBehaviour
             bool isAvailable = TaskManager.Instance.IsTerminalAvailable("PressureTerminal", fpc.OwnerClientId);
             var activeTask = TaskManager.Instance.GetActiveTaskForPlayer(fpc.OwnerClientId);
             bool hasTask = activeTask.HasValue && activeTask.Value.TaskID.ToString() == "PressureTerminal";
+            bool canUseQuickTestTask =
+                TaskManager.Instance.CanUseAlibiTask(fpc.OwnerClientId, "PressureTerminal");
 
             if (!isAvailable)
             {
                 SetInRange(false, ui);
                 fpc.SetInteractionText("SYSTEM BUSY / OFFLINE");
             }
-            else if (hasTask)
+            else if (hasTask || canUseQuickTestTask)
             {
                 // Every living participant assigned to the cooperative
                 // PressureTerminal task may open the shared computer and use

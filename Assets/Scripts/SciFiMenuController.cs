@@ -44,6 +44,7 @@ public class SciFiMenuController : MonoBehaviour
     {
         // Host left — use ShowMainMenu to fully reset to main menu state
         Debug.Log("[SciFiMenuController] Host disconnected, resetting to main menu.");
+        GameplayInteractionGate.SetQuickTestMode(false);
         ShowMainMenu();
     }
 
@@ -125,6 +126,8 @@ public class SciFiMenuController : MonoBehaviour
 
     private void Update()
     {
+        GameplayInteractionGate.ProcessQuickTestInput();
+
         // The result RPC and the isGameStarted NetworkVariable may arrive in
         // different frames. Keep the lobby guard until this client has
         // actually observed the authoritative lobby state, then allow the
@@ -215,6 +218,7 @@ private void BindQuickTestButton(Button button)
 
     private void OnPrivateGameClicked()
     {
+        GameplayInteractionGate.SetQuickTestMode(false);
         DisableMenuFpc();
 
         if (menuObject != null) menuObject.SetActive(false);
@@ -228,6 +232,7 @@ private void BindQuickTestButton(Button button)
 
     private void OnPublicGameClicked()
     {
+        GameplayInteractionGate.SetQuickTestMode(false);
         DisableMenuFpc();
 
         if (menuObject != null) menuObject.SetActive(false);
@@ -276,6 +281,7 @@ private void BindQuickTestButton(Button button)
 
     private void OnNetworkGameStarting()
     {
+        GameplayInteractionGate.SetQuickTestMode(false);
         EnterGameplayMode(hideMenusOnly: false);
     }
 
@@ -349,6 +355,7 @@ private void BindQuickTestButton(Button button)
 
     public void ShowLobbyAfterMatch()
     {
+        GameplayInteractionGate.SetQuickTestMode(false);
         _returningToLobbyAfterMatch = true;
         _gameplayModeEntered = false;
 
@@ -393,6 +400,8 @@ private void BindQuickTestButton(Button button)
     /// </summary>
     private void OnQuickTestClicked()
     {
+        GameplayInteractionGate.SetQuickTestMode(true);
+
         if (NetworkManager.Singleton == null)
         {
             Debug.LogError("[QuickTest] NetworkManager bulunamadı!");
