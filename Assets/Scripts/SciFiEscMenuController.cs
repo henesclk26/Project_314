@@ -14,8 +14,20 @@ public class SciFiEscMenuController : MonoBehaviour
     // --- Dahili değişkenler ---
     private UIDocument uiDocument;
     private VisualElement escMenuRoot;
+    private VisualElement escCard;
+    private VisualElement settingsPanel;
+    private Button settingsButton;
+    private Button settingsBackButton;
+    private Button settingsSaveButton;
     private SciFiMenuController menuController;
     private bool isMenuOpen = false;
+
+    /// <summary>
+    /// FPC'nin Update/FixedUpdate döngüsünün de görebileceği merkezi ESC kilidi.
+    /// Böylece ESC açıldığı karede veya UI katmanı yeniden çizildiğinde kamera
+    /// mouse hareketiyle tekrar dönemez.
+    /// </summary>
+    public static bool IsPauseMenuOpen { get; private set; }
 
     // =========================================================
     // AÇIKLAMA: Awake vs Start vs OnEnable
@@ -32,6 +44,11 @@ public class SciFiEscMenuController : MonoBehaviour
     {
         // UIDocument component'ini bu GameObject'ten al
         uiDocument = GetComponent<UIDocument>();
+    }
+
+    private void OnDestroy()
+    {
+        IsPauseMenuOpen = false;
     }
 
     private void Start()
@@ -65,10 +82,14 @@ public class SciFiEscMenuController : MonoBehaviour
 
         // UXML'deki kök VisualElement (name="EscMenu")
         escMenuRoot = root.Q<VisualElement>("EscMenu");
+        escCard = root.Q<VisualElement>("EscCard");
+        settingsPanel = root.Q<VisualElement>("settings-panel");
 
         // Butonları bul ve event'leri bağla
         var quitBtn = root.Q<Button>("QuitGameButton");
-        var settingsBtn = root.Q<Button>("SettingsButton");
+        settingsButton = root.Q<Button>("SettingsButton");
+        settingsBackButton = root.Q<Button>("settings-back");
+        settingsSaveButton = root.Q<Button>("settings-save");
 
         // =========================================================
         // AÇIKLAMA: clicked event
@@ -82,9 +103,14 @@ public class SciFiEscMenuController : MonoBehaviour
         if (quitBtn != null)
             quitBtn.clicked += OnQuitToMainMenu;
 
-        // Settings şimdilik işlevsiz — ileride buraya bağlarsın
-        // if (settingsBtn != null)
-        //     settingsBtn.clicked += OnOpenSettings;
+        if (settingsButton != null)
+            settingsButton.clicked += OnOpenSettings;
+        if (settingsBackButton != null)
+            settingsBackButton.clicked += OnCloseSettings;
+        if (settingsSaveButton != null)
+            settingsSaveButton.clicked += OnSaveSettings;
+
+        GameSettingsUI.ConfigureControls(root);
 
         // Oyun başlarken menüyü gizle
         SetMenuVisible(false);
@@ -100,6 +126,8 @@ public class SciFiEscMenuController : MonoBehaviour
             if (isMenuOpen)
             {
                 isMenuOpen = false;
+                IsPauseMenuOpen = false;
+                OnCloseSettings();
                 SetMenuVisible(false);
             }
             return;
@@ -123,9 +151,10 @@ public class SciFiEscMenuController : MonoBehaviour
     /// <summary>
     /// Menüyü aç/kapa toggle'ı
     /// </summary>
-private void ToggleMenu()
+    private void ToggleMenu()
     {
         isMenuOpen = !isMenuOpen;
+        IsPauseMenuOpen = isMenuOpen;
         SetMenuVisible(isMenuOpen);
 
         // Runtime'da owner olan FPC'yi bul (inspector referansı prefab olabilir, spawn'dan sonra geçersiz)
@@ -133,6 +162,7 @@ private void ToggleMenu()
 
         if (isMenuOpen)
         {
+            OnCloseSettings();
             // Menü açık → cursor serbest, karakter donuk
             UnityEngine.Cursor.lockState = CursorLockMode.None;
             UnityEngine.Cursor.visible = true;
@@ -145,6 +175,7 @@ private void ToggleMenu()
         }
         else
         {
+            OnCloseSettings();
             // Menü kapalı → cursor kilitli, karakter aktif
             UnityEngine.Cursor.lockState = CursorLockMode.Locked;
             UnityEngine.Cursor.visible = false;
@@ -184,6 +215,29 @@ private void ToggleMenu()
         }
     }
 
+    private void OnOpenSettings()
+    {
+        GameSettingsUI.BeginEdit(uiDocument != null ? uiDocument.rootVisualElement : null);
+        if (escCard != null)
+            escCard.style.display = DisplayStyle.None;
+        if (settingsPanel != null)
+            settingsPanel.style.display = DisplayStyle.Flex;
+    }
+
+    private void OnCloseSettings()
+    {
+        GameSettingsUI.Cancel(uiDocument != null ? uiDocument.rootVisualElement : null);
+        if (settingsPanel != null)
+            settingsPanel.style.display = DisplayStyle.None;
+        if (escCard != null)
+            escCard.style.display = DisplayStyle.Flex;
+    }
+
+    private void OnSaveSettings()
+    {
+        GameSettingsUI.Save(uiDocument != null ? uiDocument.rootVisualElement : null);
+    }
+
     /// <summary>
     /// Ana menüye dönüş — Main Menu UIDocument'ını açıp FPC'yi kapatır
     /// </summary>
@@ -193,6 +247,7 @@ private void ToggleMenu()
 
         // ESC menüsünü kapat
         isMenuOpen = false;
+        IsPauseMenuOpen = false;
         SetMenuVisible(false);
 
         // SciFiMenuController üzerinden ana menüyü aç

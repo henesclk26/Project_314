@@ -906,6 +906,62 @@ replace working task implementations.
      task cooldown, passive values, blackout duration, and meeting cooldown from
      observed results.
 
+## Performance Optimization `[DONE - CODE / EDITOR / BUILD; HARDWARE MATRIX PENDING]`
+
+- Runtime frame pacing now uses the saved player FPS limit during gameplay,
+  caps menus/lobbies at 60 FPS, throttles an unfocused application to 15 FPS,
+  keeps the default new-install target at 60 FPS, and makes numeric FPS limits
+  authoritative so VSync cannot silently raise them to a high-refresh monitor's
+  rate. Unlimited remains available as an explicit player choice.
+- Low / Medium / High presets now apply render scale, URP MSAA, HDR,
+  shadow distance/cascades, texture mip limits and streaming budgets,
+  reflection/particle settings, and runtime Bloom/Vignette/Motion Blur/
+  Chromatic Aberration post-processing choices.
+- The measured map camera had a 1000-meter far clip despite the map's roughly
+  227-meter diagonal. Gameplay now keeps the main map camera occlusion-enabled
+  and caps its far clip at 300 meters, leaving security-feed cameras unchanged.
+- Low/Medium runtime presets no longer request an opaque-camera color copy
+  because the project has no shader using `_CameraOpaqueTexture`; depth remains
+  available for interaction and screen-space effects. A one-time settings migration resets a
+  previously saved FPS value above 60 or Unlimited to the thermal-safe 60 FPS
+  default; the settings screen still allows players to choose higher values.
+- The sci-fi map Building environment has 1,227 static renderers prepared for
+  static batching and occlusion culling. Occlusion data was baked and 35 small
+  environment pieces received conservative distance LOD groups.
+- Security camera feeds remain disabled until opened and use a lower render
+  texture size on Low/Medium. Auto-door player scans and spawn-registration
+  polling are throttled instead of running expensive searches every frame.
+  Mission/interactable local-player resolution now uses a shared 0.25-second
+  cache, avoiding repeated `FindObjectsByType` allocations across task scripts.
+- The map now has runtime local-light culling driven by the local player's
+  camera: lights farther than 120 meters are disabled, with a 100-meter
+  reactivation threshold. These distances are tuned to the measured
+  `sci-fi-map` lighting envelope (approximately 116.5 meters diagonal) so
+  long corridors keep their prewarmed lighting without visible pop-in. This
+  applies to all lights in `sci-fi-map` while leaving directional
+  lights and other scenes untouched; remote security-camera viewing temporarily
+  keeps the map lights available for the feeds.
+- The eight cyan room lights that previously had no shadow caster now use
+  attached, low-bias soft shadows. Low/Medium runtime quality keeps the nearest
+  protected room lights in a small shadow budget instead of restoring every
+  local light, preventing cross-room light bleed without the former 29-shadow
+  atlas cost. High retains the authored scene shadow setup.
+- Server-side player validation and match win checks now resolve players through
+  Netcode's connected-client table instead of scanning the whole scene every
+  frame. Vivox session-key creation is cached and the gameplay status HUD is
+  refreshed at 10 Hz, which removes avoidable per-frame string/UI work.
+- SRP batching is enabled, the existing NetworkManager tick rate is explicitly
+  held at 30 before a session starts, and the editor can write a repeatable
+  audit to `Assets/Performance/Project314PerformanceAudit.txt`.
+- Play Mode profiler counters were captured without compile/runtime errors; the
+  Frame Debugger was also exercised (the current paused view exposed no draw
+  events). A fresh Windows build succeeded at
+  `Buildler/Optimization_20260820/Project314_Optimization.exe` (177.56 MB,
+  0 errors; existing Unity/MCP/Services and shadow-atlas diagnostics remain).
+- Remaining external verification: FPS/GPU/CPU/temperature measurements on
+  real low/mid/high PCs and 4/8/16-player online sessions. These require the
+  other machines/clients and cannot be truthfully simulated by one Editor.
+
 ## Explicit Non-Goals for the First Demo Slice `[NON-GOAL]`
 
 - Multiple killers.

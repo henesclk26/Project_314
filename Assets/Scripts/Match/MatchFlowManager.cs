@@ -54,7 +54,11 @@ public class MatchFlowManager : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
-        GameplayStatusUIManager.CreateIfNeeded();
+        if (CurrentPhase.Value == MatchPhase.Lobby)
+            GameplayStatusUIManager.SetGameplayVisible(false);
+        else
+            GameplayStatusUIManager.CreateIfNeeded();
+
         CurrentPhase.OnValueChanged += HandlePhaseChange;
         
         // Trigger initial state if joined late
@@ -68,10 +72,16 @@ public class MatchFlowManager : NetworkBehaviour
     {
         base.OnNetworkDespawn();
         CurrentPhase.OnValueChanged -= HandlePhaseChange;
+        GameplayStatusUIManager.SetGameplayVisible(false);
     }
 
     private void HandlePhaseChange(MatchPhase oldPhase, MatchPhase newPhase)
     {
+        if (newPhase == MatchPhase.Lobby)
+            GameplayStatusUIManager.SetGameplayVisible(false);
+        else
+            GameplayStatusUIManager.CreateIfNeeded();
+
         if (newPhase == MatchPhase.Meeting ||
             newPhase == MatchPhase.PostMeetingLock ||
             newPhase == MatchPhase.Ended ||
@@ -218,14 +228,20 @@ public class MatchFlowManager : NetworkBehaviour
 
         int livingKillers = 0;
         int livingVillagers = 0;
-        foreach (FirstPersonController player in FindObjectsByType<FirstPersonController>(FindObjectsSortMode.None))
+        NetworkManager networkManager = NetworkManager.Singleton;
+        if (networkManager == null)
+            return;
+
+        foreach (ulong clientId in networkManager.ConnectedClientsIds)
         {
-            if (player.isDead.Value || RoleManager.Instance == null)
+            FirstPersonController player = NetworkPlayerLookup.Find(clientId);
+            if (player == null || player.isDead.Value || RoleManager.Instance == null)
                 continue;
 
-            if (RoleManager.Instance.GetPlayerRole(player.OwnerClientId) == PlayerRole.Impostor)
+            PlayerRole role = RoleManager.Instance.GetPlayerRole(clientId);
+            if (role == PlayerRole.Impostor)
                 livingKillers++;
-            else if (RoleManager.Instance.GetPlayerRole(player.OwnerClientId) == PlayerRole.Villager)
+            else if (role == PlayerRole.Villager)
                 livingVillagers++;
         }
 
@@ -251,23 +267,13 @@ public class MatchFlowManager : NetworkBehaviour
         if (NetworkManager.Singleton.ConnectedClientsIds.Count < 3)
             return false;
 
-        FirstPersonController[] players = FindObjectsByType<FirstPersonController>(FindObjectsSortMode.None);
         foreach (ulong clientId in NetworkManager.Singleton.ConnectedClientsIds)
         {
             if (RoleManager.Instance.GetPlayerRole(clientId) == PlayerRole.None)
                 return false;
 
-            bool hasSpawnedPlayer = false;
-            foreach (FirstPersonController player in players)
-            {
-                if (player != null && player.IsSpawned && player.OwnerClientId == clientId)
-                {
-                    hasSpawnedPlayer = true;
-                    break;
-                }
-            }
-
-            if (!hasSpawnedPlayer)
+            FirstPersonController player = NetworkPlayerLookup.Find(clientId);
+            if (player == null || !player.IsSpawned)
                 return false;
         }
 

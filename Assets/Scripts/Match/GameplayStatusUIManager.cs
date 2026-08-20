@@ -19,6 +19,7 @@ public class GameplayStatusUIManager : MonoBehaviour
     private string localAlertTitle;
     private string localAlertDetail;
     private float localAlertEndTime;
+    private float nextUiRefreshTime;
 
     public static void ShowLocalAlert(string title, string detail, float durationSeconds)
     {
@@ -34,11 +35,28 @@ public class GameplayStatusUIManager : MonoBehaviour
     public static void CreateIfNeeded()
     {
         if (instance != null)
+        {
+            instance.gameObject.SetActive(true);
             return;
+        }
 
         GameObject host = new GameObject("GameplayStatusScreen");
         instance = host.AddComponent<GameplayStatusUIManager>();
         instance.CreateDocument();
+    }
+
+    public static void SetGameplayVisible(bool visible)
+    {
+        if (instance == null)
+        {
+            if (!visible)
+                return;
+
+            CreateIfNeeded();
+        }
+
+        if (instance != null)
+            instance.gameObject.SetActive(visible);
     }
 
     private void CreateDocument()
@@ -68,6 +86,24 @@ public class GameplayStatusUIManager : MonoBehaviour
         voiceStatus = root.Q<VisualElement>("gameplay-voice-status");
         voiceMode = root.Q<Label>("gameplay-voice-mode");
         voiceDetail = root.Q<Label>("gameplay-voice-detail");
+
+        // Show the voice panel immediately. Vivox initialization and channel
+        // joining are asynchronous, so hiding the panel until both finish
+        // made it appear noticeably later than the rest of the gameplay HUD.
+        SetVoiceConnectingState();
+    }
+
+    private void SetVoiceConnectingState()
+    {
+        if (voiceStatus == null || voiceMode == null || voiceDetail == null)
+            return;
+
+        voiceStatus.EnableInClassList("is-hidden", false);
+        voiceStatus.EnableInClassList("voice-meeting", false);
+        voiceStatus.EnableInClassList("voice-ghost", false);
+        voiceStatus.EnableInClassList("voice-speaking", false);
+        voiceMode.text = "VOICE // CONNECTING";
+        voiceDetail.text = "INITIALIZING // PLEASE WAIT";
     }
 
     private static void SetPickingModeRecursive(VisualElement element, PickingMode pickingMode)
@@ -84,6 +120,11 @@ public class GameplayStatusUIManager : MonoBehaviour
         if (root == null || NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
             return;
 
+        if (Time.unscaledTime < nextUiRefreshTime)
+            return;
+
+        nextUiRefreshTime = Time.unscaledTime + 0.1f;
+
         UpdateLoadout();
         UpdateAlert();
         UpdateVoiceStatus();
@@ -95,10 +136,24 @@ public class GameplayStatusUIManager : MonoBehaviour
             return;
 
         VoiceChatManager voice = VoiceChatManager.Instance;
-        bool visible = voice != null && voice.IsVoiceReady && voice.CurrentMode != VoiceChatManager.VoiceChannelMode.None;
-        voiceStatus.EnableInClassList("is-hidden", !visible);
-        if (!visible)
+        if (voice == null || !voice.IsVoiceReady)
+        {
+            SetVoiceConnectingState();
             return;
+        }
+
+        if (voice.CurrentMode == VoiceChatManager.VoiceChannelMode.None)
+        {
+            voiceStatus.EnableInClassList("is-hidden", false);
+            voiceStatus.EnableInClassList("voice-meeting", false);
+            voiceStatus.EnableInClassList("voice-ghost", false);
+            voiceStatus.EnableInClassList("voice-speaking", false);
+            voiceMode.text = "VOICE // READY";
+            voiceDetail.text = "CHANNEL // CONNECTING";
+            return;
+        }
+
+        voiceStatus.EnableInClassList("is-hidden", false);
 
         voiceStatus.EnableInClassList("voice-meeting", voice.CurrentMode == VoiceChatManager.VoiceChannelMode.Meeting);
         voiceStatus.EnableInClassList("voice-ghost", voice.CurrentMode == VoiceChatManager.VoiceChannelMode.Ghost);

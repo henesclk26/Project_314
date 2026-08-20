@@ -10,6 +10,9 @@ public class AutoDoor : MonoBehaviour
     private Animator animator;
     private Animator linkedAnimator;
     private bool isOpen = false;
+    private static FirstPersonController[] cachedPlayers = System.Array.Empty<FirstPersonController>();
+    private static float nextPlayerScanTime;
+    private const float PlayerScanInterval = 0.2f;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void RegisterAutomaticDoorSetup()
@@ -120,7 +123,13 @@ public class AutoDoor : MonoBehaviour
 
     private bool IsAnyPlayerNear()
     {
-        var allFpcs = FindObjectsByType<FirstPersonController>(FindObjectsSortMode.None);
+        if (Time.unscaledTime >= nextPlayerScanTime)
+        {
+            cachedPlayers = FindObjectsByType<FirstPersonController>(FindObjectsSortMode.None);
+            nextPlayerScanTime = Time.unscaledTime + PlayerScanInterval;
+        }
+
+        var allFpcs = cachedPlayers;
         foreach (var fpc in allFpcs)
         {
             if (fpc != null && !fpc.isDead.Value)

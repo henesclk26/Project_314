@@ -85,20 +85,6 @@ public class CircuitMissionInteractable : MonoBehaviour
 
     private static FirstPersonController GetOwnerFpc()
     {
-        FirstPersonController[] allFpcs =
-            FindObjectsByType<FirstPersonController>(FindObjectsSortMode.None);
-
-        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
-        {
-            foreach (FirstPersonController fpc in allFpcs)
-            {
-                if (fpc.IsOwner)
-                    return fpc;
-            }
-
-            return null;
-        }
-
-        return allFpcs.Length > 0 ? allFpcs[0] : null;
+        return LocalPlayerResolver.Get();
     }
 }

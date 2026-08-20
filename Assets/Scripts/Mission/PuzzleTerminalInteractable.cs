@@ -39,13 +39,6 @@ public class PuzzleTerminalInteractable : MonoBehaviour
 
     private FirstPersonController GetOwnerFpc()
     {
-        var allFpcs = FindObjectsByType<FirstPersonController>(FindObjectsSortMode.None);
-        if (Unity.Netcode.NetworkManager.Singleton != null && Unity.Netcode.NetworkManager.Singleton.IsListening)
-        {
-            foreach (var f in allFpcs) if (f.IsOwner) return f;
-            return null;
-        }
-        if (allFpcs.Length > 0) return allFpcs[0];
-        return null;
+        return LocalPlayerResolver.Get();
     }
 }

@@ -21,6 +21,11 @@ public class SciFiMenuController : MonoBehaviour
 
     private UIToolkitLobbyBridge _lobbyBridge;
     private bool _showingAlternateMainMenu;
+    private Button _mainSettingsButton;
+    private Button _mainSettingsBackButton;
+    private Button _mainSettingsSaveButton;
+    private VisualElement _mainSettingsPanel;
+    private VisualElement _mainSettingsRoot;
 
     private void Awake()
     {
@@ -190,6 +195,48 @@ private void SetupMainMenuButtons()
         BindMenuButton(root.Q<Button>("btn-public-game"), OnPublicGameButtonClicked);
         BindMenuButton(root.Q<Button>("btn-quit-game"), OnQuitGameButtonClicked);
         BindQuickTestButton(root.Q<Button>("btn-quick-test"));
+
+        if (_mainSettingsButton != null)
+            _mainSettingsButton.clicked -= OpenMainSettings;
+        if (_mainSettingsBackButton != null)
+            _mainSettingsBackButton.clicked -= CloseMainSettings;
+        if (_mainSettingsSaveButton != null)
+            _mainSettingsSaveButton.clicked -= SaveMainSettings;
+
+        _mainSettingsButton = root.Q<Button>("btn-settings");
+        _mainSettingsBackButton = root.Q<Button>("settings-back");
+        _mainSettingsSaveButton = root.Q<Button>("settings-save");
+        _mainSettingsPanel = root.Q<VisualElement>("settings-panel");
+        _mainSettingsRoot = root;
+
+        if (_mainSettingsButton != null)
+            _mainSettingsButton.clicked += OpenMainSettings;
+        if (_mainSettingsBackButton != null)
+            _mainSettingsBackButton.clicked += CloseMainSettings;
+        if (_mainSettingsSaveButton != null)
+            _mainSettingsSaveButton.clicked += SaveMainSettings;
+
+        GameSettingsUI.ConfigureControls(root);
+        CloseMainSettings();
+    }
+
+    private void OpenMainSettings()
+    {
+        GameSettingsUI.BeginEdit(_mainSettingsRoot);
+        if (_mainSettingsPanel != null)
+            _mainSettingsPanel.style.display = DisplayStyle.Flex;
+    }
+
+    private void CloseMainSettings()
+    {
+        GameSettingsUI.Cancel(_mainSettingsRoot);
+        if (_mainSettingsPanel != null)
+            _mainSettingsPanel.style.display = DisplayStyle.None;
+    }
+
+    private void SaveMainSettings()
+    {
+        GameSettingsUI.Save(_mainSettingsRoot);
     }
 
 private void BindQuickTestButton(Button button)

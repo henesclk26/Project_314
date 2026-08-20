@@ -1,0 +1,21 @@
+Project 314 Performance Audit
+Scene: Assets/Scenes/sci-fi-map.unity
+Generated: 2026-08-20T02:16:48.4170200+03:00
+
+Renderers: 1323
+Static renderers: 1227
+LOD groups: 35
+Cameras: 1
+Lights: 35
+Occlusion bake running: False
+Occlusion data size: 135568
+SRP batcher: True
+Quality preset: PC
+Texture mip streaming: True
+MSAA: 2
+Target FPS: 60
+Network tick rate: 30
+URP render scale: 0,9
+URP HDR: True
+URP MSAA: 2
+URP shadow distance: 30

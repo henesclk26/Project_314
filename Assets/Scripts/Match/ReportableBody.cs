@@ -62,10 +62,6 @@ public class ReportableBody : NetworkBehaviour
 
     private FirstPersonController GetLocalFpc()
     {
-        foreach (var f in FindObjectsByType<FirstPersonController>(FindObjectsSortMode.None))
-        {
-            if (f.IsOwner) return f;
-        }
-        return null;
+        return LocalPlayerResolver.Get();
     }
 }

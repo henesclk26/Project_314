@@ -21,6 +21,7 @@ public class PlayerSpawnCoordinator : MonoBehaviour
     private readonly Dictionary<ulong, int> placedSlots = new();
     private bool shuffleInitialized;
     private bool callbacksRegistered;
+    private float nextRegistrationCheckTime;
 
     private void Start()
     {
@@ -33,6 +34,10 @@ public class PlayerSpawnCoordinator : MonoBehaviour
 
     private void Update()
     {
+        if (Time.unscaledTime < nextRegistrationCheckTime)
+            return;
+
+        nextRegistrationCheckTime = Time.unscaledTime + 0.5f;
         if (callbacksRegistered && !IsServerReady())
             UnregisterServerCallbacks();
 

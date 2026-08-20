@@ -683,13 +683,8 @@ public class MissionManager : NetworkBehaviour
         if (!isConnected)
             return false;
 
-        foreach (FirstPersonController player in FindObjectsByType<FirstPersonController>(FindObjectsSortMode.None))
-        {
-            if (player.OwnerClientId == clientId)
-                return !player.isDead.Value;
-        }
-
-        return false;
+        FirstPersonController player = NetworkPlayerLookup.Find(clientId);
+        return player != null && !player.isDead.Value;
     }
 
     private bool CanAcceptRogueMissionInput(ulong clientId, string taskID)

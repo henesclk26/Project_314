@@ -1550,7 +1550,8 @@ public class FirstPersonController : NetworkBehaviour
 
     private static bool IsGameplayScreenOpen()
     {
-        return (ComputerUIManager.Instance != null &&
+        return SciFiEscMenuController.IsPauseMenuOpen ||
+               (ComputerUIManager.Instance != null &&
                 ComputerUIManager.Instance.IsComputerOpen) ||
                (CircuitMissionUIManager.Instance != null &&
                 CircuitMissionUIManager.Instance.IsOpen) ||

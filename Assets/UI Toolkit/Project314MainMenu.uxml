@@ -89,5 +89,65 @@
                 <ui:Button name="btn-quit-game" text="QUIT GAME" class="utility-button utility-button-quit"/>
             </ui:VisualElement>
         </ui:VisualElement>
+        <ui:VisualElement name="settings-panel" class="settings-overlay">
+            <ui:VisualElement class="settings-screen">
+                <ui:VisualElement class="settings-sidebar">
+                    <ui:Label text="SETTINGS" class="settings-title"/>
+                    <ui:Label text="P314 // PERFORMANCE CONSOLE" class="settings-subtitle"/>
+                    <ui:Button name="settings-back" text="BACK" class="settings-back-button"/>
+                    <ui:Button name="settings-save" text="SAVE" class="settings-save-button"/>
+                    <ui:VisualElement class="settings-sidebar-spacer"/>
+                    <ui:Label text="SYSTEM STATUS" class="settings-sidebar-label"/>
+                    <ui:Label text="OPTIMIZATION LINK ACTIVE" class="settings-sidebar-value"/>
+                    <ui:VisualElement class="settings-status-line"/>
+                </ui:VisualElement>
+                <ui:VisualElement class="settings-main">
+                    <ui:VisualElement class="settings-tabs">
+                        <ui:Button text="GENERAL" class="settings-tab settings-tab-disabled" enabled="false"/>
+                        <ui:Button text="ACCESSIBILITY" class="settings-tab settings-tab-disabled" enabled="false"/>
+                        <ui:Button text="GRAPHICS" class="settings-tab settings-tab-active"/>
+                        <ui:Button text="AUDIO" class="settings-tab settings-tab-disabled" enabled="false"/>
+                    </ui:VisualElement>
+                    <ui:VisualElement class="settings-content">
+                        <ui:Label text="GRAPHICS" class="settings-content-title"/>
+                        <ui:Label text="DISPLAY AND PERFORMANCE PARAMETERS" class="settings-content-subtitle"/>
+                        <ui:VisualElement class="settings-list">
+                            <ui:VisualElement class="settings-row">
+                                <ui:VisualElement class="settings-row-copy">
+                                    <ui:Label text="MAXIMUM FRAME RATE" class="settings-label"/>
+                                    <ui:Label text="1–999 FPS / UNLIMITED TARGET" class="settings-detail"/>
+                                </ui:VisualElement>
+                                <ui:VisualElement class="settings-fps-control">
+                                    <ui:SliderInt name="settings-fps-slider" low-value="1" high-value="1000" value="90" class="settings-fps-slider"/>
+                                    <ui:Label name="settings-fps-value" text="90 FPS" class="settings-fps-value"/>
+                                </ui:VisualElement>
+                            </ui:VisualElement>
+                            <ui:VisualElement class="settings-row">
+                                <ui:VisualElement class="settings-row-copy">
+                                    <ui:Label text="RESOLUTION" class="settings-label"/>
+                                    <ui:Label text="SUPPORTED DISPLAY MODES" class="settings-detail"/>
+                                </ui:VisualElement>
+                                <ui:DropdownField name="settings-resolution-dropdown" class="settings-dropdown"/>
+                            </ui:VisualElement>
+                            <ui:VisualElement class="settings-row">
+                                <ui:VisualElement class="settings-row-copy">
+                                    <ui:Label text="GRAPHICS QUALITY" class="settings-label"/>
+                                    <ui:Label text="SHADOWS, LOD AND RENDER SCALE PROFILE" class="settings-detail"/>
+                                </ui:VisualElement>
+                                <ui:DropdownField name="settings-quality-dropdown" class="settings-dropdown"/>
+                            </ui:VisualElement>
+                            <ui:VisualElement class="settings-row">
+                                <ui:VisualElement class="settings-row-copy">
+                                    <ui:Label text="V-SYNC" class="settings-label"/>
+                                    <ui:Label text="SYNCHRONIZE PRESENTATION WITH DISPLAY" class="settings-detail"/>
+                                </ui:VisualElement>
+                                <ui:Toggle name="settings-vsync-toggle" class="settings-toggle"/>
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                        <ui:Label text="PRESS SAVE TO APPLY CHANGES" class="settings-hint"/>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

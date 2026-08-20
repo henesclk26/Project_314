@@ -45,6 +45,8 @@ public sealed class VoiceChatManager : MonoBehaviour
     private float nextPositionUpdate;
     private FirstPersonController localPlayer;
     private bool vivoxEventsSubscribed;
+    private string cachedSessionSource;
+    private string cachedSessionKey;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void Bootstrap()
@@ -270,9 +272,22 @@ public sealed class VoiceChatManager : MonoBehaviour
         if (string.IsNullOrEmpty(raw))
             raw = "quicktest";
 
+        if (Instance != null && raw == Instance.cachedSessionSource &&
+            !string.IsNullOrEmpty(Instance.cachedSessionKey))
+        {
+            return Instance.cachedSessionKey;
+        }
+
         char[] characters = raw.Where(char.IsLetterOrDigit).ToArray();
         string sanitized = new string(characters).ToLowerInvariant();
-        return string.IsNullOrEmpty(sanitized) ? "quicktest" : sanitized;
+        string result = string.IsNullOrEmpty(sanitized) ? "quicktest" : sanitized;
+        if (Instance != null)
+        {
+            Instance.cachedSessionSource = raw;
+            Instance.cachedSessionKey = result;
+        }
+
+        return result;
     }
 
     private void RequestChannelReconcile()

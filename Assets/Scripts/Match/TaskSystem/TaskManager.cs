@@ -39,6 +39,10 @@ public class TaskManager : NetworkBehaviour
     private int nextCooperativeSessionId = 1;
     private float nextTaskCleanupTime;
     private readonly Dictionary<ulong, Queue<string>> recentNormalTaskIds = new Dictionary<ulong, Queue<string>>();
+    private readonly HashSet<ulong> basketballRewardedPlayers = new HashSet<ulong>();
+    // Cooperative missions are a finite sequence for the current match. Once
+    // a mission is completed it must not be selected again in the same match.
+    private readonly HashSet<string> completedCooperativeTaskIds = new HashSet<string>(StringComparer.Ordinal);
 
     private void Awake()
     {
@@ -119,6 +123,7 @@ public class TaskManager : NetworkBehaviour
     {
         if (IsServer && ActiveTaskRuns.Count == 0)
         {
+            basketballRewardedPlayers.Clear();
             InitializeCrewTarget();
             AssignInitialTasks();
         }
@@ -191,14 +196,8 @@ public class TaskManager : NetworkBehaviour
             !NetworkManager.Singleton.ConnectedClientsIds.Contains(clientId))
             return false;
 
-        FirstPersonController[] players = FindObjectsByType<FirstPersonController>(FindObjectsSortMode.None);
-        foreach (FirstPersonController player in players)
-        {
-            if (player.OwnerClientId == clientId)
-                return !player.isDead.Value;
-        }
-
-        return false;
+        FirstPersonController player = NetworkPlayerLookup.Find(clientId);
+        return player != null && !player.isDead.Value;
     }
 
     private void RepairCooperativeSession(int sessionId)
@@ -328,6 +327,8 @@ public class TaskManager : NetworkBehaviour
             if (MissionManager.Instance != null)
                 MissionManager.Instance.IsValveOverrideUnlocked.Value = false;
             recentNormalTaskIds.Clear();
+            basketballRewardedPlayers.Clear();
+            completedCooperativeTaskIds.Clear();
         }
     }
 
@@ -375,9 +376,10 @@ public class TaskManager : NetworkBehaviour
         if (AvailableTasks == null || livingVillagerCount < 3)
             return null;
 
-        List<TaskDefinition> candidates = AvailableTasks
+            List<TaskDefinition> candidates = AvailableTasks
             .Where(t => t != null && t.IsCooperative && !t.IsSpecialMapSequence &&
-                        t.RequiredVillagers >= 3 && t.RequiredVillagers <= livingVillagerCount)
+                        t.RequiredVillagers >= 3 && t.RequiredVillagers <= livingVillagerCount &&
+                        !completedCooperativeTaskIds.Contains(t.TaskID.Trim()))
             .ToList();
         return candidates.Count == 0 ? null : candidates[UnityEngine.Random.Range(0, candidates.Count)];
     }
@@ -444,12 +446,15 @@ public class TaskManager : NetworkBehaviour
     private void CompleteCooperativeTask(int sessionId)
     {
         List<ulong> participants = new List<ulong>();
+        string completedTaskId = null;
         for (int i = ActiveTaskRuns.Count - 1; i >= 0; i--)
         {
             TaskRun run = ActiveTaskRuns[i];
             if (run.CooperativeSessionId != sessionId)
                 continue;
 
+            if (string.IsNullOrWhiteSpace(completedTaskId))
+                completedTaskId = run.TaskID.ToString().Trim();
             participants.Add(run.OwnerClientId);
             ActiveTaskRuns.RemoveAt(i);
         }
@@ -470,6 +475,9 @@ public class TaskManager : NetworkBehaviour
             }
         }
 
+        if (!string.IsNullOrWhiteSpace(completedTaskId))
+            completedCooperativeTaskIds.Add(completedTaskId);
+
         TryAssignCooperativeOverlay();
     }
 
@@ -486,7 +494,10 @@ public class TaskManager : NetworkBehaviour
         List<ulong> villagers = GetEligibleVillagers();
         TaskDefinition cooperativeTask = SelectCooperativeTask(villagers.Count);
         if (cooperativeTask == null)
+        {
+            Debug.Log("[TaskManager] All available cooperative tasks are complete for this match (or fewer than three villagers remain); continuing with personal tasks.");
             return;
+        }
 
         for (int i = villagers.Count - 1; i > 0; i--)
         {
@@ -1022,6 +1033,35 @@ public class TaskManager : NetworkBehaviour
         {
             Debug.LogWarning($"[TaskManager] Completion rejected: no task '{taskID}' is assigned to sender {senderClientId}.");
         }
+    }
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    public void ReportBasketballTaskCompletedRpc(RpcParams rpcParams = default)
+    {
+        ulong senderClientId = rpcParams.Receive.SenderClientId;
+        if (!IsTaskPhaseOpen() || !IsTaskOwnerAliveAndConnected(senderClientId) ||
+            RoleManager.Instance == null || basketballRewardedPlayers.Contains(senderClientId))
+            return;
+
+        basketballRewardedPlayers.Add(senderClientId);
+
+        int assignedRunIndex = GetTaskRunIndex(senderClientId, BasketballArcadeInteractable.TaskId);
+        bool assignedNormalTask = assignedRunIndex >= 0 &&
+                                  ActiveTaskRuns[assignedRunIndex].Kind == TaskRunKind.Normal &&
+                                  ActiveTaskRuns[assignedRunIndex].CooperativeSessionId == 0 &&
+                                  RoleManager.Instance.GetPlayerRole(senderClientId) == PlayerRole.Villager;
+
+        UpgradeManager.Instance?.AwardTaskPoint(senderClientId);
+        if (assignedNormalTask)
+        {
+            CrewTaskProgress.Value++;
+            RecordNormalTaskCompletion(senderClientId, BasketballArcadeInteractable.TaskId);
+            CheckWinCondition();
+            ActiveTaskRuns.RemoveAt(assignedRunIndex);
+            AssignNormalTask(senderClientId);
+        }
+
+        Debug.Log($"[TaskManager] Basketball challenge completed by {senderClientId}; personal reward granted once. Assigned task consumed: {assignedNormalTask}.");
     }
     
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]

@@ -296,9 +296,6 @@ public class PuzzleUIManager : MonoBehaviour
 
     private FirstPersonController GetOwnerFpc()
     {
-        var allFpcs = FindObjectsByType<FirstPersonController>(FindObjectsSortMode.None);
-        foreach (var f in allFpcs) if (f.IsOwner) return f;
-        if (allFpcs.Length > 0) return allFpcs[0];
-        return null;
+        return LocalPlayerResolver.Get();
     }
 }

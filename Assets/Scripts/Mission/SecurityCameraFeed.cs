@@ -44,6 +44,16 @@ public class SecurityCameraFeed : MonoBehaviour
 
         int width = Mathf.Max(320, textureWidth);
         int height = Mathf.Max(180, textureHeight);
+        if (GamePerformanceSettings.Quality == GamePerformanceSettings.QualityPreset.Low)
+        {
+            width = Mathf.Min(width, 480);
+            height = Mathf.Min(height, 270);
+        }
+        else if (GamePerformanceSettings.Quality == GamePerformanceSettings.QualityPreset.Medium)
+        {
+            width = Mathf.Min(width, 640);
+            height = Mathf.Min(height, 360);
+        }
         if (outputTexture == null || outputTexture.width != width || outputTexture.height != height)
         {
             ReleaseTexture();

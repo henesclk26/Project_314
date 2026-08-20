@@ -903,11 +903,6 @@ public class UpgradeManager : NetworkBehaviour
 
     private static FirstPersonController FindPlayer(ulong clientId)
     {
-        foreach (FirstPersonController player in FindObjectsByType<FirstPersonController>(FindObjectsSortMode.None))
-        {
-            if (player.OwnerClientId == clientId)
-                return player;
-        }
-        return null;
+        return NetworkPlayerLookup.Find(clientId);
     }
 }

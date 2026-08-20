@@ -53,19 +53,6 @@ public class ReactorLeverInteractable : MonoBehaviour
 
     private static FirstPersonController GetOwnerFpc()
     {
-        FirstPersonController[] players =
-            FindObjectsByType<FirstPersonController>(FindObjectsSortMode.None);
-        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
-        {
-            foreach (FirstPersonController player in players)
-            {
-                if (player.IsOwner)
-                    return player;
-            }
-
-            return null;
-        }
-
-        return players.Length > 0 ? players[0] : null;
+        return LocalPlayerResolver.Get();
     }
 }

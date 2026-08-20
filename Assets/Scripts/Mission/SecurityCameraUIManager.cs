@@ -247,6 +247,10 @@ private void SetDetailFeed()
         if (!IsOpen)
             return;
 
+        // Stop the extra scene renders immediately. The close animation can
+        // still show the last captured frame, while the player's main camera
+        // is no longer competing with six live feed cameras during the exit.
+        StopAllStreams();
         overlay.RemoveFromClassList("open");
         if (closeRoutine != null)
             StopCoroutine(closeRoutine);
@@ -257,7 +261,6 @@ private void SetDetailFeed()
     {
         yield return new WaitForSeconds(CloseAnimationDuration);
         overlay.AddToClassList("hidden");
-        StopAllStreams();
         IsOpen = false;
         closeRoutine = null;
 
